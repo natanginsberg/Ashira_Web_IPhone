@@ -34,13 +34,17 @@ class App extends StatelessWidget {
               '/': (context) => Promo(),
               '/contracts': (context) => Contracts(),
               '/allSongs': (context) => AllSongs(),
-              '/sing': (context) => Sing(new Song(
-                  artist: "artist",
-                  imageResourceFile: "imageResourceFile",
-                  title: "title",
-                  genre: "genre",
-                  songResourceFile: "songResourceFile",
-                  textResourceFile: "textResourceFile")),
+              '/sing': (context) => Sing(
+                  new Song(
+                      artist: "artist",
+                      imageResourceFile: "imageResourceFile",
+                      title: "title",
+                      genre: "genre",
+                      songResourceFile: "songResourceFile",
+                      textResourceFile: "textResourceFile",
+                      womanToneResourceFile: "womanResourceFile",
+                      kidToneResourceFile: 'kidResourceFile'),
+                  ""),
             },
           );
         }

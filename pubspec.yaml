@@ -31,6 +31,9 @@ dependencies:
   audioplayers: ^0.18.3
   http: ^0.13.1
   path_provider: ^2.0.1
+  url_launcher: ^6.0.3
+  just_audio: ^0.7.4+1
+  audio_video_progress_bar: ^0.4.0
 
 
 

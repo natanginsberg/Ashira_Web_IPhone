@@ -46,7 +46,7 @@ class _ContractsState extends State<Contracts> {
               )),
               child: SingleChildScrollView(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(8.0, 5.0, 10.0, 5.0),
+                  padding: const EdgeInsets.fromLTRB(50.0, 45.0, 50.0, 45.0),
                   child: SafeArea(
                     child: FutureBuilder(
                       future: _future,
@@ -54,7 +54,9 @@ class _ContractsState extends State<Contracts> {
                         snapshot.hasData ? '${snapshot.data}' : ' Reading...',
                         textDirection: TextDirection.rtl,
                         style: TextStyle(
-                            fontFamily: 'Normal', color: Colors.white),
+                            fontFamily: 'Normal',
+                            color: Colors.white,
+                            fontSize: 15),
                       ),
                     ),
                   ),
@@ -79,7 +81,7 @@ class _ContractsState extends State<Contracts> {
                       MaterialStateProperty.all<Color>(Color(0xFFFF94F0)),
                 ),
                 child: Text(
-                  'Agree',
+                  'מאשר',
                   style: TextStyle(
                       color: Colors.white,
                       fontSize: 20,
@@ -99,10 +101,11 @@ class _ContractsState extends State<Contracts> {
 
   Future<String> getContracts() async {
     String contracts =
-        'By clicking \"Agree\" you confirm that you have read and you agree to '
-        'the terms of use and privacy policy of the service. '
-        'Use of the Service is subject to them and indicates that you have '
-        'read them in full and you agree to them.\n\n\n';
+        // 'By clicking \"Agree\" you confirm that you have read and you agree to '
+        // 'the terms of use and privacy policy of the service. '
+        // 'Use of the Service is subject to them and indicates that you have '
+        // 'read them in full and you agree to them.\n\n\n';
+        'בלחיצה על "מאשר" הנך מאשר שקראת ושאתה מסכים למדיניות פרטיות ולתנאי השימוש של השירות. שימוש בשירות כפוף לתנאים אלו.\n\n\n';
     final List futures = await Future.wait([
       getFileData('assets/PrivacyPolicy'),
       getFileData('assets/Contract'),

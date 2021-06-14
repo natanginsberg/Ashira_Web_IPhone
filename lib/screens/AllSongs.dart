@@ -6,7 +6,9 @@ import 'package:ashira_flutter/model/Song.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class AllSongs extends StatefulWidget {
   @override
@@ -76,6 +78,7 @@ List<Song> gridSongs = [];
 class _AllSongsState extends State<AllSongs> {
   final TextEditingController controller = new TextEditingController();
   bool _showGenreBar = false;
+  bool menuOpen = false;
   late bool onSearchTextChanged;
 
   String currentGenre = "All Songs";
@@ -102,354 +105,433 @@ class _AllSongsState extends State<AllSongs> {
     // setState(() {
     //   signInAnon();
     // });
-    return Scaffold(
-        key: _scaffoldKey,
-        backgroundColor: Colors.transparent,
-        body:
-            // Stack(
-            //   alignment: Alignment.center,
-            //   children: [
-            //     Positioned(
-            //       top: 70,
-            //       child: Padding(
-            //         padding:
-            //             const EdgeInsets.symmetric(vertical: 15.0, horizontal: 8.0),
-            //         child: Container(
-            //           width: MediaQuery.of(context).size.width * 0.8,
-            //           height: 48,
-            //           decoration: BoxDecoration(
-            //               border: Border.all(color: Color(0xFF8D3C8E), width: 2),
-            //               borderRadius: BorderRadius.circular(50),
-            //               gradient: RadialGradient(
-            //                 center: Alignment.center,
-            //                 radius: 0.8,
-            //                 colors: [
-            //                   const Color(0xFF221A4D), // blue sky
-            //                   const Color(0xFF000000), // yellow sun
-            //                 ],
-            //               )),
-            //           child: Row(
-            //               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            //               children: [
-            //                 Padding(
-            //                   padding: const EdgeInsets.all(8.0),
-            //                   child: Icon(
-            //                     Icons.search,
-            //                     color: Colors.white,
-            //                   ),
-            //                 ),
-            //                 SizedBox(
-            //                   width: MediaQuery.of(context).size.width * 0.5,
-            //                   height: 48,
-            //                   child: Center(
-            //                     child: TextField(
-            //                       style: TextStyle(color: Colors.white),
-            //                       textAlign: TextAlign.center,
-            //                       controller: controller,
-            //                       decoration: new InputDecoration(
-            //                         hintText: 'Search',
-            //                         hintStyle: TextStyle(color: Colors.white),
-            //                         fillColor: Colors.transparent,
-            //                       ),
-            //                       onChanged: (String value) {
-            //                         setState(() {
-            //                           // searchPath.add(new List.from(gridSongs));
-            //                           gridSongs = value.length > previousValue.length
-            //                               ? getNextSong(value)
-            //                               : getLastSong();
-            //                           previousValue = value;
-            //                         });
-            //                       },
-            //                     ),
-            //                   ),
-            //                 ),
-            //                 IconButton(
-            //                   icon: new Icon(
-            //                     Icons.cancel,
-            //                     color: Colors.white,
-            //                   ),
-            //                   onPressed: () {
-            //                     controller.clear();
-            //                     previousValue = "";
-            //                     setState(() {
-            //                       gridSongs = List.from(searchPath.first);
-            //                       searchPath.clear();
-            //                     });
-            //                   },
-            //                 ),
-            //               ]),
-            //         ),
-            //       ),
-            //     ),
-            //     Positioned.fill(
-            //       top: 150,
-            //       child: Container(
-            //           height: MediaQuery.of(context).size.height - 400,
-            //           decoration: BoxDecoration(
-            //               gradient: RadialGradient(
-            //             center: Alignment.center,
-            //             radius: 0.8,
-            //             colors: [
-            //               const Color(0xFF221A4D), // blue sky
-            //               const Color(0xFF000000), // yellow sun
-            //             ],
-            //           )),
-            //           margin: const EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 0.0),
-            //           child: buildGridView(gridSongs)),
-            //     ),
-            //     Align(
-            //       alignment: Alignment.topCenter,
-            //       child: SafeArea(
-            //         child: Row(
-            //           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            //           children: [
-            //             IconButton(
-            //               onPressed: () {},
-            //               icon: Icon(
-            //                 Icons.menu,
-            //                 color: Colors.white,
-            //               ),
-            //             ),
-            //             if (_showGenreBar)
-            //               Container(
-            //                   height: 150,
-            //                   width: 110,
-            //                   decoration: BoxDecoration(
-            //                       gradient: LinearGradient(
-            //                     colors: <Color>[Colors.pink, Colors.blue],
-            //                   )),
-            //                   child: Row(
-            //                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            //                     children: [
-            //                       buildListView(),
-            //                       Align(
-            //                         alignment: Alignment.topCenter,
-            //                         child: Transform.rotate(
-            //                           angle: 270 * pi / 180,
-            //                           child: IconButton(
-            //                             padding: const EdgeInsets.symmetric(
-            //                                 horizontal: 4.0),
-            //                             onPressed: () {
-            //                               setState(() {
-            //                                 _showGenreBar = false;
-            //                               });
-            //                             },
-            //                             icon:
-            //                                 const Icon(Icons.arrow_back_ios_rounded),
-            //                             color: Colors.pink[300],
-            //                           ),
-            //                         ),
-            //                       )
-            //                     ],
-            //                   ))
-            //             else
-            //               GenreButton(
-            //                   height: 40,
-            //                   width: 110,
-            //                   child: Row(
-            //                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            //                     children: [
-            //                       Text(
-            //                         currentGenre,
-            //                         style: TextStyle(color: Colors.white),
-            //                       ),
-            //                       Icon(
-            //                         Icons.arrow_back_ios_rounded,
-            //                         color: Colors.pink[300],
-            //                       ),
-            //                     ],
-            //                   ),
-            //                   gradient: LinearGradient(
-            //                     colors: <Color>[Colors.pink, Colors.blue],
-            //                   ),
-            //                   onPressed: () {
-            //                     setState(() {
-            //                       _showGenreBar = true;
-            //                     });
-            //                   }),
-            //             IconButton(
-            //               onPressed: () {},
-            //               icon: Icon(
-            //                 Icons.mic,
-            //                 color: Colors.white,
-            //               ),
-            //             ),
-            //           ],
-            //         ),
-            //       ),
-            //     ),
-            //   ],
-            // ),
-            Column(
-          children: [
-            SafeArea(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return MaterialApp(
+      home: Scaffold(
+          key: _scaffoldKey,
+          backgroundColor: Colors.transparent,
+          body:
+              // Stack(
+              //   alignment: Alignment.center,
+              //   children: [
+              //     Positioned(
+              //       top: 70,
+              //       child: Padding(
+              //         padding:
+              //             const EdgeInsets.symmetric(vertical: 15.0, horizontal: 8.0),
+              //         child: Container(
+              //           width: MediaQuery.of(context).size.width * 0.8,
+              //           height: 48,
+              //           decoration: BoxDecoration(
+              //               border: Border.all(color: Color(0xFF8D3C8E), width: 2),
+              //               borderRadius: BorderRadius.circular(50),
+              //               gradient: RadialGradient(
+              //                 center: Alignment.center,
+              //                 radius: 0.8,
+              //                 colors: [
+              //                   const Color(0xFF221A4D), // blue sky
+              //                   const Color(0xFF000000), // yellow sun
+              //                 ],
+              //               )),
+              //           child: Row(
+              //               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              //               children: [
+              //                 Padding(
+              //                   padding: const EdgeInsets.all(8.0),
+              //                   child: Icon(
+              //                     Icons.search,
+              //                     color: Colors.white,
+              //                   ),
+              //                 ),
+              //                 SizedBox(
+              //                   width: MediaQuery.of(context).size.width * 0.5,
+              //                   height: 48,
+              //                   child: Center(
+              //                     child: TextField(
+              //                       style: TextStyle(color: Colors.white),
+              //                       textAlign: TextAlign.center,
+              //                       controller: controller,
+              //                       decoration: new InputDecoration(
+              //                         hintText: 'Search',
+              //                         hintStyle: TextStyle(color: Colors.white),
+              //                         fillColor: Colors.transparent,
+              //                       ),
+              //                       onChanged: (String value) {
+              //                         setState(() {
+              //                           // searchPath.add(new List.from(gridSongs));
+              //                           gridSongs = value.length > previousValue.length
+              //                               ? getNextSong(value)
+              //                               : getLastSong();
+              //                           previousValue = value;
+              //                         });
+              //                       },
+              //                     ),
+              //                   ),
+              //                 ),
+              //                 IconButton(
+              //                   icon: new Icon(
+              //                     Icons.cancel,
+              //                     color: Colors.white,
+              //                   ),
+              //                   onPressed: () {
+              //                     controller.clear();
+              //                     previousValue = "";
+              //                     setState(() {
+              //                       gridSongs = List.from(searchPath.first);
+              //                       searchPath.clear();
+              //                     });
+              //                   },
+              //                 ),
+              //               ]),
+              //         ),
+              //       ),
+              //     ),
+              //     Positioned.fill(
+              //       top: 150,
+              //       child: Container(
+              //           height: MediaQuery.of(context).size.height - 400,
+              //           decoration: BoxDecoration(
+              //               gradient: RadialGradient(
+              //             center: Alignment.center,
+              //             radius: 0.8,
+              //             colors: [
+              //               const Color(0xFF221A4D), // blue sky
+              //               const Color(0xFF000000), // yellow sun
+              //             ],
+              //           )),
+              //           margin: const EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 0.0),
+              //           child: buildGridView(gridSongs)),
+              //     ),
+              //     Align(
+              //       alignment: Alignment.topCenter,
+              //       child: SafeArea(
+              //         child: Row(
+              //           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              //           children: [
+              //             IconButton(
+              //               onPressed: () {},
+              //               icon: Icon(
+              //                 Icons.menu,
+              //                 color: Colors.white,
+              //               ),
+              //             ),
+              //             if (_showGenreBar)
+              //               Container(
+              //                   height: 150,
+              //                   width: 110,
+              //                   decoration: BoxDecoration(
+              //                       gradient: LinearGradient(
+              //                     colors: <Color>[Colors.pink, Colors.blue],
+              //                   )),
+              //                   child: Row(
+              //                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              //                     children: [
+              //                       buildListView(),
+              //                       Align(
+              //                         alignment: Alignment.topCenter,
+              //                         child: Transform.rotate(
+              //                           angle: 270 * pi / 180,
+              //                           child: IconButton(
+              //                             padding: const EdgeInsets.symmetric(
+              //                                 horizontal: 4.0),
+              //                             onPressed: () {
+              //                               setState(() {
+              //                                 _showGenreBar = false;
+              //                               });
+              //                             },
+              //                             icon:
+              //                                 const Icon(Icons.arrow_back_ios_rounded),
+              //                             color: Colors.pink[300],
+              //                           ),
+              //                         ),
+              //                       )
+              //                     ],
+              //                   ))
+              //             else
+              //               GenreButton(
+              //                   height: 40,
+              //                   width: 110,
+              //                   child: Row(
+              //                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              //                     children: [
+              //                       Text(
+              //                         currentGenre,
+              //                         style: TextStyle(color: Colors.white),
+              //                       ),
+              //                       Icon(
+              //                         Icons.arrow_back_ios_rounded,
+              //                         color: Colors.pink[300],
+              //                       ),
+              //                     ],
+              //                   ),
+              //                   gradient: LinearGradient(
+              //                     colors: <Color>[Colors.pink, Colors.blue],
+              //                   ),
+              //                   onPressed: () {
+              //                     setState(() {
+              //                       _showGenreBar = true;
+              //                     });
+              //                   }),
+              //             IconButton(
+              //               onPressed: () {},
+              //               icon: Icon(
+              //                 Icons.mic,
+              //                 color: Colors.white,
+              //               ),
+              //             ),
+              //           ],
+              //         ),
+              //       ),
+              //     ),
+              //   ],
+              // ),
+              Container(
+            decoration: BoxDecoration(
+                gradient: RadialGradient(
+              center: Alignment.center,
+              radius: 0.8,
+              colors: [
+                const Color(0xFF221A4D), // blue sky
+                const Color(0xFF000000), // yellow sun
+              ],
+            )),
+            child: Stack(children: [
+              Column(
                 children: [
-                  IconButton(
-                    onPressed: () {},
-                    icon: Icon(
-                      Icons.menu,
-                      color: Colors.white,
+                  SafeArea(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        IconButton(
+                          onPressed: () {
+                            openWebsite();
+                          },
+                          icon: Icon(
+                            Icons.arrow_back_rounded,
+                            color: Colors.white,
+                          ),
+                        ),
+                        if (_showGenreBar)
+                          Container(
+                              height: 150,
+                              width: 110,
+                              decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                colors: <Color>[Colors.pink, Colors.blue],
+                              )),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  buildListView(),
+                                  Align(
+                                    alignment: Alignment.topCenter,
+                                    child: Transform.rotate(
+                                      angle: 270 * pi / 180,
+                                      child: IconButton(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 4.0),
+                                        onPressed: () {
+                                          setState(() {
+                                            _showGenreBar = false;
+                                          });
+                                        },
+                                        icon: const Icon(
+                                            Icons.arrow_back_ios_rounded),
+                                        color: Colors.pink[300],
+                                      ),
+                                    ),
+                                  )
+                                ],
+                              ))
+                        else
+                          // GenreButton(
+                          //     height: 40,
+                          //     width: 110,
+                          //     child: Row(
+                          //       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          //       children: [
+                          //         Text(
+                          //           currentGenre,
+                          //           style: TextStyle(color: Colors.white),
+                          //         ),
+                          //         Icon(
+                          //           Icons.arrow_back_ios_rounded,
+                          //           color: Colors.pink[300],
+                          //         ),
+                          //       ],
+                          //     ),
+                          //     gradient: LinearGradient(
+                          //       colors: <Color>[Colors.pink, Colors.blue],
+                          //     ),
+                          //     onPressed: () {
+                          //       setState(() {
+                          //         _showGenreBar = true;
+                          //       });
+                          //     }),
+                          IconButton(
+                            onPressed: () {},
+                            icon: Icon(
+                              Icons.mic,
+                              color: Colors.white,
+                            ),
+                          ),
+                      ],
                     ),
                   ),
-                  if (_showGenreBar)
-                    Container(
-                        height: 150,
-                        width: 110,
-                        decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                          colors: <Color>[Colors.pink, Colors.blue],
-                        )),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 15.0, horizontal: 8.0),
+                    child: Container(
+                      width: MediaQuery.of(context).size.width * 0.8,
+                      height: 48,
+                      decoration: BoxDecoration(
+                          border:
+                              Border.all(color: Color(0xFF8D3C8E), width: 2),
+                          borderRadius: BorderRadius.circular(50),
+                          gradient: RadialGradient(
+                            center: Alignment.center,
+                            radius: 0.8,
+                            colors: [
+                              const Color(0xFF221A4D), // blue sky
+                              const Color(0xFF000000), // yellow sun
+                            ],
+                          )),
+                      child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            buildListView(),
-                            Align(
-                              alignment: Alignment.topCenter,
-                              child: Transform.rotate(
-                                angle: 270 * pi / 180,
-                                child: IconButton(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 4.0),
-                                  onPressed: () {
-                                    setState(() {
-                                      _showGenreBar = false;
-                                    });
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Icon(
+                                Icons.search,
+                                color: Colors.white,
+                              ),
+                            ),
+                            SizedBox(
+                              width: MediaQuery.of(context).size.width * 0.5,
+                              height: 48,
+                              child: Center(
+                                child: TextField(
+                                  style: TextStyle(color: Colors.white),
+                                  textAlign: TextAlign.center,
+                                  controller: controller,
+                                  decoration: new InputDecoration(
+                                    hintText: 'חפש',
+                                    hintStyle: TextStyle(color: Colors.white),
+                                    fillColor: Colors.transparent,
+                                  ),
+                                  onChanged: (String value) {
+                                    if (value != previousValue)
+                                      setState(() {
+                                        // searchPath.add(new List.from(gridSongs));
+                                        gridSongs =
+                                            value.length > previousValue.length
+                                                ? getNextSong(value)
+                                                : getLastSong();
+                                        previousValue = value;
+                                      });
                                   },
-                                  icon:
-                                      const Icon(Icons.arrow_back_ios_rounded),
-                                  color: Colors.pink[300],
                                 ),
                               ),
-                            )
-                          ],
-                        ))
-                  else
-                    // GenreButton(
-                    //     height: 40,
-                    //     width: 110,
-                    //     child: Row(
-                    //       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    //       children: [
-                    //         Text(
-                    //           currentGenre,
-                    //           style: TextStyle(color: Colors.white),
-                    //         ),
-                    //         Icon(
-                    //           Icons.arrow_back_ios_rounded,
-                    //           color: Colors.pink[300],
-                    //         ),
-                    //       ],
-                    //     ),
-                    //     gradient: LinearGradient(
-                    //       colors: <Color>[Colors.pink, Colors.blue],
-                    //     ),
-                    //     onPressed: () {
-                    //       setState(() {
-                    //         _showGenreBar = true;
-                    //       });
-                    //     }),
-                    IconButton(
-                      onPressed: () {},
-                      icon: Icon(
-                        Icons.mic,
-                        color: Colors.white,
-                      ),
+                            ),
+                            IconButton(
+                              icon: new Icon(
+                                Icons.cancel,
+                                color: Colors.white,
+                              ),
+                              onPressed: () {
+                                controller.clear();
+                                previousValue = "";
+                                setState(() {
+                                  gridSongs = List.from(searchPath.first);
+                                  searchPath.clear();
+                                });
+                              },
+                            ),
+                          ]),
                     ),
+                  ),
+                  Expanded(
+                    child: Container(
+                        decoration: BoxDecoration(
+                            gradient: RadialGradient(
+                          center: Alignment.center,
+                          radius: 0.8,
+                          colors: [
+                            const Color(0xFF221A4D), // blue sky
+                            const Color(0xFF000000), // yellow sun
+                          ],
+                        )),
+                        margin: const EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 0.0),
+                        child: buildGridView(gridSongs)),
+                  ),
                 ],
               ),
-            ),
-            Padding(
-              padding:
-                  const EdgeInsets.symmetric(vertical: 15.0, horizontal: 8.0),
-              child: Container(
-                width: MediaQuery.of(context).size.width * 0.8,
-                height: 48,
-                decoration: BoxDecoration(
-                    border: Border.all(color: Color(0xFF8D3C8E), width: 2),
-                    borderRadius: BorderRadius.circular(50),
-                    gradient: RadialGradient(
-                      center: Alignment.center,
-                      radius: 0.8,
-                      colors: [
-                        const Color(0xFF221A4D), // blue sky
-                        const Color(0xFF000000), // yellow sun
-                      ],
-                    )),
-                child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              if (menuOpen)
+                Container(
+                  width: MediaQuery.of(context).size.width,
+                  height: MediaQuery.of(context).size.height * 0.7,
+                  decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: <Color>[Colors.pink, Colors.blue],
+                  )),
+                  child: Column(
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Icon(
-                          Icons.search,
-                          color: Colors.white,
-                        ),
-                      ),
-                      SizedBox(
-                        width: MediaQuery.of(context).size.width * 0.5,
-                        height: 48,
-                        child: Center(
-                          child: TextField(
-                            style: TextStyle(color: Colors.white),
-                            textAlign: TextAlign.center,
-                            controller: controller,
-                            decoration: new InputDecoration(
-                              hintText: 'Search',
-                              hintStyle: TextStyle(color: Colors.white),
-                              fillColor: Colors.transparent,
-                            ),
-                            onChanged: (String value) {
-                              if (value != previousValue)
-                                setState(() {
-                                  // searchPath.add(new List.from(gridSongs));
-                                  gridSongs =
-                                      value.length > previousValue.length
-                                          ? getNextSong(value)
-                                          : getLastSong();
-                                  previousValue = value;
-                                });
+                      Align(
+                        alignment: Alignment.topLeft,
+                        child: SafeArea(
+                          child: IconButton(
+                            onPressed: () {
+                              // setState(() {
+                              //   menuOpen = false;
+                              // });
+                              openWebsite();
                             },
+                            icon: Icon(
+                              Icons.keyboard_arrow_left_rounded,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                       ),
-                      IconButton(
-                        icon: new Icon(
-                          Icons.cancel,
-                          color: Colors.white,
+                      Expanded(
+                        child: Center(
+                          child: RichText(
+                            textAlign: TextAlign.center,
+                            text: TextSpan(children: [
+                              TextSpan(
+                                  text: "Visit our website at \n",
+                                  style: TextStyle(color: Colors.white)),
+                              TextSpan(
+                                  text: "https://ashira-music.com/",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    decoration: TextDecoration.underline,
+                                  ),
+                                  recognizer: new TapGestureRecognizer()
+                                    ..onTap = () async {
+                                      final url = "https://ashira-music.com/";
+                                      if (await canLaunch(url)) {
+                                        await launch(
+                                          url,
+                                        );
+                                      }
+                                    })
+                            ]),
+                          ),
                         ),
-                        onPressed: () {
-                          controller.clear();
-                          previousValue = "";
-                          setState(() {
-                            gridSongs = List.from(searchPath.first);
-                            searchPath.clear();
-                          });
-                        },
-                      ),
-                    ]),
-              ),
-            ),
-            Expanded(
-              child: Container(
-                  decoration: BoxDecoration(
-                      gradient: RadialGradient(
-                    center: Alignment.center,
-                    radius: 0.8,
-                    colors: [
-                      const Color(0xFF221A4D), // blue sky
-                      const Color(0xFF000000), // yellow sun
+                      )
                     ],
-                  )),
-                  margin: const EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 0.0),
-                  child: buildGridView(gridSongs)),
-            ),
-          ],
-        ));
+                  ),
+                )
+            ]),
+          )),
+    );
   }
 
   getSongs() {
+    incrementFirebaseByOne();
     FirebaseFirestore.instance
         .collection('songs')
         .get()
@@ -462,12 +544,30 @@ class _AllSongsState extends State<AllSongs> {
             imageResourceFile: data['imageResourceFile'],
             genre: data['genre'],
             songResourceFile: data['songResourceFile'],
-            textResourceFile: data['textResourceFile']));
+            textResourceFile: data['textResourceFile'],
+            womanToneResourceFile: data['womanToneResourceFile'],
+            kidToneResourceFile: data['kidToneResourceFile']));
       });
       setState(() {
         if (songs.length > 0) gridSongs = new List.from(songs);
       });
     });
+  }
+
+  void incrementFirebaseByOne() async {
+    int j = 0;
+    // FirebaseFirestore.instance
+    //     .collection('websiteEntrances')
+    //     .get()
+    //     .then((QuerySnapshot querySnapshot) {
+    //       querySnapshot.docs.forEach((element) {j = element.data()['entries'] + 1;
+    // });});
+    FirebaseFirestore.instance
+        .collection('websiteEntrances')
+        .doc('entries')
+        .update({'entries': FieldValue.increment(1)});
+
+    // .update({'entries': FieldValue.increment(1)});
   }
 
   buildGridView(List<Song> songs) {
@@ -482,7 +582,10 @@ class _AllSongsState extends State<AllSongs> {
         itemBuilder: (BuildContext ctx, index) {
           return Container(
             alignment: Alignment.center,
-            child: SongLayout(song: songs[index]),
+            child: SongLayout(
+              song: songs[index],
+              index: index,
+            ),
           );
         });
   }
@@ -549,5 +652,14 @@ class _AllSongsState extends State<AllSongs> {
           genre,
           style: TextStyle(color: Colors.white),
         ));
+  }
+
+  void openWebsite() async {
+    final url = "https://ashira-music.com/";
+    if (await canLaunch(url)) {
+      await launch(
+        url,
+      );
+    }
   }
 }

@@ -68,4 +68,10 @@ class Line {
     // future.replaceFirst(lastWordInPosition.text, "");
     // future.trim();
   }
+
+  void resetLine(double time) {
+    future = past;
+    past = "";
+    updateLyrics(time);
+  }
 }

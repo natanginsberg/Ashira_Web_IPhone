@@ -4,8 +4,10 @@ import 'package:flutter/material.dart';
 
 class SongLayout extends StatelessWidget {
   final Song song;
+  final int index;
+  int counter = 0;
 
-  SongLayout({required this.song});
+  SongLayout({required this.song, required this.index});
 
   @override
   Widget build(BuildContext context) {
@@ -15,8 +17,13 @@ class SongLayout extends StatelessWidget {
         return Colors.transparent;
       })),
       onPressed: () {
+        counter += 1;
         // Navigator.pushNamed(context, '/sing', arguments: {'song':this.song});
-        Navigator.push(context, MaterialPageRoute(builder: (_)=>Sing(this.song)));
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (_) => Sing(
+                    this.song, index.toString() + " " + counter.toString())));
       },
       child: Container(
         decoration: BoxDecoration(

@@ -10,8 +10,9 @@ class Song {
 
   String textResourceFile;
 
-  // String womanToneResourceFile;
-  // String kidToneResourceFile;
+  String womanToneResourceFile;
+  String kidToneResourceFile;
+
   // int timesDownloaded;
   // int timesPlayed;
   String title;
@@ -43,7 +44,9 @@ class Song {
       required this.title,
       required this.genre,
       required this.songResourceFile,
-      required this.textResourceFile});
+      required this.textResourceFile,
+      required this.kidToneResourceFile,
+      required this.womanToneResourceFile});
 
   Future<List<Line>> parseLines() async {
     final response = await http.read(Uri.parse(textResourceFile));
