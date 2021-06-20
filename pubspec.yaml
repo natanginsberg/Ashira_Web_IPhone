@@ -34,6 +34,7 @@ dependencies:
   url_launcher: ^6.0.3
   just_audio: ^0.7.4+1
   audio_video_progress_bar: ^0.4.0
+  flutter_svg: ^0.22.0
 
 
 
@@ -80,6 +81,11 @@ flutter:
     - family: Normal
       fonts:
         - asset: fonts/varela_round_regular.ttf
+    - family: SignInFont
+      fonts:
+        - asset: fonts/OpenSansHebrew-Regular.ttf
+        - asset: fonts/OpenSansHebrew-Light.ttf
+        - asset: fonts/OpenSansHebrew-Bold.ttf
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages

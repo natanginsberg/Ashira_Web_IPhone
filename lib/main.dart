@@ -1,11 +1,10 @@
 import 'package:ashira_flutter/screens/AllSongs.dart';
 import 'package:ashira_flutter/screens/Contracts.dart';
 import 'package:ashira_flutter/screens/Promo.dart';
+import 'package:ashira_flutter/screens/SignIn.dart';
 import 'package:ashira_flutter/screens/Sing.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-
-import 'model/Song.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,17 +32,21 @@ class App extends StatelessWidget {
             routes: {
               '/': (context) => Promo(),
               '/contracts': (context) => Contracts(),
+              '/signIn': (context) => SignIn(),
               '/allSongs': (context) => AllSongs(),
               '/sing': (context) => Sing(
-                  new Song(
-                      artist: "artist",
-                      imageResourceFile: "imageResourceFile",
-                      title: "title",
-                      genre: "genre",
-                      songResourceFile: "songResourceFile",
-                      textResourceFile: "textResourceFile",
-                      womanToneResourceFile: "womanResourceFile",
-                      kidToneResourceFile: 'kidResourceFile'),
+                  songs
+
+                  // new Song(
+                  //     artist: "artist",
+                  //     imageResourceFile: "imageResourceFile",
+                  //     title: "title",
+                  //     genre: "genre",
+                  //     songResourceFile: "songResourceFile",
+                  //     textResourceFile: "textResourceFile",
+                  //     womanToneResourceFile: "womanResourceFile",
+                  //     kidToneResourceFile: 'kidResourceFile'),
+                  ,
                   ""),
             },
           );

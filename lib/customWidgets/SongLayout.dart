@@ -1,11 +1,11 @@
 import 'package:ashira_flutter/model/Song.dart';
-import 'package:ashira_flutter/screens/Sing.dart';
 import 'package:flutter/material.dart';
 
 class SongLayout extends StatelessWidget {
   final Song song;
   final int index;
   int counter = 0;
+  bool clicked = false;
 
   SongLayout({required this.song, required this.index});
 
@@ -18,18 +18,24 @@ class SongLayout extends StatelessWidget {
       })),
       onPressed: () {
         counter += 1;
+
         // Navigator.pushNamed(context, '/sing', arguments: {'song':this.song});
-        Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (_) => Sing(
-                    this.song, index.toString() + " " + counter.toString())));
+        // Navigator.push(
+        //     context,
+        //     MaterialPageRoute(
+        //         builder: (_) => Sing(
+        //             this.song, index.toString() + " " + counter.toString())));
       },
       child: Container(
-        decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(15.0),
-            color: Color(0xFF0A999A),
-            backgroundBlendMode: BlendMode.colorDodge),
+        decoration: clicked
+            ? BoxDecoration(
+                borderRadius: BorderRadius.circular(15.0),
+                color: Color(0xFF0A999A),
+                backgroundBlendMode: BlendMode.colorDodge)
+            : BoxDecoration(
+                borderRadius: BorderRadius.circular(15.0),
+                color: Color(0xFF840A9A),
+                backgroundBlendMode: BlendMode.colorDodge),
         child: Column(
           children: [
             Expanded(

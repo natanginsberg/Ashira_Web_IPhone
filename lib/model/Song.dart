@@ -20,6 +20,7 @@ class Song {
   // List<String> lines;
   String genre;
   late List<Line> lines;
+  int length;
 
   // String songReference;
   // String date = "";
@@ -46,7 +47,8 @@ class Song {
       required this.songResourceFile,
       required this.textResourceFile,
       required this.kidToneResourceFile,
-      required this.womanToneResourceFile});
+      required this.womanToneResourceFile,
+      required this.length});
 
   Future<List<Line>> parseLines() async {
     final response = await http.read(Uri.parse(textResourceFile));

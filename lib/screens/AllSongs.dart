@@ -1,14 +1,14 @@
 import 'dart:math';
 import 'dart:ui';
 
-import 'package:ashira_flutter/customWidgets/SongLayout.dart';
 import 'package:ashira_flutter/model/Song.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+import 'Sing.dart';
 
 class AllSongs extends StatefulWidget {
   @override
@@ -17,58 +17,7 @@ class AllSongs extends StatefulWidget {
 
 final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-List<Song> songs = [
-  // Song(
-  //     artist: "avrham fried",
-  //     imageResourceFile:
-  //         'https://s3.wasabisys.com/playbacks/%D7%90%D7%91%D7%A8%D7%94%D7%9D%20%D7%A4%D7%A8%D7%99%D7%93/%D7%90%D7%91%D7%90/img903052.jpg',
-  //     title: "aleh katan",
-  //     genre: "mizrachi",
-  //     textResourceFile:
-  //         "https://s3.wasabisys.com/playbacks/%D7%90%D7%91%D7%A8%D7%94%D7%9D%20%D7%A4%D7%A8%D7%99%D7%93/%D7%94%D7%A0%D7%A0%D7%99%20%D7%91%D7%99%D7%93%D7%9A/%D7%91%D7%99%D7%98%D7%99%D7%9D%20%D7%94%D7%A0%D7%A0%D7%99%20%D7%91%D7%99%D7%93%D7%9A.lrc",
-  //     songResourceFile:
-  //         "https://s3.wasabisys.com/playbacks/%D7%90%D7%91%D7%A8%D7%94%D7%9D%20%D7%A4%D7%A8%D7%99%D7%93/%D7%94%D7%A0%D7%A0%D7%99%20%D7%91%D7%99%D7%93%D7%9A/%D7%94%D7%A0%D7%A0%D7%99_%D7%91%D7%99%D7%93%D7%9A-%D7%A8%D7%94-%D7%92%D7%91%D7%A8%D7%99%D7%9D.mp3"),
-  // Song(
-  //     artist: "avrham fried",
-  //     imageResourceFile:
-  //         'https://s3.wasabisys.com/playbacks/%D7%90%D7%91%D7%A8%D7%94%D7%9D%20%D7%A4%D7%A8%D7%99%D7%93/%D7%90%D7%91%D7%90/img903052.jpg',
-  //     title: "aleh katan",
-  //     genre: "mizrachi",
-  //     textResourceFile:
-  //         "https://s3.wasabisys.com/playbacks/%D7%90%D7%91%D7%A8%D7%94%D7%9D%20%D7%A4%D7%A8%D7%99%D7%93/%D7%94%D7%A0%D7%A0%D7%99%20%D7%91%D7%99%D7%93%D7%9A/%D7%91%D7%99%D7%98%D7%99%D7%9D%20%D7%94%D7%A0%D7%A0%D7%99%20%D7%91%D7%99%D7%93%D7%9A.lrc",
-  //     songResourceFile:
-  //         "https://s3.wasabisys.com/playbacks/%D7%90%D7%91%D7%A8%D7%94%D7%9D%20%D7%A4%D7%A8%D7%99%D7%93/%D7%94%D7%A0%D7%A0%D7%99%20%D7%91%D7%99%D7%93%D7%9A/%D7%94%D7%A0%D7%A0%D7%99_%D7%91%D7%99%D7%93%D7%9A-%D7%A8%D7%94-%D7%92%D7%91%D7%A8%D7%99%D7%9D.mp3"),
-  // Song(
-  //     artist: "avrham fried",
-  //     imageResourceFile:
-  //         'https://s3.wasabisys.com/playbacks/%D7%90%D7%91%D7%A8%D7%94%D7%9D%20%D7%A4%D7%A8%D7%99%D7%93/%D7%90%D7%91%D7%90/img903052.jpg',
-  //     title: "aleh katan",
-  //     genre: "mizrachi",
-  //     textResourceFile:
-  //         "https://s3.wasabisys.com/playbacks/%D7%90%D7%91%D7%A8%D7%94%D7%9D%20%D7%A4%D7%A8%D7%99%D7%93/%D7%94%D7%A0%D7%A0%D7%99%20%D7%91%D7%99%D7%93%D7%9A/%D7%91%D7%99%D7%98%D7%99%D7%9D%20%D7%94%D7%A0%D7%A0%D7%99%20%D7%91%D7%99%D7%93%D7%9A.lrc",
-  //     songResourceFile:
-  //         "https://s3.wasabisys.com/playbacks/%D7%90%D7%91%D7%A8%D7%94%D7%9D%20%D7%A4%D7%A8%D7%99%D7%93/%D7%94%D7%A0%D7%A0%D7%99%20%D7%91%D7%99%D7%93%D7%9A/%D7%94%D7%A0%D7%A0%D7%99_%D7%91%D7%99%D7%93%D7%9A-%D7%A8%D7%94-%D7%92%D7%91%D7%A8%D7%99%D7%9D.mp3"),
-  // Song(
-  //     artist: "avrham fried",
-  //     imageResourceFile:
-  //         'https://s3.wasabisys.com/playbacks/%D7%90%D7%91%D7%A8%D7%94%D7%9D%20%D7%A4%D7%A8%D7%99%D7%93/%D7%90%D7%91%D7%90/img903052.jpg',
-  //     title: "aleh katan",
-  //     genre: "mizrachi",
-  //     textResourceFile:
-  //         "https://s3.wasabisys.com/playbacks/%D7%90%D7%91%D7%A8%D7%94%D7%9D%20%D7%A4%D7%A8%D7%99%D7%93/%D7%94%D7%A0%D7%A0%D7%99%20%D7%91%D7%99%D7%93%D7%9A/%D7%91%D7%99%D7%98%D7%99%D7%9D%20%D7%94%D7%A0%D7%A0%D7%99%20%D7%91%D7%99%D7%93%D7%9A.lrc",
-  //     songResourceFile:
-  //         "https://s3.wasabisys.com/playbacks/%D7%90%D7%91%D7%A8%D7%94%D7%9D%20%D7%A4%D7%A8%D7%99%D7%93/%D7%94%D7%A0%D7%A0%D7%99%20%D7%91%D7%99%D7%93%D7%9A/%D7%94%D7%A0%D7%A0%D7%99_%D7%91%D7%99%D7%93%D7%9A-%D7%A8%D7%94-%D7%92%D7%91%D7%A8%D7%99%D7%9D.mp3"),
-  // Song(
-  //     artist: "avrham fried",
-  //     imageResourceFile:
-  //         'https://s3.wasabisys.com/playbacks/%D7%90%D7%91%D7%A8%D7%94%D7%9D%20%D7%A4%D7%A8%D7%99%D7%93/%D7%90%D7%91%D7%90/img903052.jpg',
-  //     title: "aleh katan",
-  //     genre: "mizrachi",
-  //     textResourceFile:
-  //         "https://s3.wasabisys.com/playbacks/%D7%90%D7%91%D7%A8%D7%94%D7%9D%20%D7%A4%D7%A8%D7%99%D7%93/%D7%94%D7%A0%D7%A0%D7%99%20%D7%91%D7%99%D7%93%D7%9A/%D7%91%D7%99%D7%98%D7%99%D7%9D%20%D7%94%D7%A0%D7%A0%D7%99%20%D7%91%D7%99%D7%93%D7%9A.lrc",
-  //     songResourceFile:
-  //         "https://s3.wasabisys.com/playbacks/%D7%90%D7%91%D7%A8%D7%94%D7%9D%20%D7%A4%D7%A8%D7%99%D7%93/%D7%94%D7%A0%D7%A0%D7%99%20%D7%91%D7%99%D7%93%D7%9A/%D7%94%D7%A0%D7%A0%D7%99_%D7%91%D7%99%D7%93%D7%9A-%D7%A8%D7%94-%D7%92%D7%91%D7%A8%D7%99%D7%9D.mp3"),
-];
+List<Song> songs = [];
 
 List<String> genres = ["All Songs", "hebrew"];
 
@@ -86,6 +35,8 @@ class _AllSongsState extends State<AllSongs> {
   String previousValue = "";
 
   final FirebaseAuth firebaseAuth = FirebaseAuth.instance;
+
+  List<Song> songsClicked = [];
 
   void signInAnon() async {
     await firebaseAuth.signInAnonymously().then((value) => getSongs());
@@ -410,26 +361,29 @@ class _AllSongsState extends State<AllSongs> {
                               width: MediaQuery.of(context).size.width * 0.5,
                               height: 48,
                               child: Center(
-                                child: TextField(
-                                  style: TextStyle(color: Colors.white),
-                                  textAlign: TextAlign.center,
-                                  controller: controller,
-                                  decoration: new InputDecoration(
-                                    hintText: 'חפש',
-                                    hintStyle: TextStyle(color: Colors.white),
-                                    fillColor: Colors.transparent,
+                                child: Directionality(
+                                  textDirection: TextDirection.rtl,
+                                  child: TextField(
+                                    style: TextStyle(color: Colors.white),
+                                    textAlign: TextAlign.center,
+                                    controller: controller,
+                                    decoration: new InputDecoration(
+                                      hintText: 'חפש',
+                                      hintStyle: TextStyle(color: Colors.white),
+                                      fillColor: Colors.transparent,
+                                    ),
+                                    onChanged: (String value) {
+                                      if (value != previousValue)
+                                        setState(() {
+                                          // searchPath.add(new List.from(gridSongs));
+                                          gridSongs = value.length >
+                                                  previousValue.length
+                                              ? getNextSong(value)
+                                              : getLastSong();
+                                          previousValue = value;
+                                        });
+                                    },
                                   ),
-                                  onChanged: (String value) {
-                                    if (value != previousValue)
-                                      setState(() {
-                                        // searchPath.add(new List.from(gridSongs));
-                                        gridSongs =
-                                            value.length > previousValue.length
-                                                ? getNextSong(value)
-                                                : getLastSong();
-                                        previousValue = value;
-                                      });
-                                  },
                                 ),
                               ),
                             ),
@@ -466,65 +420,79 @@ class _AllSongsState extends State<AllSongs> {
                   ),
                 ],
               ),
-              if (menuOpen)
-                Container(
-                  width: MediaQuery.of(context).size.width,
-                  height: MediaQuery.of(context).size.height * 0.7,
-                  decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: <Color>[Colors.pink, Colors.blue],
-                  )),
-                  child: Column(
-                    children: [
-                      Align(
-                        alignment: Alignment.topLeft,
-                        child: SafeArea(
-                          child: IconButton(
-                            onPressed: () {
-                              // setState(() {
-                              //   menuOpen = false;
-                              // });
-                              openWebsite();
-                            },
-                            icon: Icon(
-                              Icons.keyboard_arrow_left_rounded,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: Center(
-                          child: RichText(
-                            textAlign: TextAlign.center,
-                            text: TextSpan(children: [
-                              TextSpan(
-                                  text: "Visit our website at \n",
-                                  style: TextStyle(color: Colors.white)),
-                              TextSpan(
-                                  text: "https://ashira-music.com/",
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    decoration: TextDecoration.underline,
-                                  ),
-                                  recognizer: new TapGestureRecognizer()
-                                    ..onTap = () async {
-                                      final url = "https://ashira-music.com/";
-                                      if (await canLaunch(url)) {
-                                        await launch(
-                                          url,
-                                        );
-                                      }
-                                    })
-                            ]),
-                          ),
-                        ),
-                      )
-                    ],
+              // if (menuOpen)
+              //   Container(
+              //     width: MediaQuery.of(context).size.width,
+              //     height: MediaQuery.of(context).size.height * 0.7,
+              //     decoration: BoxDecoration(
+              //         gradient: LinearGradient(
+              //       begin: Alignment.topCenter,
+              //       end: Alignment.bottomCenter,
+              //       colors: <Color>[Colors.pink, Colors.blue],
+              //     )),
+              //     child: Column(
+              //       children: [
+              //         Align(
+              //           alignment: Alignment.topLeft,
+              //           child: SafeArea(
+              //             child: IconButton(
+              //               onPressed: () {
+              //                 // setState(() {
+              //                 //   menuOpen = false;
+              //                 // });
+              //                 openWebsite();
+              //               },
+              //               icon: Icon(
+              //                 Icons.keyboard_arrow_left_rounded,
+              //                 color: Colors.white,
+              //               ),
+              //             ),
+              //           ),
+              //         ),
+              //         Expanded(
+              //           child: Center(
+              //             child: RichText(
+              //               textAlign: TextAlign.center,
+              //               text: TextSpan(children: [
+              //                 TextSpan(
+              //                     text: "Visit our website at \n",
+              //                     style: TextStyle(color: Colors.white)),
+              //                 TextSpan(
+              //                     text: "https://ashira-music.com/",
+              //                     style: TextStyle(
+              //                       color: Colors.white,
+              //                       decoration: TextDecoration.underline,
+              //                     ),
+              //                     recognizer: new TapGestureRecognizer()
+              //                       ..onTap = () async {
+              //                         final url = "https://ashira-music.com/";
+              //                         if (await canLaunch(url)) {
+              //                           await launch(
+              //                             url,
+              //                           );
+              //                         }
+              //                       })
+              //               ]),
+              //             ),
+              //           ),
+              //         )
+              //       ],
+              //     ),
+              //   ),
+              Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Align(
+                  alignment: Alignment.bottomRight,
+                  child: FloatingActionButton(
+                    onPressed: () => playSongs(),
+                    autofocus: true,
+                    child: Icon(Icons.play_arrow),
+                    backgroundColor: songsClicked.length > 0
+                        ? Color(0xFF8D3C8E)
+                        : Colors.black,
                   ),
-                )
+                ),
+              )
             ]),
           )),
     );
@@ -546,7 +514,8 @@ class _AllSongsState extends State<AllSongs> {
             songResourceFile: data['songResourceFile'],
             textResourceFile: data['textResourceFile'],
             womanToneResourceFile: data['womanToneResourceFile'],
-            kidToneResourceFile: data['kidToneResourceFile']));
+            kidToneResourceFile: data['kidToneResourceFile'],
+            length: data['length']));
       });
       setState(() {
         if (songs.length > 0) gridSongs = new List.from(songs);
@@ -581,12 +550,12 @@ class _AllSongsState extends State<AllSongs> {
         itemCount: songs.length,
         itemBuilder: (BuildContext ctx, index) {
           return Container(
-            alignment: Alignment.center,
-            child: SongLayout(
-              song: songs[index],
-              index: index,
-            ),
-          );
+              alignment: Alignment.center, child: buildSongLayout(songs[index])
+              // SongLayout(
+              //   song: songs[index],
+              //   index: index,
+
+              );
         });
   }
 
@@ -661,5 +630,107 @@ class _AllSongsState extends State<AllSongs> {
         url,
       );
     }
+  }
+
+  playSongs() {
+    if (songsClicked.length > 0) {
+      List<Song> songsPassed = [];
+      for (Song song in this.songsClicked) {
+        songsPassed.add(song);
+      }
+      Navigator.push(
+          context, MaterialPageRoute(builder: (_) => Sing(songsPassed, "22")));
+      setState(() {
+        songsClicked.clear();
+      });
+    }
+  }
+
+  buildSongLayout(Song song) {
+    return ElevatedButton(
+      style: ButtonStyle(backgroundColor:
+          MaterialStateProperty.resolveWith<Color>((Set<MaterialState> states) {
+        return Colors.transparent;
+      })),
+      onPressed: () {
+        setState(() {
+          songInSongsClicked(song)
+              ? songsClicked.removeWhere((element) =>
+                  element.songResourceFile == song.songResourceFile)
+              : songsClicked.add(song);
+        });
+
+        // Navigator.pushNamed(context, '/sing', arguments: {'song':this.song});
+        // Navigator.push(
+        //     context,
+        //     MaterialPageRoute(
+        //         builder: (_) => Sing(
+        //             this.song, index.toString() + " " + counter.toString())));
+      },
+      child: Container(
+        decoration: songInSongsClicked(song)
+            ? BoxDecoration(
+                borderRadius: BorderRadius.circular(15.0),
+                color: Color(0xFF8D3C8E),
+                backgroundBlendMode: BlendMode.plus)
+            : BoxDecoration(
+                borderRadius: BorderRadius.circular(15.0),
+                color: Color(0xFF0A999A),
+                backgroundBlendMode: BlendMode.colorDodge),
+        child: Column(
+          children: [
+            Expanded(
+              flex: 4,
+              child: Container(
+                  margin: EdgeInsets.all(5.0),
+                  child: ClipRRect(
+                      borderRadius: BorderRadius.circular(15.0),
+                      child: Image(
+                          fit: BoxFit.fill,
+                          image: NetworkImage(song.imageResourceFile)))),
+            ),
+            Expanded(
+              flex: 2,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text(
+                      song.title,
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontFamily: 'Normal',
+                          fontSize: 15),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(4.0),
+                    child: Center(
+                      child: Text(
+                        song.artist,
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontFamily: 'Normal',
+                            fontSize: 15),
+                      ),
+                    ),
+                  )
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  songInSongsClicked(Song song) {
+    if (songsClicked.length > 0)
+      for (int i = 0; i < songsClicked.length; i++) {
+        if (song.songResourceFile == songsClicked[i].songResourceFile)
+          return true;
+      }
+    return false;
   }
 }
