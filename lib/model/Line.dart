@@ -27,6 +27,10 @@ class Line {
     return from <= position && position <= to;
   }
 
+  bool isAfter(double position){
+    return from > position;
+  }
+
   bool needToUpdateLyrics(double position) {
     return !(lastLetterInPosition.isIn(position) ||
         lastLetterInPosition.isFuture(position));
@@ -70,7 +74,7 @@ class Line {
   }
 
   void resetLine(double time) {
-    future = past;
+    future = getFutureFromSyllable();
     past = "";
     updateLyrics(time);
   }

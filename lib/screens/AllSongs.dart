@@ -1,3 +1,4 @@
+import 'dart:html';
 import 'dart:math';
 import 'dart:ui';
 
@@ -11,8 +12,12 @@ import 'package:url_launcher/url_launcher.dart';
 import 'Sing.dart';
 
 class AllSongs extends StatefulWidget {
+  List<DocumentReference> documentReference;
+
+  AllSongs(this.documentReference);
+
   @override
-  _AllSongsState createState() => _AllSongsState();
+  _AllSongsState createState() => _AllSongsState(documentReference[0]);
 }
 
 final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
@@ -25,6 +30,7 @@ List<List<Song>> searchPath = [];
 List<Song> gridSongs = [];
 
 class _AllSongsState extends State<AllSongs> {
+  // Locale _locale = Locale.fromSubtags(languageCode: "he");
   final TextEditingController controller = new TextEditingController();
   bool _showGenreBar = false;
   bool menuOpen = false;
@@ -37,6 +43,10 @@ class _AllSongsState extends State<AllSongs> {
   final FirebaseAuth firebaseAuth = FirebaseAuth.instance;
 
   List<Song> songsClicked = [];
+
+  DocumentReference documentReference;
+
+  _AllSongsState(this.documentReference);
 
   void signInAnon() async {
     await firebaseAuth.signInAnonymously().then((value) => getSongs());
@@ -52,11 +62,31 @@ class _AllSongsState extends State<AllSongs> {
   }
 
   @override
+  void dispose() {
+    // TODO: implement dispose
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     // setState(() {
     //   signInAnon();
     // });
     return MaterialApp(
+      // locale: _locale,
+      // localizationsDelegates: [
+      //   AppLocalizations.delegate, // Add this line
+      //   GlobalMaterialLocalizations.delegate,
+      //   GlobalWidgetsLocalizations.delegate,
+      //   GlobalCupertinoLocalizations.delegate,
+      // ],
+      // supportedLocales: [
+      //   const Locale('en', ''), // English, no country code
+      //   const Locale('he', ''), // Spanish, no country code
+      // ],
+      // theme: ThemeData(
+      //   primarySwatch: Colors.blue,
+      // ),
       home: Scaffold(
           key: _scaffoldKey,
           backgroundColor: Colors.transparent,
@@ -294,41 +324,51 @@ class _AllSongsState extends State<AllSongs> {
                                   )
                                 ],
                               ))
-                        else
-                          // GenreButton(
-                          //     height: 40,
-                          //     width: 110,
-                          //     child: Row(
-                          //       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          //       children: [
-                          //         Text(
-                          //           currentGenre,
-                          //           style: TextStyle(color: Colors.white),
-                          //         ),
-                          //         Icon(
-                          //           Icons.arrow_back_ios_rounded,
-                          //           color: Colors.pink[300],
-                          //         ),
-                          //       ],
-                          //     ),
-                          //     gradient: LinearGradient(
-                          //       colors: <Color>[Colors.pink, Colors.blue],
-                          //     ),
-                          //     onPressed: () {
-                          //       setState(() {
-                          //         _showGenreBar = true;
-                          //       });
-                          //     }),
-                          IconButton(
-                            onPressed: () {},
-                            icon: Icon(
-                              Icons.mic,
-                              color: Colors.white,
-                            ),
-                          ),
+                        // else
+                        // GenreButton(
+                        //     height: 40,
+                        //     width: 110,
+                        //     child: Row(
+                        //       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        //       children: [
+                        //         Text(
+                        //           currentGenre,
+                        //           style: TextStyle(color: Colors.white),
+                        //         ),
+                        //         Icon(
+                        //           Icons.arrow_back_ios_rounded,
+                        //           color: Colors.pink[300],
+                        //         ),
+                        //       ],
+                        //     ),
+                        //     gradient: LinearGradient(
+                        //       colors: <Color>[Colors.pink, Colors.blue],
+                        //     ),
+                        //     onPressed: () {
+                        //       setState(() {
+                        //         _showGenreBar = true;
+                        //       });
+                        //     }),
+                        // TextButton(
+                        //   onPressed: () {
+                        //     setState(() {
+                        //       setLocale(_locale ==
+                        //               Locale.fromSubtags(languageCode: "he")
+                        //           ? Locale.fromSubtags(languageCode: "en")
+                        //           : Locale.fromSubtags(languageCode: "he"));
+                        //     });
+                        //   },
+                        //   child: Text(
+                        //     (_locale == Locale.fromSubtags(languageCode: "he")
+                        //         ? "עברית"
+                        //         : "English"),
+                        //     style: TextStyle(color: Colors.white),
+                        //   ),
+                        // ),
                       ],
                     ),
                   ),
+
                   Padding(
                     padding: const EdgeInsets.symmetric(
                         vertical: 15.0, horizontal: 8.0),
@@ -362,13 +402,25 @@ class _AllSongsState extends State<AllSongs> {
                               height: 48,
                               child: Center(
                                 child: Directionality(
-                                  textDirection: TextDirection.rtl,
+                                  textDirection:
+                                      // _locale ==
+                                      //         Locale.fromSubtags(languageCode: "he")
+                                      //     ? TextDirection.rtl
+                                      //     :
+                                      TextDirection.rtl,
                                   child: TextField(
                                     style: TextStyle(color: Colors.white),
                                     textAlign: TextAlign.center,
                                     controller: controller,
                                     decoration: new InputDecoration(
-                                      hintText: 'חפש',
+                                      hintText:
+                                          // _locale ==
+                                          //         Locale.fromSubtags(
+                                          //             languageCode: "he")
+                                          //     ?
+                                          "חפש"
+                                      // : "Search"
+                                      ,
                                       hintStyle: TextStyle(color: Colors.white),
                                       fillColor: Colors.transparent,
                                     ),
@@ -497,6 +549,19 @@ class _AllSongsState extends State<AllSongs> {
           )),
     );
   }
+
+  // void setLocale(Locale choice) {
+  //   // var localeSubject = BehaviorSubject<Locale>();
+  //   //
+  //   // choice == 0
+  //   //     ? localeSubject.sink.add(Locale('he ', ''))
+  //   //     : localeSubject.sink.add(Locale('en', ''));
+  //   //
+  //   // return localeSubject.stream.distinct();
+  //   setState(() {
+  //     _locale = choice;
+  //   });
+  // }
 
   getSongs() {
     incrementFirebaseByOne();
@@ -659,13 +724,6 @@ class _AllSongsState extends State<AllSongs> {
                   element.songResourceFile == song.songResourceFile)
               : songsClicked.add(song);
         });
-
-        // Navigator.pushNamed(context, '/sing', arguments: {'song':this.song});
-        // Navigator.push(
-        //     context,
-        //     MaterialPageRoute(
-        //         builder: (_) => Sing(
-        //             this.song, index.toString() + " " + counter.toString())));
       },
       child: Container(
         decoration: songInSongsClicked(song)
@@ -719,6 +777,22 @@ class _AllSongsState extends State<AllSongs> {
                 ],
               ),
             ),
+            Padding(
+              padding: EdgeInsets.all(8.0),
+              child: Align(
+                alignment: Alignment.bottomRight,
+                child: Text(
+                  songInSongsClicked(song)
+                      ? (songsClicked.indexWhere((element) =>
+                                  element.songResourceFile ==
+                                  song.songResourceFile) +
+                              1)
+                          .toString()
+                      : "",
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            )
           ],
         ),
       ),

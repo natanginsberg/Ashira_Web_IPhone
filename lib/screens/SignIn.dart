@@ -1,6 +1,6 @@
-import 'dart:io';
-
+import 'package:ashira_flutter/screens/AllSongs.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
@@ -13,8 +13,12 @@ class SignIn extends StatefulWidget {
 
 final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
+List<DocumentReference> drs = [];
+
 class _SignIn extends State<SignIn> {
   bool _needPermission = false;
+  bool hebrew = true;
+  late DocumentReference dr;
 
   @override
   void initState() {
@@ -35,11 +39,6 @@ class _SignIn extends State<SignIn> {
     final directory = await getApplicationDocumentsDirectory();
 
     return directory.path;
-  }
-
-  Future<File> get _localFile async {
-    final path = await _localPath;
-    return File('$path/contractApproved.txt');
   }
 
   @override
@@ -106,13 +105,17 @@ class _SignIn extends State<SignIn> {
                                       child: Text(
                                     'למערכות אשירה',
                                     style: TextStyle(
-                                        fontSize: 25, color: Colors.white),
+                                        fontFamily: 'SignInFont',
+                                        fontSize: 25,
+                                        color: Colors.white),
                                   )),
                                   Center(
                                       child: Text(
                                     'אפליקציית הקריוקי היהודי ',
                                     style: TextStyle(
-                                        fontSize: 25, color: Colors.white),
+                                        fontFamily: 'SignInFont',
+                                        fontSize: 25,
+                                        color: Colors.white),
                                   ))
                                 ],
                               ),
@@ -176,9 +179,7 @@ class _SignIn extends State<SignIn> {
                             ),
                             Center(
                                 child: Text(
-                              _needPermission
-                                  ? 'אימייל לא תקין'
-                                  : "",
+                              _needPermission ? 'אימייל לא תקין' : "",
                               style: TextStyle(
                                   color: Colors.red,
                                   wordSpacing: 5,
@@ -192,8 +193,9 @@ class _SignIn extends State<SignIn> {
                               children: [
                                 Center(
                                     child: Text(
-                                  'לקבלת גישה למערכת אנא צרו עימנו קשר',
+                                  'המערכת מיועדת להפעלת קריוקי',
                                   style: TextStyle(
+                                      fontFamily: 'SignInFont',
                                       color: Colors.white,
                                       wordSpacing: 5,
                                       fontSize: 20,
@@ -202,8 +204,20 @@ class _SignIn extends State<SignIn> {
                                 )),
                                 Center(
                                     child: Text(
+                                      'לקבלת הצעת מחיר צרו איתנו קשר',
+                                      style: TextStyle(
+                                          fontFamily: 'SignInFont',
+                                          color: Colors.white,
+                                          wordSpacing: 5,
+                                          fontSize: 20,
+                                          height: 1.4,
+                                          letterSpacing: 1.6),
+                                    )),
+                                Center(
+                                    child: Text(
                                   'אימייל: ashirajewishkaraoke@gmail.com',
                                   style: TextStyle(
+                                      fontFamily: 'SignInFont',
                                       color: Colors.white,
                                       wordSpacing: 5,
                                       fontSize: 20,
@@ -214,6 +228,7 @@ class _SignIn extends State<SignIn> {
                                     child: Text(
                                   'אשר - 053-3381427  יוסי - 058-7978079',
                                   style: TextStyle(
+                                      fontFamily: 'SignInFont',
                                       color: Colors.white,
                                       wordSpacing: 5,
                                       fontSize: 20,
@@ -241,13 +256,39 @@ class _SignIn extends State<SignIn> {
         .then((QuerySnapshot querySnapshot) {
       querySnapshot.docs.forEach((doc) {
         Map<String, dynamic> data = doc.data();
-        if (_editingController.text == data['email'])
-          Navigator.pushReplacementNamed(context, '/allSongs');
-        else
+        if (_editingController.text == data['email']) {
+          incrementByOne(doc);
+          drs.add(doc.reference);
+          Navigator.pushReplacement(
+              context, MaterialPageRoute(builder: (_) => AllSongs(drs)));
+        } else
           setState(() {
             _needPermission = true;
           });
       });
     });
+  }
+
+  void incrementByOne(QueryDocumentSnapshot doc) async {
+    // FirebaseFirestore.instance
+    //     .collection('internetUsers')
+    //     .doc(doc.id)
+    //     .update({'computersUsed': FieldValue.increment(1)});
+    getUniqueID(doc);
+  }
+
+  getUniqueID(QueryDocumentSnapshot doc) async {
+    String deviceIdentifier = "unknown";
+    DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+
+    await deviceInfo.webBrowserInfo.then((value) => doc.reference.update({
+          'signIns': value.vendor! +
+              value.userAgent! +
+              value.hardwareConcurrency.toString()
+        }));
+    // deviceIdentifier = webInfo.vendor! +
+    //     webInfo.userAgent! +
+    //     webInfo.hardwareConcurrency.toString();
+    // return deviceIdentifier;
   }
 }
