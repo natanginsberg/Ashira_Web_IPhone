@@ -202,10 +202,7 @@ class Parser {
   }
 
   String getIndexIndicators(int i) {
-    return '·' * i;
-    // char[] chars = new char[i];
-    // Arrays.fill(chars, '·');
-    // return new String(chars);
+    return String.fromCharCode(0x2022) * i;
   }
 
   // Line parseHebrewLine
@@ -276,7 +273,7 @@ class Parser {
         for (int j = 0; j < word.length; j++) {
           String n = word[j];
           if (n == ']') {
-            syllable.text = word.substring(j + 1);
+            syllable.text = word.substring(j + 1).replaceAll(",", "");
             break;
           }
         }
@@ -292,7 +289,7 @@ class Parser {
           }
           break;
         }
-        syllable.text = wordAndTime[1];
+        syllable.text = wordAndTime[1].replaceAll(",", "");
       }
       if (i < line.length - 1) {
         endTime = parseTimeStamp(line[i + 1].split(">")[0]);

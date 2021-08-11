@@ -12,12 +12,12 @@ import 'package:url_launcher/url_launcher.dart';
 import 'Sing.dart';
 
 class AllSongs extends StatefulWidget {
-  List<DocumentReference> documentReference;
+  String id;
 
-  AllSongs(this.documentReference);
+  AllSongs(this.id);
 
   @override
-  _AllSongsState createState() => _AllSongsState(documentReference[0]);
+  _AllSongsState createState() => _AllSongsState(id);
 }
 
 final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
@@ -44,9 +44,11 @@ class _AllSongsState extends State<AllSongs> {
 
   List<Song> songsClicked = [];
 
-  DocumentReference documentReference;
+  String id;
 
-  _AllSongsState(this.documentReference);
+  bool accessDenied = false;
+
+  _AllSongsState(this.id);
 
   void signInAnon() async {
     await firebaseAuth.signInAnonymously().then((value) => getSongs());
@@ -90,182 +92,7 @@ class _AllSongsState extends State<AllSongs> {
       home: Scaffold(
           key: _scaffoldKey,
           backgroundColor: Colors.transparent,
-          body:
-              // Stack(
-              //   alignment: Alignment.center,
-              //   children: [
-              //     Positioned(
-              //       top: 70,
-              //       child: Padding(
-              //         padding:
-              //             const EdgeInsets.symmetric(vertical: 15.0, horizontal: 8.0),
-              //         child: Container(
-              //           width: MediaQuery.of(context).size.width * 0.8,
-              //           height: 48,
-              //           decoration: BoxDecoration(
-              //               border: Border.all(color: Color(0xFF8D3C8E), width: 2),
-              //               borderRadius: BorderRadius.circular(50),
-              //               gradient: RadialGradient(
-              //                 center: Alignment.center,
-              //                 radius: 0.8,
-              //                 colors: [
-              //                   const Color(0xFF221A4D), // blue sky
-              //                   const Color(0xFF000000), // yellow sun
-              //                 ],
-              //               )),
-              //           child: Row(
-              //               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              //               children: [
-              //                 Padding(
-              //                   padding: const EdgeInsets.all(8.0),
-              //                   child: Icon(
-              //                     Icons.search,
-              //                     color: Colors.white,
-              //                   ),
-              //                 ),
-              //                 SizedBox(
-              //                   width: MediaQuery.of(context).size.width * 0.5,
-              //                   height: 48,
-              //                   child: Center(
-              //                     child: TextField(
-              //                       style: TextStyle(color: Colors.white),
-              //                       textAlign: TextAlign.center,
-              //                       controller: controller,
-              //                       decoration: new InputDecoration(
-              //                         hintText: 'Search',
-              //                         hintStyle: TextStyle(color: Colors.white),
-              //                         fillColor: Colors.transparent,
-              //                       ),
-              //                       onChanged: (String value) {
-              //                         setState(() {
-              //                           // searchPath.add(new List.from(gridSongs));
-              //                           gridSongs = value.length > previousValue.length
-              //                               ? getNextSong(value)
-              //                               : getLastSong();
-              //                           previousValue = value;
-              //                         });
-              //                       },
-              //                     ),
-              //                   ),
-              //                 ),
-              //                 IconButton(
-              //                   icon: new Icon(
-              //                     Icons.cancel,
-              //                     color: Colors.white,
-              //                   ),
-              //                   onPressed: () {
-              //                     controller.clear();
-              //                     previousValue = "";
-              //                     setState(() {
-              //                       gridSongs = List.from(searchPath.first);
-              //                       searchPath.clear();
-              //                     });
-              //                   },
-              //                 ),
-              //               ]),
-              //         ),
-              //       ),
-              //     ),
-              //     Positioned.fill(
-              //       top: 150,
-              //       child: Container(
-              //           height: MediaQuery.of(context).size.height - 400,
-              //           decoration: BoxDecoration(
-              //               gradient: RadialGradient(
-              //             center: Alignment.center,
-              //             radius: 0.8,
-              //             colors: [
-              //               const Color(0xFF221A4D), // blue sky
-              //               const Color(0xFF000000), // yellow sun
-              //             ],
-              //           )),
-              //           margin: const EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 0.0),
-              //           child: buildGridView(gridSongs)),
-              //     ),
-              //     Align(
-              //       alignment: Alignment.topCenter,
-              //       child: SafeArea(
-              //         child: Row(
-              //           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              //           children: [
-              //             IconButton(
-              //               onPressed: () {},
-              //               icon: Icon(
-              //                 Icons.menu,
-              //                 color: Colors.white,
-              //               ),
-              //             ),
-              //             if (_showGenreBar)
-              //               Container(
-              //                   height: 150,
-              //                   width: 110,
-              //                   decoration: BoxDecoration(
-              //                       gradient: LinearGradient(
-              //                     colors: <Color>[Colors.pink, Colors.blue],
-              //                   )),
-              //                   child: Row(
-              //                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              //                     children: [
-              //                       buildListView(),
-              //                       Align(
-              //                         alignment: Alignment.topCenter,
-              //                         child: Transform.rotate(
-              //                           angle: 270 * pi / 180,
-              //                           child: IconButton(
-              //                             padding: const EdgeInsets.symmetric(
-              //                                 horizontal: 4.0),
-              //                             onPressed: () {
-              //                               setState(() {
-              //                                 _showGenreBar = false;
-              //                               });
-              //                             },
-              //                             icon:
-              //                                 const Icon(Icons.arrow_back_ios_rounded),
-              //                             color: Colors.pink[300],
-              //                           ),
-              //                         ),
-              //                       )
-              //                     ],
-              //                   ))
-              //             else
-              //               GenreButton(
-              //                   height: 40,
-              //                   width: 110,
-              //                   child: Row(
-              //                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              //                     children: [
-              //                       Text(
-              //                         currentGenre,
-              //                         style: TextStyle(color: Colors.white),
-              //                       ),
-              //                       Icon(
-              //                         Icons.arrow_back_ios_rounded,
-              //                         color: Colors.pink[300],
-              //                       ),
-              //                     ],
-              //                   ),
-              //                   gradient: LinearGradient(
-              //                     colors: <Color>[Colors.pink, Colors.blue],
-              //                   ),
-              //                   onPressed: () {
-              //                     setState(() {
-              //                       _showGenreBar = true;
-              //                     });
-              //                   }),
-              //             IconButton(
-              //               onPressed: () {},
-              //               icon: Icon(
-              //                 Icons.mic,
-              //                 color: Colors.white,
-              //               ),
-              //             ),
-              //           ],
-              //         ),
-              //       ),
-              //     ),
-              //   ],
-              // ),
-              Container(
+          body: Container(
             decoration: BoxDecoration(
                 gradient: RadialGradient(
               center: Alignment.center,
@@ -324,56 +151,14 @@ class _AllSongsState extends State<AllSongs> {
                                   )
                                 ],
                               ))
-                        // else
-                        // GenreButton(
-                        //     height: 40,
-                        //     width: 110,
-                        //     child: Row(
-                        //       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        //       children: [
-                        //         Text(
-                        //           currentGenre,
-                        //           style: TextStyle(color: Colors.white),
-                        //         ),
-                        //         Icon(
-                        //           Icons.arrow_back_ios_rounded,
-                        //           color: Colors.pink[300],
-                        //         ),
-                        //       ],
-                        //     ),
-                        //     gradient: LinearGradient(
-                        //       colors: <Color>[Colors.pink, Colors.blue],
-                        //     ),
-                        //     onPressed: () {
-                        //       setState(() {
-                        //         _showGenreBar = true;
-                        //       });
-                        //     }),
-                        // TextButton(
-                        //   onPressed: () {
-                        //     setState(() {
-                        //       setLocale(_locale ==
-                        //               Locale.fromSubtags(languageCode: "he")
-                        //           ? Locale.fromSubtags(languageCode: "en")
-                        //           : Locale.fromSubtags(languageCode: "he"));
-                        //     });
-                        //   },
-                        //   child: Text(
-                        //     (_locale == Locale.fromSubtags(languageCode: "he")
-                        //         ? "עברית"
-                        //         : "English"),
-                        //     style: TextStyle(color: Colors.white),
-                        //   ),
-                        // ),
                       ],
                     ),
                   ),
-
                   Padding(
                     padding: const EdgeInsets.symmetric(
                         vertical: 15.0, horizontal: 8.0),
                     child: Container(
-                      width: MediaQuery.of(context).size.width * 0.8,
+                      width: MediaQuery.of(context).size.width * 0.6,
                       height: 48,
                       decoration: BoxDecoration(
                           border:
@@ -381,7 +166,7 @@ class _AllSongsState extends State<AllSongs> {
                           borderRadius: BorderRadius.circular(50),
                           gradient: RadialGradient(
                             center: Alignment.center,
-                            radius: 0.8,
+                            radius: 4,
                             colors: [
                               const Color(0xFF221A4D), // blue sky
                               const Color(0xFF000000), // yellow sun
@@ -468,75 +253,18 @@ class _AllSongsState extends State<AllSongs> {
                           ],
                         )),
                         margin: const EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 0.0),
-                        child: buildGridView(gridSongs)),
+                        child: accessDenied
+                            ? renewWording()
+                            : buildGridView(gridSongs)),
                   ),
                 ],
               ),
-              // if (menuOpen)
-              //   Container(
-              //     width: MediaQuery.of(context).size.width,
-              //     height: MediaQuery.of(context).size.height * 0.7,
-              //     decoration: BoxDecoration(
-              //         gradient: LinearGradient(
-              //       begin: Alignment.topCenter,
-              //       end: Alignment.bottomCenter,
-              //       colors: <Color>[Colors.pink, Colors.blue],
-              //     )),
-              //     child: Column(
-              //       children: [
-              //         Align(
-              //           alignment: Alignment.topLeft,
-              //           child: SafeArea(
-              //             child: IconButton(
-              //               onPressed: () {
-              //                 // setState(() {
-              //                 //   menuOpen = false;
-              //                 // });
-              //                 openWebsite();
-              //               },
-              //               icon: Icon(
-              //                 Icons.keyboard_arrow_left_rounded,
-              //                 color: Colors.white,
-              //               ),
-              //             ),
-              //           ),
-              //         ),
-              //         Expanded(
-              //           child: Center(
-              //             child: RichText(
-              //               textAlign: TextAlign.center,
-              //               text: TextSpan(children: [
-              //                 TextSpan(
-              //                     text: "Visit our website at \n",
-              //                     style: TextStyle(color: Colors.white)),
-              //                 TextSpan(
-              //                     text: "https://ashira-music.com/",
-              //                     style: TextStyle(
-              //                       color: Colors.white,
-              //                       decoration: TextDecoration.underline,
-              //                     ),
-              //                     recognizer: new TapGestureRecognizer()
-              //                       ..onTap = () async {
-              //                         final url = "https://ashira-music.com/";
-              //                         if (await canLaunch(url)) {
-              //                           await launch(
-              //                             url,
-              //                           );
-              //                         }
-              //                       })
-              //               ]),
-              //             ),
-              //           ),
-              //         )
-              //       ],
-              //     ),
-              //   ),
               Padding(
                 padding: const EdgeInsets.all(20.0),
                 child: Align(
                   alignment: Alignment.bottomRight,
                   child: FloatingActionButton(
-                    onPressed: () => playSongs(),
+                    onPressed: () => checkEmailAndContinue(),
                     autofocus: true,
                     child: Icon(Icons.play_arrow),
                     backgroundColor: songsClicked.length > 0
@@ -570,17 +298,17 @@ class _AllSongsState extends State<AllSongs> {
         .get()
         .then((QuerySnapshot querySnapshot) {
       querySnapshot.docs.forEach((doc) {
-        Map<String, dynamic> data = doc.data();
+        // Map<String, dynamic> data = doc.data();
         songs.add(new Song(
-            artist: data['artist'],
-            title: data['title'],
-            imageResourceFile: data['imageResourceFile'],
-            genre: data['genre'],
-            songResourceFile: data['songResourceFile'],
-            textResourceFile: data['textResourceFile'],
-            womanToneResourceFile: data['womanToneResourceFile'],
-            kidToneResourceFile: data['kidToneResourceFile'],
-            length: data['length']));
+            artist: doc.get('artist'),
+            title: doc.get("title"),
+            imageResourceFile: doc.get("imageResourceFile"),
+            genre: doc.get("genre"),
+            songResourceFile: doc.get("songResourceFile"),
+            textResourceFile: doc.get("textResourceFile"),
+            womanToneResourceFile: doc.get("womanToneResourceFile"),
+            kidToneResourceFile: doc.get("kidToneResourceFile"),
+            length: doc.get("length")));
       });
       setState(() {
         if (songs.length > 0) gridSongs = new List.from(songs);
@@ -704,7 +432,7 @@ class _AllSongsState extends State<AllSongs> {
         songsPassed.add(song);
       }
       Navigator.push(
-          context, MaterialPageRoute(builder: (_) => Sing(songsPassed, "22")));
+          context, MaterialPageRoute(builder: (_) => Sing(songsPassed, id)));
       setState(() {
         songsClicked.clear();
       });
@@ -806,5 +534,103 @@ class _AllSongsState extends State<AllSongs> {
           return true;
       }
     return false;
+  }
+
+  renewWording() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Center(
+            child: Text(
+          'זמן הרשמתך נגמר',
+          style: TextStyle(
+              fontFamily: 'SignInFont',
+              color: Colors.yellow,
+              wordSpacing: 5,
+              fontSize: 30,
+              height: 1.4,
+              letterSpacing: 1.6),
+        )),
+        Center(
+            child: Text(
+          'לפרטים צרו איתנו קשר',
+          style: TextStyle(
+              fontFamily: 'SignInFont',
+              color: Colors.white,
+              wordSpacing: 5,
+              fontSize: 20,
+              height: 1.4,
+              letterSpacing: 1.6),
+        )),
+        Center(
+            child: Directionality(
+          textDirection: TextDirection.rtl,
+          child: Text(
+            'אימייל: ashirajewishkaraoke@gmail.com',
+            style: TextStyle(
+                fontFamily: 'SignInFont',
+                color: Colors.white,
+                wordSpacing: 5,
+                fontSize: 20,
+                height: 1.4,
+                letterSpacing: 1.6),
+          ),
+        )),
+        Center(
+            child: Text(
+          'אשר - 053-3381427  יוסי - 058-7978079',
+          style: TextStyle(
+              fontFamily: 'SignInFont',
+              color: Colors.white,
+              wordSpacing: 5,
+              fontSize: 20,
+              height: 1.4,
+              letterSpacing: 1.6),
+        )),
+      ],
+    );
+  }
+
+  checkEmailAndContinue() async {
+    bool valid = false;
+    // CollectionReference collectionRef =
+    //     FirebaseFirestore.instance.collection('collectionName');
+    final databaseReference = FirebaseFirestore.instance;
+    try {
+      var doc =
+          await databaseReference.collection('internetUsers').doc(id).get();
+      if (doc.exists) {
+        valid = true;
+        playSongs();
+        return;
+      } else {
+        setState(() {
+          accessDenied = true;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        accessDenied = true;
+      });
+    }
+    // collectionRef.document()
+    // FirebaseFirestore.instance
+    //     .collection('internetUsers')
+    //     .get()
+    //     .then((QuerySnapshot querySnapshot) {
+    //   querySnapshot.docs.forEach((doc) {
+    //     Map<String, dynamic> data = doc.data();
+    //     if (email == data['email']) {
+    //       valid = true;
+    //       playSongs();
+    //       return;
+    //     }
+    //   });
+    //   if (!valid)
+    //     setState(() {
+    //       accessDenied = true;
+    //     });
+    // });
   }
 }

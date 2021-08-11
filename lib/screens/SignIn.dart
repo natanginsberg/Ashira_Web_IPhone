@@ -1,3 +1,5 @@
+import 'dart:html';
+
 import 'package:ashira_flutter/screens/AllSongs.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:device_info_plus/device_info_plus.dart';
@@ -5,6 +7,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:universal_html/html.dart' as html;
 
 class SignIn extends StatefulWidget {
   @override
@@ -13,11 +16,16 @@ class SignIn extends StatefulWidget {
 
 final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-List<DocumentReference> drs = [];
+String id = "";
+
+const appleType = "apple";
+const androidType = "android";
+const desktopType = "desktop";
 
 class _SignIn extends State<SignIn> {
   bool _needPermission = false;
   bool hebrew = true;
+
   late DocumentReference dr;
 
   @override
@@ -31,8 +39,8 @@ class _SignIn extends State<SignIn> {
     _editingController.dispose();
     super.dispose();
   }
-
   bool _isEditingText = false;
+
   late TextEditingController _editingController;
 
   Future<String> get _localPath async {
@@ -59,6 +67,7 @@ class _SignIn extends State<SignIn> {
                     center: Alignment.center,
                     radius: 0.8,
                     colors: [
+                      //const Color(0xFF9812E0),
                       const Color(0xFF2C2554), // yellow sun
                       const Color(0xFF17131F), // blue sky
                     ],
@@ -71,7 +80,9 @@ class _SignIn extends State<SignIn> {
                     Center(
                       child: Container(
                         height: MediaQuery.of(context).size.height - 40,
-                        width: MediaQuery.of(context).size.width / 3,
+                        width: isSmartphone()
+                            ? MediaQuery.of(context).size.width
+                            : MediaQuery.of(context).size.width / 3,
                         decoration: BoxDecoration(
                             gradient: RadialGradient(
                               center: Alignment.center,
@@ -97,7 +108,8 @@ class _SignIn extends State<SignIn> {
                                       'ברוכים הבאים',
                                       style: TextStyle(
                                           fontFamily: 'SignInFont',
-                                          fontSize: 25,
+                                          fontSize:
+                                              tabletOrComputerFontSize(25),
                                           color: Colors.white),
                                     ),
                                   ),
@@ -106,33 +118,36 @@ class _SignIn extends State<SignIn> {
                                     'למערכות אשירה',
                                     style: TextStyle(
                                         fontFamily: 'SignInFont',
-                                        fontSize: 25,
+                                        fontSize: tabletOrComputerFontSize(25),
                                         color: Colors.white),
                                   )),
                                   Center(
                                       child: Text(
-                                    'אפליקציית הקריוקי היהודי ',
+                                    'אפליקציית הקריוקי היהודי',
                                     style: TextStyle(
                                         fontFamily: 'SignInFont',
-                                        fontSize: 25,
+                                        fontSize: tabletOrComputerFontSize(25),
                                         color: Colors.white),
                                   ))
                                 ],
                               ),
                             ),
-                            SizedBox(
-                              height: 20,
-                            ),
+                            if (!isSmartphone())
+                              SizedBox(
+                                height: 20,
+                              ),
                             Center(
                                 child: Text(
-                              'לכניסה הזינו כתובת מייל',
+                              'לכניסה הזינו סיסמא',
                               style:
                                   TextStyle(fontSize: 15, color: Colors.white),
                             )),
                             Center(
                               child: Container(
-                                  width: MediaQuery.of(context).size.width / 4,
-                                  height: 50,
+                                  width: isSmartphone()
+                                      ? MediaQuery.of(context).size.width / 2
+                                      : MediaQuery.of(context).size.width / 4,
+                                  height: tabletOrComputerFontSize(50),
                                   decoration: BoxDecoration(
                                       border: Border.all(color: Colors.purple),
                                       borderRadius: BorderRadius.all(
@@ -147,9 +162,9 @@ class _SignIn extends State<SignIn> {
                                         textAlign: TextAlign.center,
                                         decoration: new InputDecoration(
                                           hintText:
-                                              'your_email@your_domain.com',
+                                              '******',
                                           hintStyle: TextStyle(
-                                              color: Color(0xFFB8B6B6)),
+                                              color: Color(0xFF787676)),
                                           fillColor: Colors.transparent,
                                         ),
                                         style: TextStyle(
@@ -173,7 +188,9 @@ class _SignIn extends State<SignIn> {
                                     child: Text(
                                       'כניסה',
                                       style: TextStyle(
-                                          fontSize: 20, color: Colors.white),
+                                          fontSize:
+                                              tabletOrComputerFontSize(20),
+                                          color: Colors.white),
                                     )),
                               ),
                             ),
@@ -181,59 +198,67 @@ class _SignIn extends State<SignIn> {
                                 child: Text(
                               _needPermission ? 'אימייל לא תקין' : "",
                               style: TextStyle(
-                                  color: Colors.red,
-                                  wordSpacing: 5,
-                                  fontSize: 20,
-                                  height: 1.4,
-                                  letterSpacing: 1.6),
+                                color: Colors.red,
+                                //wordSpacing: 5,
+                                fontSize: 20,
+                                //height: 1.4,
+                                //letterSpacing: 1.6
+                              ),
                             )),
                             Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 Center(
-                                    child: Text(
-                                  'המערכת מיועדת להפעלת קריוקי',
-                                  style: TextStyle(
-                                      fontFamily: 'SignInFont',
+                                    child: Directionality(
+                                  textDirection: TextDirection.rtl,
+                                  child: Text(
+                                    'המערכת מיועדת להפעלת קריוקי',
+                                    style: TextStyle(
+                                      //   fontFamily: 'SignInFont',
                                       color: Colors.white,
-                                      wordSpacing: 5,
-                                      fontSize: 20,
-                                      height: 1.4,
-                                      letterSpacing: 1.6),
+                                      //wordSpacing: 5,
+                                      fontSize: tabletOrComputerFontSize(20),
+                                      //height: 1.4,
+                                      //letterSpacing: 1.6
+                                    ),
+                                  ),
                                 )),
                                 Center(
                                     child: Text(
-                                      'לקבלת הצעת מחיר צרו איתנו קשר',
-                                      style: TextStyle(
-                                          fontFamily: 'SignInFont',
-                                          color: Colors.white,
-                                          wordSpacing: 5,
-                                          fontSize: 20,
-                                          height: 1.4,
-                                          letterSpacing: 1.6),
-                                    )),
+                                  'לקבלת הצעת מחיר צרו איתנו קשר',
+                                  style: TextStyle(
+                                    //fontFamily: 'SignInFont',
+                                    color: Colors.white,
+                                    // wordSpacing: 5,
+                                    fontSize: tabletOrComputerFontSize(20),
+                                    //height: 1.4,
+                                    // letterSpacing: 1.6
+                                  ),
+                                )),
                                 Center(
                                     child: Text(
-                                  'אימייל: ashirajewishkaraoke@gmail.com',
+                                  'asher307901520@gmail.com',
                                   style: TextStyle(
-                                      fontFamily: 'SignInFont',
-                                      color: Colors.white,
-                                      wordSpacing: 5,
-                                      fontSize: 20,
-                                      height: 1.4,
-                                      letterSpacing: 1.6),
+                                    //fontFamily: 'SignInFont',
+                                    color: Colors.white,
+                                    //wordSpacing: 5,
+                                    fontSize: tabletOrComputerFontSize(20),
+                                    // height: 1.4,
+                                    //letterSpacing: 1.6
+                                  ),
                                 )),
                                 Center(
                                     child: Text(
                                   'אשר - 053-3381427  יוסי - 058-7978079',
                                   style: TextStyle(
-                                      fontFamily: 'SignInFont',
-                                      color: Colors.white,
-                                      wordSpacing: 5,
-                                      fontSize: 20,
-                                      height: 1.4,
-                                      letterSpacing: 1.6),
+                                    // fontFamily: 'SignInFont',
+                                    color: Colors.white,
+                                    //wordSpacing: 5,
+                                    fontSize: tabletOrComputerFontSize(20),
+                                    //height: 1.4,
+                                    //letterSpacing: 1.6
+                                  ),
                                 )),
                               ],
                             )
@@ -250,34 +275,29 @@ class _SignIn extends State<SignIn> {
   }
 
   checkEmailAndContinue() {
+    bool valid = false;
     FirebaseFirestore.instance
         .collection('internetUsers')
         .get()
         .then((QuerySnapshot querySnapshot) {
       querySnapshot.docs.forEach((doc) {
-        Map<String, dynamic> data = doc.data();
-        if (_editingController.text == data['email']) {
+        if (_editingController.text.toLowerCase() == doc.get("email")) {
+          id = doc.id;
+          valid = true;
           incrementByOne(doc);
-          drs.add(doc.reference);
           Navigator.pushReplacement(
-              context, MaterialPageRoute(builder: (_) => AllSongs(drs)));
-        } else
-          setState(() {
-            _needPermission = true;
-          });
+              context, MaterialPageRoute(builder: (_) => AllSongs(doc.id)));
+          return;
+        }
       });
+      if (!valid)
+        setState(() {
+          _needPermission = true;
+        });
     });
   }
 
   void incrementByOne(QueryDocumentSnapshot doc) async {
-    // FirebaseFirestore.instance
-    //     .collection('internetUsers')
-    //     .doc(doc.id)
-    //     .update({'computersUsed': FieldValue.increment(1)});
-    getUniqueID(doc);
-  }
-
-  getUniqueID(QueryDocumentSnapshot doc) async {
     String deviceIdentifier = "unknown";
     DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
 
@@ -291,4 +311,22 @@ class _SignIn extends State<SignIn> {
     //     webInfo.hardwareConcurrency.toString();
     // return deviceIdentifier;
   }
+
+  bool isSmartphone() {
+    final userAgent = html.window.navigator.userAgent.toString().toLowerCase();
+    // smartphone
+    return (userAgent.contains("iphone") ||
+        userAgent.contains("android")
+
+        // tablet
+        ||
+        userAgent.contains("ipad") ||
+        (html.window.navigator.platform!.toLowerCase().contains("macintel") &&
+            html.window.navigator.maxTouchPoints! > 0));
+  }
+
+  tabletOrComputerFontSize(int size) {
+    return isSmartphone() ? size : size;
+  }
 }
+

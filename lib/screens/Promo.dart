@@ -1,9 +1,7 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
 
 class Promo extends StatefulWidget {
   @override
@@ -15,16 +13,16 @@ final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 class _PromoState extends State<Promo> {
   late Timer timer;
 
-  Future<String> get _localPath async {
-    final directory = await getApplicationDocumentsDirectory();
+  // Future<String> get _localPath async {
+  //   final directory = await getApplicationDocumentsDirectory();
+  //
+  //   return directory.path;
+  // }
 
-    return directory.path;
-  }
-
-  Future<File> get _localFile async {
-    final path = await _localPath;
-    return File('$path/contractApproved.txt');
-  }
+  // Future<File> get _localFile async {
+  //   final path = await _localPath;
+  //   return File('$path/contractApproved.txt');
+  // }
 
   @override
   void dispose() {
@@ -35,10 +33,8 @@ class _PromoState extends State<Promo> {
 
   @override
   Widget build(BuildContext context) {
-    timer = Timer(
-        Duration(seconds: 1),
-        () =>
-            contractApproved().then((value) async => moveToNextScreen(value)));
+    timer = Timer(Duration(seconds: 1), () => moveToNextScreen(true));
+    // contractApproved().then((value) async => moveToNextScreen(value)));
     return MaterialApp(
       home: Scaffold(
         key: _scaffoldKey,
@@ -116,22 +112,22 @@ class _PromoState extends State<Promo> {
 
   moveToNextScreen(bool approved) {
     // if (approved == true)
-      Navigator.pushReplacementNamed(context, '/signIn');
+    Navigator.pushReplacementNamed(context, '/signIn');
     // else
     //   Navigator.pushReplacementNamed(context, '/contracts');
   }
 
-  Future<bool> contractApproved() async {
-    try {
-      final file = await _localFile;
-
-      // Read the file.
-      String contents = await file.readAsString();
-
-      return contents == "32";
-    } catch (e) {
-      // If encountering an error, return 0.
-      return false;
-    }
-  }
+// Future<bool> contractApproved() async {
+//   try {
+//     final file = await _localFile;
+//
+//     Read the file.
+// String contents = await file.readAsString();
+//
+// return contents == "32";
+// } catch (e) {
+//   If encountering an error, return 0.
+// return false;
+// }
+// }
 }

@@ -27,7 +27,7 @@ class Line {
     return from <= position && position <= to;
   }
 
-  bool isAfter(double position){
+  bool isAfter(double position) {
     return from > position;
   }
 

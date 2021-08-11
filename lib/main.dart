@@ -3,11 +3,10 @@ import 'package:ashira_flutter/screens/Contracts.dart';
 import 'package:ashira_flutter/screens/Promo.dart';
 import 'package:ashira_flutter/screens/SignIn.dart';
 import 'package:ashira_flutter/screens/Sing.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -49,21 +48,9 @@ class App extends StatelessWidget {
               '/': (context) => Promo(),
               '/contracts': (context) => Contracts(),
               '/signIn': (context) => SignIn(),
-              '/allSongs': (context) => AllSongs(drs),
+              '/allSongs': (context) => AllSongs(id),
               '/sing': (context) => Sing(
-                  songs
-
-                  // new Song(
-                  //     artist: "artist",
-                  //     imageResourceFile: "imageResourceFile",
-                  //     title: "title",
-                  //     genre: "genre",
-                  //     songResourceFile: "songResourceFile",
-                  //     textResourceFile: "textResourceFile",
-                  //     womanToneResourceFile: "womanResourceFile",
-                  //     kidToneResourceFile: 'kidResourceFile'),
-                  ,
-                  ""),
+                  songs, id),
             },
           );
         }
