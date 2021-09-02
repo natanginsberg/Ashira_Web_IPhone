@@ -7,6 +7,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:universal_html/html.dart' as html;
 import 'package:url_launcher/url_launcher.dart';
 
 import 'Sing.dart';
@@ -99,7 +101,7 @@ class _AllSongsState extends State<AllSongs> {
               radius: 0.8,
               colors: [
                 const Color(0xFF221A4D), // blue sky
-                const Color(0xFF000000), // yellow sun
+                const Color(0xFF000000),
               ],
             )),
             child: Stack(children: [
@@ -148,9 +150,9 @@ class _AllSongsState extends State<AllSongs> {
                                         color: Colors.pink[300],
                                       ),
                                     ),
-                                  )
+                                  ),
                                 ],
-                              ))
+                              )),
                       ],
                     ),
                   ),
@@ -333,23 +335,24 @@ class _AllSongsState extends State<AllSongs> {
   }
 
   buildGridView(List<Song> songs) {
-    return GridView.builder(
-        shrinkWrap: true,
-        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: 200,
-            childAspectRatio: 0.6,
-            crossAxisSpacing: 20,
-            mainAxisSpacing: 20),
-        itemCount: songs.length,
-        itemBuilder: (BuildContext ctx, index) {
-          return Container(
-              alignment: Alignment.center, child: buildSongLayout(songs[index])
-              // SongLayout(
-              //   song: songs[index],
-              //   index: index,
+    return  GridView.builder(
+            shrinkWrap: true,
+            gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 200,
+                childAspectRatio: isSmartphone() ? 0.75 : 0.6,
+                crossAxisSpacing: 20,
+                mainAxisSpacing: 20),
+            itemCount: songs.length,
+            itemBuilder: (BuildContext ctx, index) {
+              return Container(
+                  alignment: Alignment.center,
+                  child: buildSongLayout(songs[index])
+                  // SongLayout(
+                  //   song: songs[index],
+                  //   index: index,
 
-              );
-        });
+                  );
+            });
   }
 
   getLastSong() {
@@ -476,7 +479,7 @@ class _AllSongsState extends State<AllSongs> {
                           image: NetworkImage(song.imageResourceFile)))),
             ),
             Expanded(
-              flex: 2,
+              flex: isSmartphone() ? 1 : 2,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -525,6 +528,15 @@ class _AllSongsState extends State<AllSongs> {
         ),
       ),
     );
+  }
+
+  bool isSmartphone() {
+    final userAgent = html.window.navigator.userAgent.toString().toLowerCase();
+    return (userAgent.contains("iphone") ||
+        userAgent.contains("android") ||
+        userAgent.contains("ipad") ||
+        (html.window.navigator.platform!.toLowerCase().contains("macintel") &&
+            html.window.navigator.maxTouchPoints! > 0));
   }
 
   songInSongsClicked(Song song) {

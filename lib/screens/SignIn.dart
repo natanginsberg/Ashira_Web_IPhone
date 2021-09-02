@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:universal_html/html.dart' as html;
+import 'package:wordpress_api/wordpress_api.dart' as wp;
 
 class SignIn extends StatefulWidget {
   @override
@@ -27,21 +28,35 @@ class _SignIn extends State<SignIn> {
   bool hebrew = true;
 
   late DocumentReference dr;
+  wp.WooCredentials credentials = new wp.WooCredentials(
+      "f05eb5fc740b05eca1c9ad164566c545956bc2ef",
+      "7da22cebd8183c9ff96456b8a58dea8093c363f2");
+  wp.WordPressAPI api = wp.WordPressAPI('https://ashira-music.com',
+      wooCredentials: wp.WooCredentials(
+          ));
+
+  // wp.WordPressAPI api = wp.WordPressAPI('https://ashira-music.com');
+
+  String data = "this is the test";
 
   @override
   void initState() {
     super.initState();
-    _editingController = TextEditingController(text: "");
+    _passwordEditingController = TextEditingController(text: "");
+
   }
 
   @override
   void dispose() {
-    _editingController.dispose();
+
+    _passwordEditingController.dispose();
     super.dispose();
   }
+
   bool _isEditingText = false;
 
-  late TextEditingController _editingController;
+  late TextEditingController _passwordEditingController;
+
 
   Future<String> get _localPath async {
     final directory = await getApplicationDocumentsDirectory();
@@ -132,16 +147,39 @@ class _SignIn extends State<SignIn> {
                                 ],
                               ),
                             ),
-                            if (!isSmartphone())
-                              SizedBox(
-                                height: 20,
-                              ),
+
+                            // RaisedButton(
+                            //   onPressed: (){
+                            //
+                            //     // make PayPal payment
+                            //
+                            //     Navigator.of(context).push(
+                            //       MaterialPageRoute(
+                            //         builder: (BuildContext context) => PaypalPayment(
+                            //           onFinish: (number) async {
+                            //
+                            //             // payment done
+                            //             print('order id: '+number);
+                            //
+                            //           },
+                            //         ),
+                            //       ),
+                            //     );
+                            //
+                            //
+                            //   },
+                            //   child: Text('Pay with Paypal', textAlign: TextAlign.center,),
+                            // ),
                             Center(
                                 child: Text(
-                              'לכניסה הזינו סיסמא',
+                              'לכניסה הזינו שם משתמש וסיסמא',
                               style:
                                   TextStyle(fontSize: 15, color: Colors.white),
                             )),
+                            // if (!isSmartphone())
+                            //   SizedBox(
+                            //     height: 20,
+                            //   ),
                             Center(
                               child: Container(
                                   width: isSmartphone()
@@ -161,8 +199,7 @@ class _SignIn extends State<SignIn> {
                                         },
                                         textAlign: TextAlign.center,
                                         decoration: new InputDecoration(
-                                          hintText:
-                                              '******',
+                                          hintText: '******',
                                           hintStyle: TextStyle(
                                               color: Color(0xFF787676)),
                                           fillColor: Colors.transparent,
@@ -170,7 +207,7 @@ class _SignIn extends State<SignIn> {
                                         style: TextStyle(
                                             fontSize: 15, color: Colors.white),
                                         autofocus: true,
-                                        controller: _editingController,
+                                        controller: _passwordEditingController,
                                       ),
                                     ),
                                   )),
@@ -194,17 +231,18 @@ class _SignIn extends State<SignIn> {
                                     )),
                               ),
                             ),
-                            Center(
-                                child: Text(
-                              _needPermission ? 'אימייל לא תקין' : "",
-                              style: TextStyle(
-                                color: Colors.red,
-                                //wordSpacing: 5,
-                                fontSize: 20,
-                                //height: 1.4,
-                                //letterSpacing: 1.6
-                              ),
-                            )),
+                            if (_needPermission)
+                              Center(
+                                  child: Text(
+                                _needPermission ? 'אימייל לא תקין' : "",
+                                style: TextStyle(
+                                  color: Colors.red,
+                                  //wordSpacing: 5,
+                                  fontSize: 20,
+                                  //height: 1.4,
+                                  //letterSpacing: 1.6
+                                ),
+                              )),
                             Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.center,
@@ -214,6 +252,7 @@ class _SignIn extends State<SignIn> {
                                   textDirection: TextDirection.rtl,
                                   child: Text(
                                     'המערכת מיועדת להפעלת קריוקי',
+                                    // data,
                                     style: TextStyle(
                                       //   fontFamily: 'SignInFont',
                                       color: Colors.white,
@@ -238,7 +277,7 @@ class _SignIn extends State<SignIn> {
                                 )),
                                 Center(
                                     child: Text(
-                                  'asher307901520@gmail.com',
+                                  'ashira.jewishkaraoke@gmail.com',
                                   style: TextStyle(
                                     //fontFamily: 'SignInFont',
                                     color: Colors.white,
@@ -274,14 +313,32 @@ class _SignIn extends State<SignIn> {
     );
   }
 
-  checkEmailAndContinue() {
+  checkEmailAndContinue() async {
+    // try {
+    // final wp.WPResponse res = await getting(id: 1);
+    DocumentSnapshot<Map<String, dynamic>> doc =
+        await checkIfEmailIsInFirebase(id);
+    if (doc.exists && timeIsStillAllocated(doc)) {
+      print("this is the true");
+    }
+    final wp.WPResponse res =
+        await api.fetch('orders', namespace: "wc/v2");
+
+    // String titles = "these are the titles ";
+    print(res.meta!.total);
+    for (final post in res.data) {
+      // print(post.title);
+      // titles += post.title;
+      // titles += " ";
+    }
+
     bool valid = false;
     FirebaseFirestore.instance
         .collection('internetUsers')
         .get()
         .then((QuerySnapshot querySnapshot) {
       querySnapshot.docs.forEach((doc) {
-        if (_editingController.text.toLowerCase() == doc.get("email")) {
+        if (_passwordEditingController.text.toLowerCase() == doc.get("email")) {
           id = doc.id;
           valid = true;
           incrementByOne(doc);
@@ -328,5 +385,24 @@ class _SignIn extends State<SignIn> {
   tabletOrComputerFontSize(int size) {
     return isSmartphone() ? size : size;
   }
-}
 
+  Future<DocumentSnapshot<Map<String, dynamic>>> checkIfEmailIsInFirebase(
+      String id) async {
+    try {
+      var collection = FirebaseFirestore.instance.collection('internetUsers');
+
+      var doc = await collection.doc("natan").get();
+
+      return doc;
+    } catch (e) {
+      throw e;
+    }
+  }
+
+  bool timeIsStillAllocated(DocumentSnapshot<Map<String, dynamic>> doc) {
+    DateTime currentTime = DateTime.now().toUtc();
+    Timestamp endTime = doc.get("endTime");
+    DateTime myDateTime = endTime.toDate();
+    return currentTime.compareTo(myDateTime) < 0;
+  }
+}

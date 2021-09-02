@@ -12,8 +12,8 @@ class Line {
   late Letter lastLetterInPosition;
   late Syllable lastWordInPosition;
 
-  void addSyllables() {
-    future = getFutureFromSyllable();
+  void addSyllables(bool personalMoishie) {
+    future = getFutureFromSyllable(personalMoishie);
     lastLetterInPosition = syllables.first.letters.first;
     lastWordInPosition = syllables.first;
   }
@@ -36,18 +36,26 @@ class Line {
         lastLetterInPosition.isFuture(position));
   }
 
-  void updateLyrics(double position) {
+  void updateLyrics(double position, bool personalMoishie) {
     past = "";
     future = "";
     for (Syllable syllable in syllables)
       if (syllable.isIn(position)) {
+        if (personalMoishie && syllable.text.contains(String.fromCharCode(0x2022))) {
+          assignNumber(syllable);
+          return;
+        }
         for (Letter letter in syllable.letters)
           if (letter.isPast(position) || letter.isIn(position)) {
             lastLetterInPosition = letter;
             past += letter.letter;
           } else
             future += letter.letter;
-      } else if (syllable.isPast(position))
+      }
+    //else if (syllable.text.contains(String.fromCharCode(0x2022))) {
+      //  return;
+      //}
+      else if (syllable.isPast(position))
         past += syllable.text;
       else
         future += syllable.text;
@@ -58,8 +66,11 @@ class Line {
     splitWordFuture = "";
   }
 
-  String getFutureFromSyllable() {
+  String getFutureFromSyllable(bool personalMoishie) {
     String text = "";
+    if (personalMoishie && syllables[0].text.contains(String.fromCharCode(0x2022))) {
+      return String.fromCharCode(0x2022) * 6;
+    }
     for (Syllable s in syllables) {
       text += s.text;
       // text += " ";
@@ -69,13 +80,22 @@ class Line {
 
   void removeCurrentWordFromFuture() {
     future = future.substring(lastWordInPosition.letters.length);
-    // future.replaceFirst(lastWordInPosition.text, "");
-    // future.trim();
   }
 
-  void resetLine(double time) {
-    future = getFutureFromSyllable();
+  void resetLine(double time, bool personalMoishie) {
+    future = getFutureFromSyllable(personalMoishie);
     past = "";
-    updateLyrics(time);
+    updateLyrics(time, personalMoishie);
+  }
+
+  void assignNumber(Syllable syllable) {
+    future = "";
+    if (syllable.text == String.fromCharCode(0x2022) + " ") {
+      past = 1.toString();
+    } else if (syllable.text == String.fromCharCode(0x2022) * 2 + " ") {
+      past = 2.toString();
+    } else if (syllable.text == String.fromCharCode(0x2022) * 3 + " ") {
+      past = 3.toString();
+    }
   }
 }

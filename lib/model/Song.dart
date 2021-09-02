@@ -1,6 +1,3 @@
-import 'package:ashira_flutter/utils/Parser.dart';
-import 'package:http/http.dart' as http;
-
 import 'Line.dart';
 
 class Song {
@@ -50,9 +47,9 @@ class Song {
       required this.womanToneResourceFile,
       required this.length});
 
-  Future<List<Line>> parseLines() async {
-    final response = await http.read(Uri.parse(textResourceFile));
-    lines = (new Parser()).parse(response.split("\r\n"));
-    return lines;
-  }
+// Future<List<Line>> parseLines() async {
+// final response = await http.read(Uri.parse(textResourceFile));
+//  lines = (new Parser()).parse(response.split("\r\n"));
+// return lines;
+//}
 }

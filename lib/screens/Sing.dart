@@ -10,10 +10,12 @@ import 'package:ashira_flutter/utils/Parser.dart';
 import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:just_audio/just_audio.dart';
 import 'package:universal_html/html.dart' as html;
+import 'package:wakelock/wakelock.dart';
 
 // List<CameraDescription> cameras;
 
@@ -81,6 +83,8 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
 
   int trackNumber = 0;
 
+  // Wakelock.toggle(enable: isPlaying);
+
   @override
   Future<void> dispose() async {
     // TODO: implement dispose
@@ -111,8 +115,8 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
     checkFirestorePermissions(false);
     if (this.id == 'מוישי') {
       personalMoishie = true;
-      createAllBackgroundPictureArray();
     }
+    createAllBackgroundPictureArray();
   }
 
   @override
@@ -135,7 +139,8 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
       final response = await http.get(Uri.parse(song.textResourceFile));
 
       String lyrics = utf8.decode(response.bodyBytes);
-      allLines.add((new Parser()).parse((lyrics).split("\r\n")));
+      allLines.add(
+          (new Parser()).parse((lyrics).split("\r\n"), this.id == 'מוישי'));
     }
     lines = allLines[0];
     return allLines[0];
@@ -183,14 +188,98 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
                           Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Center(
-                                child: SafeArea(
-                                  child: Text(
-                                    songs[trackNumber].title,
-                                    style: TextStyle(
-                                        fontSize: 18, color: Colors.white),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Container(width: 390.0, height: 0.0),
+                                  Center(
+                                    child: SafeArea(
+                                      child: Text(
+                                        songs[trackNumber].title,
+                                        style: TextStyle(
+                                            fontSize: 18, color: Colors.white),
+                                      ),
+                                    ),
                                   ),
-                                ),
+                                  Container(
+                                    width: 390,
+                                    height: 40,
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                      children: [
+                                        Flexible(
+                                          child: RichText(
+                                            text: TextSpan(children: [
+                                              TextSpan(
+                                                  text: 'Classic - קלאסי',
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                  ),
+                                                  recognizer:
+                                                      TapGestureRecognizer()
+                                                        ..onTap = () {
+                                                          setState(() {
+                                                            personalMoishie =
+                                                                !personalMoishie;
+                                                          });
+                                                        }),
+                                            ]),
+                                          ),
+                                        ),
+                                        Theme(
+                                          data: ThemeData(
+                                              unselectedWidgetColor:
+                                                  Colors.black),
+                                          child: Checkbox(
+                                            //    <-- label
+                                            value: !personalMoishie,
+                                            onChanged: (newValue) {
+                                              setState(() {
+                                                personalMoishie =
+                                                    !personalMoishie;
+                                              });
+                                            },
+                                          ),
+                                        ),
+                                        Flexible(
+                                          child: RichText(
+                                            text: TextSpan(children: [
+                                              TextSpan(
+                                                  text: 'Advanced - חוויתי',
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                  ),
+                                                  recognizer:
+                                                      TapGestureRecognizer()
+                                                        ..onTap = () {
+                                                          setState(() {
+                                                            personalMoishie =
+                                                                !personalMoishie;
+                                                          });
+                                                        }),
+                                            ]),
+                                          ),
+                                        ),
+                                        Theme(
+                                          data: ThemeData(
+                                              unselectedWidgetColor:
+                                                  Colors.red),
+                                          child: Checkbox(
+                                            //    <-- label
+                                            value: personalMoishie,
+                                            onChanged: (newValue) {
+                                              setState(() {
+                                                personalMoishie =
+                                                    !personalMoishie;
+                                              });
+                                            },
+                                          ),
+                                        )
+                                      ],
+                                    ),
+                                  )
+                                ],
                               ),
 
                               Expanded(
@@ -308,6 +397,9 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
                                                     ),
                                                     onPressed: () {
                                                       restart();
+                                                      setState(() {
+                                                        songFinished = false;
+                                                      });
                                                     })
                                                 : IconButton(
                                                     iconSize: 50,
@@ -429,12 +521,14 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
     // getRichTextSize();
 
     audioPlayer.play();
+
     // Future<int> duration = audioPlayer.getDuration();
     // duration.then((value) =>
     // songLength = value);
 
     // if (result == 1) {
     setState(() {
+      Wakelock.enable();
       songFinished = false;
       isPlaying = true;
       paused = false;
@@ -447,6 +541,7 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
           // songTime * 1000 >= songs[trackNumber].length - 150
           ) {
         setState(() {
+          Wakelock.disable();
           isPlaying = false;
           songFinished = true;
           timer.cancel();
@@ -493,7 +588,9 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
     Color futureFontColor = personalMoishie ? Colors.white : Colors.white30;
     FontWeight weight = personalMoishie ? FontWeight.bold : FontWeight.normal;
     return Container(
-      height: personalMoishie ? (MediaQuery.of(context).size.height / 4).toDouble() : 41,
+      height: personalMoishie
+          ? (MediaQuery.of(context).size.height / 4).toDouble()
+          : 41,
       child: Center(
         child: Stack(children: [
           RichText(
@@ -549,13 +646,17 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
       for (int i = 0; i < splits.length; i++) {
         if (splits[i] > p.inMilliseconds) {
           int newTrack = i - 1;
-          if (newTrack != trackNumber) changeSong(newTrack);
+          if (newTrack != trackNumber) {
+            changeSong(newTrack);
+          }
           resetRows(new Duration(
               milliseconds: p.inMilliseconds - splits[trackNumber]));
           break;
         } else if (i == splits.length - 1) {
           int newTrack = i;
-          if (newTrack != trackNumber) changeSong(newTrack);
+          if (newTrack != trackNumber) {
+            changeSong(newTrack);
+          }
           resetRows(new Duration(
               milliseconds: p.inMilliseconds - splits[trackNumber]));
         }
@@ -565,8 +666,8 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
         if (splits[i] <= p.inMilliseconds + splits[trackNumber] + 200) {
           if (i > trackNumber) {
             int newTrack = i;
-            changeAudio(newTrack);
             changeSong(newTrack);
+            changeAudio(newTrack);
             resetRows(new Duration(milliseconds: 1));
             p = new Duration(milliseconds: 1);
           }
@@ -598,6 +699,7 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
     audioPlayer.pause();
     timer.cancel();
     setState(() {
+      Wakelock.disable();
       isPlaying = false;
       paused = true;
     });
@@ -622,7 +724,7 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
     setState(() {
       //print("the lines were reset");
       for (Line line in lines) {
-        line.resetLine(time);
+        line.resetLine(time, personalMoishie);
       }
     });
   }
@@ -631,7 +733,7 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
     setState(() {
       for (List<Line> songsLines in allLines)
         for (Line line in songsLines) {
-          line.resetLine(0.0);
+          line.resetLine(0.0, personalMoishie);
         }
     });
   }
@@ -711,7 +813,7 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text(
-                " באיזה טון אתה שר",
+                " באיזה טון אתה שר?",
                 style: TextStyle(fontSize: 18, color: Colors.white),
               ),
               ClipRRect(
@@ -719,15 +821,35 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
                   child: Stack(children: <Widget>[
                     Positioned.fill(
                       child: Container(
-                        decoration: const BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: <Color>[
-                              Color(0xFF0D47A1),
-                              Color(0xFF1976D2),
-                              Color(0xFF42A5F5),
-                            ],
-                          ),
-                        ),
+                        decoration: personalMoishie
+                            ? BoxDecoration(
+                                borderRadius:
+                                    BorderRadius.all(new Radius.circular(50.0)),
+                                gradient: LinearGradient(
+                                  colors: <Color>[
+                                    Color(0xFF0D47A1),
+                                    Color(0xFF1976D2),
+                                    Color(0xFF42A5F5),
+                                  ],
+                                ),
+                              )
+                            : BoxDecoration(
+                                color: Colors.purple,
+                                // border: Border.all(color: Colors.tealAccent),
+                                borderRadius:
+                                    BorderRadius.all(new Radius.circular(60.0)),
+                                gradient: RadialGradient(
+                                  colors: <Color>[
+                                    Colors.purple.shade200,
+                                    Colors.purple.shade800,
+                                    Colors.purple.shade500,
+                                  ],
+                                  stops: [0.2, 0.7, 1],
+                                  center: Alignment(0.1, 0.3),
+                                  focal: Alignment(-0.1, 0.6),
+                                  focalRadius: 2,
+                                ),
+                              ),
                       ),
                     ),
                     Container(
@@ -752,15 +874,33 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
                   child: Stack(children: <Widget>[
                     Positioned.fill(
                       child: Container(
-                        decoration: const BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: <Color>[
-                              Color(0xFF630DA1),
-                              Color(0xFF7A37E5),
-                              Color(0xFFB47DF1),
-                            ],
-                          ),
-                        ),
+                        decoration: personalMoishie
+                            ? BoxDecoration(
+                                borderRadius:
+                                    BorderRadius.all(new Radius.circular(60.0)),
+                                gradient: LinearGradient(
+                                  colors: <Color>[
+                                    Color(0xFF630DA1),
+                                    Color(0xFF7A37E5),
+                                    Color(0xFFB47DF1),
+                                  ],
+                                ),
+                              )
+                            : BoxDecoration(
+                                gradient: RadialGradient(
+                                  colors: <Color>[
+                                    Colors.purple.shade200,
+                                    Colors.purple.shade800,
+                                    Colors.purple.shade500,
+                                  ],
+                                  stops: [0.2, 0.7, 1],
+                                  center: Alignment(0.1, 0.3),
+                                  focal: Alignment(-0.1, 0.6),
+                                  focalRadius: 3,
+                                ),
+                                borderRadius:
+                                    BorderRadius.all(new Radius.circular(75.0)),
+                              ),
                       ),
                     ),
                     Container(
@@ -785,15 +925,33 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
                   child: Stack(children: <Widget>[
                     Positioned.fill(
                       child: Container(
-                        decoration: const BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: <Color>[
-                              Color(0xFF0D47A1),
-                              Color(0xFF19D247),
-                              Color(0xFFF5AD42),
-                            ],
-                          ),
-                        ),
+                        decoration: personalMoishie
+                            ? BoxDecoration(
+                                borderRadius:
+                                    BorderRadius.all(new Radius.circular(60.0)),
+                                gradient: LinearGradient(
+                                  colors: <Color>[
+                                    Color(0xFF0D47A1),
+                                    Color(0xFF19D247),
+                                    Color(0xFFF5AD42),
+                                  ],
+                                ),
+                              )
+                            : BoxDecoration(
+                                gradient: RadialGradient(
+                                  colors: <Color>[
+                                    Colors.purple.shade200,
+                                    Colors.purple.shade800,
+                                    Colors.purple.shade500,
+                                  ],
+                                  stops: [0.2, 0.7, 1],
+                                  center: Alignment(0.1, 0.3),
+                                  focal: Alignment(-0.1, 0.6),
+                                  focalRadius: 4,
+                                ),
+                                borderRadius:
+                                    BorderRadius.all(new Radius.circular(90.0)),
+                              ),
                       ),
                     ),
                     Container(
@@ -846,7 +1004,7 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
         if (!disposed)
           setState(() {
             _progressValue = new Duration(milliseconds: playingTime);
-            line.updateLyrics(time);
+            line.updateLyrics(time, personalMoishie);
             isPlaying = true;
           });
         // }

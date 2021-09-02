@@ -6,7 +6,7 @@ import 'package:ashira_flutter/model/Line.dart';
 import 'package:ashira_flutter/model/Syllable.dart';
 
 class Parser {
-  List<Line> parse(List<String> data) {
+  List<Line> parse(List<String> data, bool personalMoishie) {
     List<Line> lines = [];
     for (int i = 0; i < data.length - 1; i++) {
       String line = data[i];
@@ -60,24 +60,26 @@ class Parser {
                 Line nextLineInSong = parseLine(
                     l,
                     getLineTimeStamp(k == 0 ? (textLines[1])[0] : nextLine),
-                    isLastLine);
+                    isLastLine,
+                    personalMoishie);
                 lines.add(nextLineInSong);
                 if (lastWordIsUnproportionatelyLong(
                     getLineTimeStamp(k == 0 ? textLines[1][0] : nextLine),
                     nextLineInSong.to)) {
                   lines.add(addIntroIndication(
                       getLineTimeStamp(k == 0 ? textLines[1][0] : nextLine),
-                      false));
+                      false,
+                      personalMoishie));
                 }
               }
             } else {
-              Line nextLineInSong = parseLine(
-                  lineWordsAndTimes, getLineTimeStamp(nextLine), isLastLine);
+              Line nextLineInSong = parseLine(lineWordsAndTimes,
+                  getLineTimeStamp(nextLine), isLastLine, personalMoishie);
               lines.add(nextLineInSong);
               if (lastWordIsUnproportionatelyLong(
                   getLineTimeStamp(nextLine), nextLineInSong.to)) {
-                lines
-                    .add(addIntroIndication(getLineTimeStamp(nextLine), false));
+                lines.add(addIntroIndication(
+                    getLineTimeStamp(nextLine), false, personalMoishie));
               }
             }
             // } else {
@@ -97,8 +99,11 @@ class Parser {
     for (Line line in lines)
       if (line.from == 0 && line.syllables.length > 0)
         line.from = line.syllables[0].from;
-    lines.insert(0, addIntroIndication(lines[0].from, true));
-
+    lines.insert(0, addIntroIndication(lines[0].from, true, personalMoishie));
+    if (lines[lines.length - 1]
+       .syllables[0]
+        .text
+        .contains(String.fromCharCode(0x2022))) lines.removeLast();
     return lines;
   }
 
@@ -181,7 +186,7 @@ class Parser {
     return parseTimeStamp != to;
   }
 
-  Line addIntroIndication(double from, bool beginning) {
+  Line addIntroIndication(double from, bool beginning, bool personalMoishie) {
     double nextSyllableStartsAt = from;
     Line indicatorLine = new Line();
     indicatorLine.from = beginning ? 0 : from - 3;
@@ -197,7 +202,7 @@ class Parser {
       syllable.letters = addLettersToSyllable(syllable);
       indicatorLine.syllables.insert(0, syllable);
     }
-    indicatorLine.addSyllables();
+    indicatorLine.addSyllables(personalMoishie);
     return indicatorLine;
   }
 
@@ -205,61 +210,8 @@ class Parser {
     return String.fromCharCode(0x2022) * i;
   }
 
-  // Line parseHebrewLine
-  //
-  // (
-  //
-  // String
-  //
-  // [
-  //
-  // ]
-  //
-  // line
-  //
-  // ,
-  //
-  // String nextLine, boolean
-  //
-  // lastLine
-  //
-  // ) {
-  // Line currentLine = new Line();
-  // Syllable syllable;
-  // double startTime = 0;
-  // double endTime = 0;
-  // for (int i = 0; i < line.length; i++) {
-  // syllable = new Syllable();
-  // String word = line[i];
-  // if (i == line.length - 1) {
-  // startTime = getLineTimeStamp(word);
-  // currentLine.from = startTime;
-  // syllable.text = word.substring(word.indexOf(0, word.indexOf("[")));
-  // } else {
-  // String[] wordAndTime = word.split("<");
-  // if (i > 0) {
-  // startTime = parseTimeStamp(wordAndTime[1]);
-  // }
-  // syllable.text = wordAndTime[0];
-  // }
-  // if (i == 0) {
-  // if (lastLine) {
-  // endTime = startTime + 100000;
-  // } else {
-  // endTime = getLineTimeStamp(nextLine);
-  // }
-  // }
-  // syllable.from = startTime;
-  // syllable.to = endTime;
-  // syllable.letters = addLettersToSyllable(syllable);
-  // currentLine.syllables.add(syllable);
-  // endTime = startTime;
-  // }
-  // currentLine.to = endTime;
-  // return currentLine;
-  // }
-
-  Line parseLine(List<String> line, double nextLineTimeStamp, bool lastLine) {
+  Line parseLine(List<String> line, double nextLineTimeStamp, bool lastLine,
+      bool personalMoishie) {
     Line currentLine = new Line();
     Syllable syllable;
     double startTime = 0;
@@ -311,7 +263,7 @@ class Parser {
       startTime = endTime;
     }
     currentLine.to = endTime;
-    currentLine.addSyllables();
+    currentLine.addSyllables(personalMoishie);
     return currentLine;
   }
 
