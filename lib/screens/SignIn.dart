@@ -1,14 +1,19 @@
 import 'dart:html';
+import 'dart:ui';
 
-import 'package:ashira_flutter/screens/AllSongs.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:universal_html/html.dart' as html;
+import 'package:url_launcher/url_launcher.dart';
 import 'package:wordpress_api/wordpress_api.dart' as wp;
+
+import 'AllSongs.dart';
 
 class SignIn extends StatefulWidget {
   @override
@@ -16,8 +21,6 @@ class SignIn extends StatefulWidget {
 }
 
 final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
-String id = "";
 
 const appleType = "apple";
 const androidType = "android";
@@ -35,20 +38,23 @@ class _SignIn extends State<SignIn> {
       wooCredentials: wp.WooCredentials(
           ));
 
-  // wp.WordPressAPI api = wp.WordPressAPI('https://ashira-music.com');
+  String errorMessage = "";
 
-  String data = "this is the test";
+  String id = "";
+  String email = "";
+
+  bool amIHovering = false;
 
   @override
   void initState() {
     super.initState();
     _passwordEditingController = TextEditingController(text: "");
-
+    _userNameEditingController = TextEditingController(text: "");
   }
 
   @override
   void dispose() {
-
+    _userNameEditingController.dispose();
     _passwordEditingController.dispose();
     super.dispose();
   }
@@ -56,7 +62,7 @@ class _SignIn extends State<SignIn> {
   bool _isEditingText = false;
 
   late TextEditingController _passwordEditingController;
-
+  late TextEditingController _userNameEditingController;
 
   Future<String> get _localPath async {
     final directory = await getApplicationDocumentsDirectory();
@@ -147,39 +153,46 @@ class _SignIn extends State<SignIn> {
                                 ],
                               ),
                             ),
-
-                            // RaisedButton(
-                            //   onPressed: (){
-                            //
-                            //     // make PayPal payment
-                            //
-                            //     Navigator.of(context).push(
-                            //       MaterialPageRoute(
-                            //         builder: (BuildContext context) => PaypalPayment(
-                            //           onFinish: (number) async {
-                            //
-                            //             // payment done
-                            //             print('order id: '+number);
-                            //
-                            //           },
-                            //         ),
-                            //       ),
-                            //     );
-                            //
-                            //
-                            //   },
-                            //   child: Text('Pay with Paypal', textAlign: TextAlign.center,),
-                            // ),
                             Center(
-                                child: Text(
-                              'לכניסה הזינו שם משתמש וסיסמא',
-                              style:
-                                  TextStyle(fontSize: 15, color: Colors.white),
+                                child: Directionality(
+                              textDirection: TextDirection.ltr,
+                              child: Text(
+                                'Enter Email and Order # - לכניסה הזינו אימייל ומספר הזמנה',
+                                style: TextStyle(
+                                    fontSize: 15, color: Colors.white),
+                              ),
                             )),
-                            // if (!isSmartphone())
-                            //   SizedBox(
-                            //     height: 20,
-                            //   ),
+                            Center(
+                              child: Directionality(
+                                textDirection: TextDirection.ltr,
+                                child: MouseRegion(
+                                  cursor: SystemMouseCursors.click,
+                                  onEnter: (PointerEvent details) =>
+                                      setState(() => amIHovering = true),
+                                  onExit: (PointerEvent details) =>
+                                      setState(() {
+                                    amIHovering = false;
+                                  }),
+                                  child: RichText(
+                                      text: TextSpan(
+                                          text:
+                                              'To place an Order # click here - לקניית מספר הזמנה הקליקו כאן',
+                                          style: TextStyle(
+                                            fontSize: 15,
+                                            color: amIHovering
+                                                ? Colors.blue[300]
+                                                : Colors.blue,
+                                            decoration:
+                                                TextDecoration.underline,
+                                          ),
+                                          recognizer: TapGestureRecognizer()
+                                            ..onTap = () {
+                                              launch(
+                                                  'https://ashira-music.com/product/karaoke/');
+                                            })),
+                                ),
+                              ),
+                            ),
                             Center(
                               child: Container(
                                   width: isSmartphone()
@@ -199,7 +212,39 @@ class _SignIn extends State<SignIn> {
                                         },
                                         textAlign: TextAlign.center,
                                         decoration: new InputDecoration(
-                                          hintText: '******',
+                                          hintText: 'Email - אימייל',
+                                          hintStyle: TextStyle(
+                                              color: Color(0xFF787676)),
+                                          fillColor: Colors.transparent,
+                                        ),
+                                        style: TextStyle(
+                                            fontSize: 15, color: Colors.white),
+                                        autofocus: true,
+                                        controller: _userNameEditingController,
+                                      ),
+                                    ),
+                                  )),
+                            ),
+                            Center(
+                              child: Container(
+                                  width: isSmartphone()
+                                      ? MediaQuery.of(context).size.width / 2
+                                      : MediaQuery.of(context).size.width / 4,
+                                  height: tabletOrComputerFontSize(50),
+                                  decoration: BoxDecoration(
+                                      border: Border.all(color: Colors.purple),
+                                      borderRadius: BorderRadius.all(
+                                          new Radius.circular(20.0))),
+                                  child: Center(
+                                    child: Directionality(
+                                      textDirection: TextDirection.ltr,
+                                      child: TextField(
+                                        onSubmitted: (value) {
+                                          checkEmailAndContinue();
+                                        },
+                                        textAlign: TextAlign.center,
+                                        decoration: new InputDecoration(
+                                          hintText: 'Order # - מספר הזמנה',
                                           hintStyle: TextStyle(
                                               color: Color(0xFF787676)),
                                           fillColor: Colors.transparent,
@@ -231,16 +276,19 @@ class _SignIn extends State<SignIn> {
                                     )),
                               ),
                             ),
-                            if (_needPermission)
+                            if (errorMessage != "")
                               Center(
-                                  child: Text(
-                                _needPermission ? 'אימייל לא תקין' : "",
-                                style: TextStyle(
-                                  color: Colors.red,
-                                  //wordSpacing: 5,
-                                  fontSize: 20,
-                                  //height: 1.4,
-                                  //letterSpacing: 1.6
+                                  child: Directionality(
+                                textDirection: TextDirection.ltr,
+                                child: Text(
+                                  errorMessage,
+                                  style: TextStyle(
+                                    color: Colors.red,
+                                    //wordSpacing: 5,
+                                    fontSize: 20,
+                                    //height: 1.4,
+                                    //letterSpacing: 1.6
+                                  ),
                                 ),
                               )),
                             Column(
@@ -314,44 +362,48 @@ class _SignIn extends State<SignIn> {
   }
 
   checkEmailAndContinue() async {
-    // try {
-    // final wp.WPResponse res = await getting(id: 1);
-    DocumentSnapshot<Map<String, dynamic>> doc =
-        await checkIfEmailIsInFirebase(id);
-    if (doc.exists && timeIsStillAllocated(doc)) {
-      print("this is the true");
-    }
-    final wp.WPResponse res =
-        await api.fetch('orders', namespace: "wc/v2");
-
-    // String titles = "these are the titles ";
-    print(res.meta!.total);
-    for (final post in res.data) {
-      // print(post.title);
-      // titles += post.title;
-      // titles += " ";
-    }
-
-    bool valid = false;
-    FirebaseFirestore.instance
-        .collection('internetUsers')
-        .get()
-        .then((QuerySnapshot querySnapshot) {
-      querySnapshot.docs.forEach((doc) {
-        if (_passwordEditingController.text.toLowerCase() == doc.get("email")) {
-          id = doc.id;
-          valid = true;
-          incrementByOne(doc);
-          Navigator.pushReplacement(
-              context, MaterialPageRoute(builder: (_) => AllSongs(doc.id)));
+    id = _passwordEditingController.text.toLowerCase();
+    email = _userNameEditingController.text.toLowerCase();
+    try {
+      DocumentSnapshot<Map<String, dynamic>> doc = await checkFirebaseId(id);
+      if (doc.exists) {
+        if (!timeIsStillAllocated(doc)) {
+          setState(() {
+            _needPermission = true;
+            errorMessage = "Your time is up - אזל לך הזמן";
+          });
+          return;
+        } else {
+          startAllSongs();
           return;
         }
-      });
-      if (!valid)
-        setState(() {
-          _needPermission = true;
-        });
-    });
+      }
+      try {
+        final wp.WPResponse res =
+            await api.fetch('orders/' + id, namespace: "wc/v2");
+        if (res.data['billing']['email'].toString().toLowerCase() == email) {
+          await addTimeToFirebase(res);
+        } else {
+          setState(() {
+            errorMessage = "Email and Order # do not match - אין התאמה בנתונים";
+          });
+        }
+        return;
+      } catch (e) {
+        try {
+          final wp.WPResponse res =
+              await api.fetch('orders', namespace: "wc/v2");
+          setState(() {
+            // errorMessage = "Invalid Order Number - מספר הזמנה שגוי";
+            errorMessage = e.toString();
+          });
+        } catch (e) {
+          printConnectionError();
+        }
+      }
+    } catch (e) {
+      printConnectionError();
+    }
   }
 
   void incrementByOne(QueryDocumentSnapshot doc) async {
@@ -386,15 +438,16 @@ class _SignIn extends State<SignIn> {
     return isSmartphone() ? size : size;
   }
 
-  Future<DocumentSnapshot<Map<String, dynamic>>> checkIfEmailIsInFirebase(
+  Future<DocumentSnapshot<Map<String, dynamic>>> checkFirebaseId(
       String id) async {
     try {
       var collection = FirebaseFirestore.instance.collection('internetUsers');
 
-      var doc = await collection.doc("natan").get();
+      var doc = await collection.doc(id).get();
 
       return doc;
     } catch (e) {
+      printConnectionError();
       throw e;
     }
   }
@@ -404,5 +457,65 @@ class _SignIn extends State<SignIn> {
     Timestamp endTime = doc.get("endTime");
     DateTime myDateTime = endTime.toDate();
     return currentTime.compareTo(myDateTime) < 0;
+  }
+
+  addTimeToFirebase(wp.WPResponse res) {
+    int quantity = 0;
+    Map<String, dynamic> json = (res.data);
+    var itemObjsJson = json['line_items'] as List;
+    List<Item> items =
+        itemObjsJson.map((itemJson) => Item.fromJson(itemJson)).toList();
+    for (Item item in items) {
+      if (item.sku == '110011') {
+        quantity = item.quantity;
+      }
+    }
+    Map<String, dynamic> firestoreDoc = new Map<String, dynamic>();
+    firestoreDoc['endTime'] =
+        Timestamp.fromDate(DateTime.now().add(Duration(hours: quantity)));
+    firestoreDoc['email'] = res.data['billing']['email'];
+    CollectionReference users =
+        FirebaseFirestore.instance.collection('internetUsers');
+
+    Future<void> addUser() {
+      return users
+          .doc(id)
+          .set(firestoreDoc)
+          .then((value) => startAllSongs())
+          .catchError((error) => () {
+                setState(() {
+                  errorMessage = error.toString();
+                });
+              });
+    }
+
+    addUser();
+  }
+
+  printConnectionError() {
+    setState(() {
+      errorMessage = "Connection error - בעיית תקשרות";
+    });
+  }
+
+  startAllSongs() {
+    Navigator.pushReplacement(
+        context, MaterialPageRoute(builder: (_) => AllSongs(id)));
+  }
+}
+
+class Item {
+  String sku;
+  int quantity;
+
+  Item(this.sku, this.quantity);
+
+  factory Item.fromJson(dynamic json) {
+    return Item(json['sku'] as String, json['quantity'] as int);
+  }
+
+  @override
+  String toString() {
+    return '{ ${this.sku}, ${this.quantity} }';
   }
 }
