@@ -1,6 +1,30 @@
 {
+    "appName": "Ashira",
+    "acum": "Copyright with Acum",
+    "welcome": "Welcome to Ashira",
+    "ashiraSystems": "the",
+    "slogan": "Jewish Karaoke App",
+    "enterPrompt": "Enter Email and Order #",
+    "placeOrder": "To place an Order click here",
+    "email": "Email",
+    "orderNumber": "Order #",
+    "enter": "Enter",
+    "personalUse": "For personal Use only",
+    "publicUse": "Contact us at",
+    "outOfTimeError": "Your time is up",
+    "noOrderNumberError": "Invalid Order Number",
+    "matchError": "Email and Order # do not match",
+    "communicationError": "Connection error",
     "search": "Search",
-    "@helloWorld": {
-      "description": "The conventional newborn programmer greeting"
-    }
+    "timeRemaining": "Time remaining ",
+    "playlist": "Playlist",
+    "overtime": "Not enough time",
+    "totalTime": "Total time",
+    "addTime": "To add time, enter order #",
+    "man":"Man",
+    "woman":"Woman",
+    "kid":"Kid",
+    "classic":"Classic",
+    "advanced":"Advanced",
+    "submit": "add"
 }

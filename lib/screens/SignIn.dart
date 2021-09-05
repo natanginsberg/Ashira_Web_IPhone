@@ -7,7 +7,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter_svg/svg.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:universal_html/html.dart' as html;
 import 'package:url_launcher/url_launcher.dart';
@@ -26,24 +26,21 @@ const appleType = "apple";
 const androidType = "android";
 const desktopType = "desktop";
 
+String id = "";
+Timestamp endTime = Timestamp(10, 10);
+String email = "";
+
 class _SignIn extends State<SignIn> {
-  bool _needPermission = false;
   bool hebrew = true;
 
   late DocumentReference dr;
-  wp.WooCredentials credentials = new wp.WooCredentials(
-      "f05eb5fc740b05eca1c9ad164566c545956bc2ef",
-      "7da22cebd8183c9ff96456b8a58dea8093c363f2");
-  wp.WordPressAPI api = wp.WordPressAPI('https://ashira-music.com',
-      wooCredentials: wp.WooCredentials(
-          ));
+
 
   String errorMessage = "";
 
-  String id = "";
-  String email = "";
-
   bool amIHovering = false;
+
+  var _loading = false;
 
   @override
   void initState() {
@@ -59,8 +56,6 @@ class _SignIn extends State<SignIn> {
     super.dispose();
   }
 
-  bool _isEditingText = false;
-
   late TextEditingController _passwordEditingController;
   late TextEditingController _userNameEditingController;
 
@@ -75,293 +70,317 @@ class _SignIn extends State<SignIn> {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        key: _scaffoldKey,
-        body: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(
-                child: Center(
-              child: Container(
-                  width: MediaQuery.of(context).size.width,
-                  decoration: BoxDecoration(
-                      gradient: RadialGradient(
-                    center: Alignment.center,
-                    radius: 0.8,
-                    colors: [
-                      //const Color(0xFF9812E0),
-                      const Color(0xFF2C2554), // yellow sun
-                      const Color(0xFF17131F), // blue sky
-                    ],
-                  )),
-                  child: Stack(children: [
-                    SvgPicture.asset(
-                      'Sun_loading_background.svg',
-                      width: MediaQuery.of(context).size.width,
-                    ),
-                    Center(
-                      child: Container(
-                        height: MediaQuery.of(context).size.height - 40,
-                        width: isSmartphone()
-                            ? MediaQuery.of(context).size.width
-                            : MediaQuery.of(context).size.width / 3,
-                        decoration: BoxDecoration(
-                            gradient: RadialGradient(
-                              center: Alignment.center,
-                              radius: 0.8,
-                              colors: [
-                                const Color(0x5C221A4D), // blue sky
-                                const Color(0x54000000), // yellow sun
-                              ],
-                            ),
-                            border: Border.all(color: Colors.purple),
-                            borderRadius:
-                                BorderRadius.all(new Radius.circular(20.0))),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(0, 40.0, 0, 0),
-                              child: Column(
-                                children: [
-                                  Center(
-                                    child: Text(
-                                      'ברוכים הבאים',
+          key: _scaffoldKey,
+          body: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                  child: Center(
+                child: Container(
+                    width: MediaQuery.of(context).size.width,
+                    decoration: BoxDecoration(
+                        //     gradient: RadialGradient(
+                        //   center: Alignment.center,
+                        //   radius: 0.8,
+                        //   colors: [
+                        //     //const Color(0xFF9812E0),
+                        //     const Color(0xFF2C2554), // yellow sun
+                        //     const Color(0xFF17131F), // blue sky
+                        //   ],
+                        // )
+
+                        image: DecorationImage(
+                      image: AssetImage('assets/compBack.jpg'),
+                      fit: BoxFit.fill,
+                    )),
+                    child: Stack(children: [
+                      Center(
+                        child: Container(
+                          height: MediaQuery.of(context).size.height - 40,
+                          width: isSmartphone()
+                              ? MediaQuery.of(context).size.width
+                              : MediaQuery.of(context).size.width / 3,
+                          decoration: BoxDecoration(
+                              gradient: RadialGradient(
+                                center: Alignment.center,
+                                radius: 0.8,
+                                colors: [
+                                  const Color(0xFF2C2554),
+                                  const Color(0xFF17131F),
+                                ],
+                              ),
+                              border: Border.all(color: Colors.purple),
+                              borderRadius:
+                                  BorderRadius.all(new Radius.circular(20.0))),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Padding(
+                                padding:
+                                    const EdgeInsets.fromLTRB(0, 40.0, 0, 0),
+                                child: Column(
+                                  children: [
+                                    Center(
+                                      child: Text(
+                                        // 'ברוכים הבאים',
+                                        AppLocalizations.of(context)!.welcome,
+                                        style: TextStyle(
+                                            fontFamily: 'SignInFont',
+                                            fontSize:
+                                                tabletOrComputerFontSize(25),
+                                            color: Colors.white),
+                                      ),
+                                    ),
+                                    Center(
+                                        child: Text(
+                                      AppLocalizations.of(context)!
+                                          .ashiraSystems,
                                       style: TextStyle(
                                           fontFamily: 'SignInFont',
                                           fontSize:
                                               tabletOrComputerFontSize(25),
                                           color: Colors.white),
-                                    ),
-                                  ),
-                                  Center(
-                                      child: Text(
-                                    'למערכות אשירה',
-                                    style: TextStyle(
-                                        fontFamily: 'SignInFont',
-                                        fontSize: tabletOrComputerFontSize(25),
-                                        color: Colors.white),
-                                  )),
-                                  Center(
-                                      child: Text(
-                                    'אפליקציית הקריוקי היהודי',
-                                    style: TextStyle(
-                                        fontFamily: 'SignInFont',
-                                        fontSize: tabletOrComputerFontSize(25),
-                                        color: Colors.white),
-                                  ))
-                                ],
-                              ),
-                            ),
-                            Center(
-                                child: Directionality(
-                              textDirection: TextDirection.ltr,
-                              child: Text(
-                                'Enter Email and Order # - לכניסה הזינו אימייל ומספר הזמנה',
-                                style: TextStyle(
-                                    fontSize: 15, color: Colors.white),
-                              ),
-                            )),
-                            Center(
-                              child: Directionality(
-                                textDirection: TextDirection.ltr,
-                                child: MouseRegion(
-                                  cursor: SystemMouseCursors.click,
-                                  onEnter: (PointerEvent details) =>
-                                      setState(() => amIHovering = true),
-                                  onExit: (PointerEvent details) =>
-                                      setState(() {
-                                    amIHovering = false;
-                                  }),
-                                  child: RichText(
-                                      text: TextSpan(
-                                          text:
-                                              'To place an Order # click here - לקניית מספר הזמנה הקליקו כאן',
-                                          style: TextStyle(
-                                            fontSize: 15,
-                                            color: amIHovering
-                                                ? Colors.blue[300]
-                                                : Colors.blue,
-                                            decoration:
-                                                TextDecoration.underline,
-                                          ),
-                                          recognizer: TapGestureRecognizer()
-                                            ..onTap = () {
-                                              launch(
-                                                  'https://ashira-music.com/product/karaoke/');
-                                            })),
+                                    )),
+                                    Center(
+                                        child: Text(
+                                      AppLocalizations.of(context)!.slogan,
+                                      style: TextStyle(
+                                          fontFamily: 'SignInFont',
+                                          fontSize:
+                                              tabletOrComputerFontSize(25),
+                                          color: Colors.white),
+                                    ))
+                                  ],
                                 ),
                               ),
-                            ),
-                            Center(
-                              child: Container(
-                                  width: isSmartphone()
-                                      ? MediaQuery.of(context).size.width / 2
-                                      : MediaQuery.of(context).size.width / 4,
-                                  height: tabletOrComputerFontSize(50),
-                                  decoration: BoxDecoration(
-                                      border: Border.all(color: Colors.purple),
-                                      borderRadius: BorderRadius.all(
-                                          new Radius.circular(20.0))),
-                                  child: Center(
-                                    child: Directionality(
-                                      textDirection: TextDirection.ltr,
-                                      child: TextField(
-                                        onSubmitted: (value) {
-                                          checkEmailAndContinue();
-                                        },
-                                        textAlign: TextAlign.center,
-                                        decoration: new InputDecoration(
-                                          hintText: 'Email - אימייל',
-                                          hintStyle: TextStyle(
-                                              color: Color(0xFF787676)),
-                                          fillColor: Colors.transparent,
-                                        ),
-                                        style: TextStyle(
-                                            fontSize: 15, color: Colors.white),
-                                        autofocus: true,
-                                        controller: _userNameEditingController,
-                                      ),
-                                    ),
-                                  )),
-                            ),
-                            Center(
-                              child: Container(
-                                  width: isSmartphone()
-                                      ? MediaQuery.of(context).size.width / 2
-                                      : MediaQuery.of(context).size.width / 4,
-                                  height: tabletOrComputerFontSize(50),
-                                  decoration: BoxDecoration(
-                                      border: Border.all(color: Colors.purple),
-                                      borderRadius: BorderRadius.all(
-                                          new Radius.circular(20.0))),
-                                  child: Center(
-                                    child: Directionality(
-                                      textDirection: TextDirection.ltr,
-                                      child: TextField(
-                                        onSubmitted: (value) {
-                                          checkEmailAndContinue();
-                                        },
-                                        textAlign: TextAlign.center,
-                                        decoration: new InputDecoration(
-                                          hintText: 'Order # - מספר הזמנה',
-                                          hintStyle: TextStyle(
-                                              color: Color(0xFF787676)),
-                                          fillColor: Colors.transparent,
-                                        ),
-                                        style: TextStyle(
-                                            fontSize: 15, color: Colors.white),
-                                        autofocus: true,
-                                        controller: _passwordEditingController,
-                                      ),
-                                    ),
-                                  )),
-                            ),
-                            Container(
-                              decoration: BoxDecoration(
-                                  color: Colors.blue,
-                                  borderRadius: BorderRadius.all(
-                                      new Radius.circular(10))),
-                              child: Padding(
-                                padding:
-                                    const EdgeInsets.fromLTRB(8.0, 4, 8.0, 4),
-                                child: TextButton(
-                                    onPressed: checkEmailAndContinue,
-                                    child: Text(
-                                      'כניסה',
-                                      style: TextStyle(
-                                          fontSize:
-                                              tabletOrComputerFontSize(20),
-                                          color: Colors.white),
-                                    )),
-                              ),
-                            ),
-                            if (errorMessage != "")
                               Center(
                                   child: Directionality(
                                 textDirection: TextDirection.ltr,
                                 child: Text(
-                                  errorMessage,
+                                  AppLocalizations.of(context)!.enterPrompt,
                                   style: TextStyle(
-                                    color: Colors.red,
-                                    //wordSpacing: 5,
-                                    fontSize: 20,
-                                    //height: 1.4,
-                                    //letterSpacing: 1.6
-                                  ),
+                                      fontSize: 15, color: Colors.white),
                                 ),
                               )),
-                            Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
+                              Center(
+                                child: Directionality(
+                                  textDirection: TextDirection.ltr,
+                                  child: MouseRegion(
+                                    cursor: SystemMouseCursors.click,
+                                    onEnter: (PointerEvent details) =>
+                                        setState(() => amIHovering = true),
+                                    onExit: (PointerEvent details) =>
+                                        setState(() {
+                                      amIHovering = false;
+                                    }),
+                                    child: RichText(
+                                        text: TextSpan(
+                                            text: AppLocalizations.of(context)!
+                                                .placeOrder,
+                                            style: TextStyle(
+                                              fontSize: 15,
+                                              color: amIHovering
+                                                  ? Colors.blue[300]
+                                                  : Colors.blue,
+                                              decoration:
+                                                  TextDecoration.underline,
+                                            ),
+                                            recognizer: TapGestureRecognizer()
+                                              ..onTap = () {
+                                                launch(
+                                                    'https://ashira-music.com/product/karaoke/');
+                                              })),
+                                  ),
+                                ),
+                              ),
+                              Center(
+                                child: Container(
+                                    width: isSmartphone()
+                                        ? MediaQuery.of(context).size.width / 2
+                                        : MediaQuery.of(context).size.width / 4,
+                                    height: tabletOrComputerFontSize(50),
+                                    decoration: BoxDecoration(
+                                        border:
+                                            Border.all(color: Colors.purple),
+                                        borderRadius: BorderRadius.all(
+                                            new Radius.circular(20.0))),
+                                    child: Center(
+                                      child: Directionality(
+                                        textDirection: TextDirection.ltr,
+                                        child: TextField(
+                                          onSubmitted: (value) {
+                                            if (!_loading)
+                                              checkEmailAndContinue();
+                                          },
+                                          textAlign: TextAlign.center,
+                                          decoration: new InputDecoration(
+                                            hintText:
+                                                AppLocalizations.of(context)!
+                                                    .email,
+                                            hintStyle: TextStyle(
+                                                color: Color(0xFF787676)),
+                                            fillColor: Colors.transparent,
+                                          ),
+                                          style: TextStyle(
+                                              fontSize: 15,
+                                              color: Colors.white),
+                                          autofocus: true,
+                                          controller:
+                                              _userNameEditingController,
+                                        ),
+                                      ),
+                                    )),
+                              ),
+                              Center(
+                                child: Container(
+                                    width: isSmartphone()
+                                        ? MediaQuery.of(context).size.width / 2
+                                        : MediaQuery.of(context).size.width / 4,
+                                    height: tabletOrComputerFontSize(50),
+                                    decoration: BoxDecoration(
+                                        border:
+                                            Border.all(color: Colors.purple),
+                                        borderRadius: BorderRadius.all(
+                                            new Radius.circular(20.0))),
+                                    child: Center(
+                                      child: Directionality(
+                                        textDirection: TextDirection.ltr,
+                                        child: TextField(
+                                          onSubmitted: (value) {
+                                            if (!_loading)
+                                              checkEmailAndContinue();
+                                          },
+                                          textAlign: TextAlign.center,
+                                          decoration: new InputDecoration(
+                                            hintText:
+                                                AppLocalizations.of(context)!
+                                                    .orderNumber,
+                                            hintStyle: TextStyle(
+                                                color: Color(0xFF787676)),
+                                            fillColor: Colors.transparent,
+                                          ),
+                                          style: TextStyle(
+                                              fontSize: 15,
+                                              color: Colors.white),
+                                          autofocus: true,
+                                          controller:
+                                              _passwordEditingController,
+                                        ),
+                                      ),
+                                    )),
+                              ),
+                              !_loading
+                                  ? Container(
+                                      decoration: BoxDecoration(
+                                          color: Colors.blue,
+                                          borderRadius: BorderRadius.all(
+                                              new Radius.circular(10))),
+                                      child: Padding(
+                                        padding: const EdgeInsets.fromLTRB(
+                                            8.0, 4, 8.0, 4),
+                                        child: TextButton(
+                                            onPressed: checkEmailAndContinue,
+                                            child: Directionality(
+                                              textDirection: TextDirection.ltr,
+                                              child: Text(
+                                                AppLocalizations.of(context)!
+                                                    .enter,
+                                                style: TextStyle(
+                                                    fontSize:
+                                                        tabletOrComputerFontSize(
+                                                            20),
+                                                    color: Colors.white),
+                                              ),
+                                            )),
+                                      ),
+                                    )
+                                  : new Align(
+                                      child: new Container(
+                                        color: Colors.transparent,
+                                        width: 70.0,
+                                        height: 70.0,
+                                        child: new Padding(
+                                            padding: const EdgeInsets.all(5.0),
+                                            child: new Center(
+                                                child:
+                                                    new CircularProgressIndicator())),
+                                      ),
+                                      alignment: FractionalOffset.center,
+                                    ),
+                              if (errorMessage != "")
                                 Center(
                                     child: Directionality(
-                                  textDirection: TextDirection.rtl,
+                                  textDirection: TextDirection.ltr,
                                   child: Text(
-                                    'המערכת מיועדת להפעלת קריוקי',
-                                    // data,
+                                    errorMessage,
                                     style: TextStyle(
-                                      //   fontFamily: 'SignInFont',
-                                      color: Colors.white,
-                                      //wordSpacing: 5,
-                                      fontSize: tabletOrComputerFontSize(20),
-                                      //height: 1.4,
-                                      //letterSpacing: 1.6
+                                      color: Colors.red,
+                                      fontSize: 20,
                                     ),
                                   ),
                                 )),
-                                Center(
+                              Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Center(
+                                      child: Directionality(
+                                    textDirection: TextDirection.rtl,
                                     child: Text(
-                                  'לקבלת הצעת מחיר צרו איתנו קשר',
-                                  style: TextStyle(
-                                    //fontFamily: 'SignInFont',
-                                    color: Colors.white,
-                                    // wordSpacing: 5,
-                                    fontSize: tabletOrComputerFontSize(20),
-                                    //height: 1.4,
-                                    // letterSpacing: 1.6
-                                  ),
-                                )),
-                                Center(
-                                    child: Text(
-                                  'ashira.jewishkaraoke@gmail.com',
-                                  style: TextStyle(
-                                    //fontFamily: 'SignInFont',
-                                    color: Colors.white,
-                                    //wordSpacing: 5,
-                                    fontSize: tabletOrComputerFontSize(20),
-                                    // height: 1.4,
-                                    //letterSpacing: 1.6
-                                  ),
-                                )),
-                                Center(
-                                    child: Text(
-                                  'אשר - 053-3381427  יוסי - 058-7978079',
-                                  style: TextStyle(
-                                    // fontFamily: 'SignInFont',
-                                    color: Colors.white,
-                                    //wordSpacing: 5,
-                                    fontSize: tabletOrComputerFontSize(20),
-                                    //height: 1.4,
-                                    //letterSpacing: 1.6
-                                  ),
-                                )),
-                              ],
-                            )
-                          ],
+                                      AppLocalizations.of(context)!.personalUse,
+                                      // data,
+                                      style: TextStyle(
+                                        //   fontFamily: 'SignInFont',
+                                        color: Colors.white,
+                                        //wordSpacing: 5,
+                                        fontSize: tabletOrComputerFontSize(20),
+                                        //height: 1.4,
+                                        //letterSpacing: 1.6
+                                      ),
+                                    ),
+                                  )),
+                                  Center(
+                                      child: Text(
+                                    AppLocalizations.of(context)!.publicUse,
+                                    style: TextStyle(
+                                      //fontFamily: 'SignInFont',
+                                      color: Colors.white,
+                                      // wordSpacing: 5,
+                                      fontSize: tabletOrComputerFontSize(20),
+                                      //height: 1.4,
+                                      // letterSpacing: 1.6
+                                    ),
+                                  )),
+                                  Center(
+                                      child: Text(
+                                    'ashira.jewishkaraoke@gmail.com',
+                                    style: TextStyle(
+                                      //fontFamily: 'SignInFont',
+                                      color: Colors.white,
+                                      //wordSpacing: 5,
+                                      fontSize: tabletOrComputerFontSize(20),
+                                      // height: 1.4,
+                                      //letterSpacing: 1.6
+                                    ),
+                                  )),
+                                ],
+                              )
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  ])),
-            )),
-          ],
-        ),
-      ),
+                    ])),
+              )),
+            ],
+          )),
     );
   }
 
   checkEmailAndContinue() async {
+    setState(() {
+      _loading = true;
+    });
     id = _passwordEditingController.text.toLowerCase();
     email = _userNameEditingController.text.toLowerCase();
     try {
@@ -369,36 +388,39 @@ class _SignIn extends State<SignIn> {
       if (doc.exists) {
         if (!timeIsStillAllocated(doc)) {
           setState(() {
-            _needPermission = true;
-            errorMessage = "Your time is up - אזל לך הזמן";
+            errorMessage = AppLocalizations.of(context)!.outOfTimeError;
+            _loading = false;
           });
           return;
         } else {
           startAllSongs();
+          _loading = false;
           return;
         }
-      }
-      try {
-        final wp.WPResponse res =
-            await api.fetch('orders/' + id, namespace: "wc/v2");
-        if (res.data['billing']['email'].toString().toLowerCase() == email) {
-          await addTimeToFirebase(res);
-        } else {
-          setState(() {
-            errorMessage = "Email and Order # do not match - אין התאמה בנתונים";
-          });
-        }
-        return;
-      } catch (e) {
+      } else {
         try {
           final wp.WPResponse res =
-              await api.fetch('orders', namespace: "wc/v2");
-          setState(() {
-            // errorMessage = "Invalid Order Number - מספר הזמנה שגוי";
-            errorMessage = e.toString();
-          });
+              await api.fetch('orders/' + id, namespace: "wc/v2");
+          if (res.data['billing']['email'].toString().toLowerCase() == email) {
+            await addTimeToFirebase(res);
+          } else {
+            setState(() {
+              errorMessage = AppLocalizations.of(context)!.matchError;
+              _loading = false;
+            });
+          }
+          return;
         } catch (e) {
-          printConnectionError();
+          try {
+            final wp.WPResponse res =
+                await api.fetch('orders', namespace: "wc/v2");
+            setState(() {
+              errorMessage = AppLocalizations.of(context)!.noOrderNumberError;
+              _loading = false;
+            });
+          } catch (e) {
+            printConnectionError();
+          }
         }
       }
     } catch (e) {
@@ -454,7 +476,7 @@ class _SignIn extends State<SignIn> {
 
   bool timeIsStillAllocated(DocumentSnapshot<Map<String, dynamic>> doc) {
     DateTime currentTime = DateTime.now().toUtc();
-    Timestamp endTime = doc.get("endTime");
+    endTime = doc.get("endTime");
     DateTime myDateTime = endTime.toDate();
     return currentTime.compareTo(myDateTime) < 0;
   }
@@ -471,9 +493,11 @@ class _SignIn extends State<SignIn> {
       }
     }
     Map<String, dynamic> firestoreDoc = new Map<String, dynamic>();
-    firestoreDoc['endTime'] =
-        Timestamp.fromDate(DateTime.now().add(Duration(hours: quantity)));
-    firestoreDoc['email'] = res.data['billing']['email'];
+    endTime = Timestamp.fromDate(DateTime.now().add(Duration(hours: quantity)));
+    email = res.data['billing']['email'];
+    firestoreDoc['endTime'] = endTime;
+    firestoreDoc['email'] = email;
+
     CollectionReference users =
         FirebaseFirestore.instance.collection('internetUsers');
 
@@ -494,13 +518,15 @@ class _SignIn extends State<SignIn> {
 
   printConnectionError() {
     setState(() {
-      errorMessage = "Connection error - בעיית תקשרות";
+      errorMessage = AppLocalizations.of(context)!.communicationError;
+      _loading = false;
     });
   }
 
   startAllSongs() {
-    Navigator.pushReplacement(
-        context, MaterialPageRoute(builder: (_) => AllSongs(id)));
+    // add email to send and add the timestamp
+    Navigator.pushReplacement(context,
+        MaterialPageRoute(builder: (_) => AllSongs(id, endTime, email)));
   }
 }
 

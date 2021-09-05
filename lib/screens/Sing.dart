@@ -12,23 +12,29 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:http/http.dart' as http;
 import 'package:just_audio/just_audio.dart';
 import 'package:universal_html/html.dart' as html;
+import 'package:url_launcher/url_launcher.dart';
 import 'package:wakelock/wakelock.dart';
-
+import 'package:wordpress_api/wordpress_api.dart' as wp;
 // List<CameraDescription> cameras;
 
 class Sing extends StatefulWidget {
   final List<Song> songs;
   final String id;
 
-  Sing(this.songs, this.id);
+  Timestamp endTime;
+  final String email;
+
+  Sing(this.songs, this.id, this.endTime, this.email);
 
   // Sing({Key key, @required this.song}) : super(key: key);
 
   @override
-  _SingState createState() => _SingState(songs, id);
+  _SingState createState() => _SingState(songs, id, endTime, email);
 }
 
 class _SingState extends State<Sing> with WidgetsBindingObserver {
@@ -64,7 +70,7 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
 
   bool disposed = false;
 
-  bool accessDenied = true;
+  bool _accessDenied = false;
 
   bool personalMoishie = false;
 
@@ -72,10 +78,22 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
 
   String error = '';
 
+  late TextEditingController _orderEditingController;
+
+  bool _loading = false;
+
+  String _errorMessage = "";
+
   Random random = new Random();
   num randomNumber = 0;
 
-  _SingState(this.songs, this.id);
+  Timestamp endTime;
+
+  String email;
+
+  bool amIHovering = false;
+
+  _SingState(this.songs, this.id, this.endTime, this.email);
 
   Duration _progressValue = new Duration(seconds: 0);
   Duration songLength = new Duration(seconds: 1);
@@ -112,7 +130,7 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
       totalLength += songs[i].length - 0;
     }
     songLength = new Duration(milliseconds: totalLength - 150);
-    checkFirestorePermissions(false);
+    // checkFirestorePermissions(false);
     if (this.id == 'מוישי') {
       personalMoishie = true;
     }
@@ -174,7 +192,7 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
                   const Color(0xFF000000), // yellow sun
                 ],
               )),
-              child: accessDenied
+              child: !_accessDenied
                   ? Padding(
                       padding:
                           const EdgeInsets.fromLTRB(15.0, 25.0, 15.0, 25.0),
@@ -206,13 +224,16 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
                                     width: 390,
                                     height: 40,
                                     child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceEvenly,
                                       children: [
                                         Flexible(
                                           child: RichText(
                                             text: TextSpan(children: [
                                               TextSpan(
-                                                  text: 'Classic - קלאסי',
+                                                  text: AppLocalizations.of(
+                                                          context)!
+                                                      .classic,
                                                   style: TextStyle(
                                                     color: Colors.white,
                                                   ),
@@ -246,7 +267,9 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
                                           child: RichText(
                                             text: TextSpan(children: [
                                               TextSpan(
-                                                  text: 'Advanced - חוויתי',
+                                                  text: AppLocalizations.of(
+                                                          context)!
+                                                      .advanced,
                                                   style: TextStyle(
                                                     color: Colors.white,
                                                   ),
@@ -455,106 +478,164 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
                         ]),
                       ),
                     )
-                  : expiredWording(),
+                  : expireWording(),
             ),
           )),
     );
   }
 
-  expiredWording() {
+  expireWording() {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Center(
             child: Text(
-          'יש יותר מדאי אנשים בפנים',
+          AppLocalizations.of(context)!.outOfTimeError,
           style: TextStyle(
               fontFamily: 'SignInFont',
               color: Colors.yellow,
               wordSpacing: 5,
-              fontSize: 30,
+              fontSize: 40,
               height: 1.4,
               letterSpacing: 1.6),
         )),
-        Center(
-            child: Text(
-          'לפרטים צרו איתנו קשר',
-          style: TextStyle(
-              fontFamily: 'SignInFont',
-              color: Colors.white,
-              wordSpacing: 5,
-              fontSize: 20,
-              height: 1.4,
-              letterSpacing: 1.6),
-        )),
-        Center(
-            child: Directionality(
-          textDirection: TextDirection.rtl,
-          child: Text(
-            'אימייל: ashirajewishkaraoke@gmail.com',
+        //todo add box to enter order # and add link to get order #
+        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Text(
+            AppLocalizations.of(context)!.addTime + " ",
             style: TextStyle(
                 fontFamily: 'SignInFont',
                 color: Colors.white,
                 wordSpacing: 5,
-                fontSize: 20,
+                fontSize: 30,
                 height: 1.4,
                 letterSpacing: 1.6),
           ),
-        )),
-        Center(
-            child: Text(
-          'אשר - 053-3381427  יוסי - 058-7978079',
-          style: TextStyle(
-              fontFamily: 'SignInFont',
-              color: Colors.white,
-              wordSpacing: 5,
-              fontSize: 20,
-              height: 1.4,
-              letterSpacing: 1.6),
-        )),
+          Container(
+            height: 40,
+            width: 160,
+            decoration: BoxDecoration(
+                border: Border.all(color: Colors.purple),
+                borderRadius: BorderRadius.all(new Radius.circular(10.0))),
+            child: TextField(
+              onSubmitted: (value) {
+                if (!_loading) checkOrderNumber();
+              },
+              textAlign: TextAlign.center,
+              decoration: new InputDecoration(
+                hintText: AppLocalizations.of(context)!.orderNumber,
+                hintStyle: TextStyle(color: Color(0xFF787676)),
+                fillColor: Colors.transparent,
+              ),
+              style: TextStyle(fontSize: 15, color: Colors.white),
+              autofocus: true,
+              controller: _orderEditingController,
+            ),
+          ),
+          SizedBox(
+            width: 15,
+          ),
+          _loading
+              ? new Container(
+                  color: Colors.transparent,
+                  width: 70.0,
+                  height: 70.0,
+                  child: new Padding(
+                      padding: const EdgeInsets.all(5.0),
+                      child:
+                          new Center(child: new CircularProgressIndicator())),
+                )
+              : Container(
+                  decoration: BoxDecoration(
+                      color: Colors.blue,
+                      borderRadius: BorderRadius.all(new Radius.circular(10))),
+                  child: Padding(
+                      padding: const EdgeInsets.fromLTRB(8.0, 4, 8.0, 4),
+                      child: TextButton(
+                          onPressed: checkOrderNumber,
+                          child: Directionality(
+                            textDirection: TextDirection.ltr,
+                            child: Text(
+                              AppLocalizations.of(context)!.enter,
+                              style:
+                                  TextStyle(fontSize: 15, color: Colors.white),
+                            ),
+                          ))))
+        ]),
+        SizedBox(
+          height: 15,
+        ),
+        MouseRegion(
+          cursor: SystemMouseCursors.click,
+          onEnter: (PointerEvent details) => setState(() => amIHovering = true),
+          onExit: (PointerEvent details) => setState(() {
+            amIHovering = false;
+          }),
+          child: RichText(
+              text: TextSpan(
+                  text: AppLocalizations.of(context)!.placeOrder,
+                  style: TextStyle(
+                    fontSize: 25,
+                    color: amIHovering ? Colors.blue[300] : Colors.blue,
+                    decoration: TextDecoration.underline,
+                  ),
+                  recognizer: TapGestureRecognizer()
+                    ..onTap = () {
+                      launch('https://ashira-music.com/product/karaoke/');
+                    })),
+        ),
+        SizedBox(
+          height: 15,
+        ),
+        Text(
+          _errorMessage,
+          style: TextStyle(color: Colors.red, fontSize: 20),
+        )
       ],
     );
   }
 
+  bool timesUp() {
+    DateTime currentTime = DateTime.now().toUtc();
+    DateTime myDateTime = endTime.toDate();
+    return currentTime.compareTo(myDateTime) > 0;
+  }
+
   void play() async {
-    // getRichTextSize();
+    if (timesUp()) {
+      setState(() {
+        _accessDenied = true;
+      });
+    } else {
+      audioPlayer.play();
+      setState(() {
+        Wakelock.enable();
+        songFinished = false;
+        isPlaying = true;
+        paused = false;
+      });
 
-    audioPlayer.play();
+      audioPlayer.processingStateStream.listen((state) {
+        if (state == ProcessingState.completed) if (currentLineIndex ==
+                    lines.length - 1 &&
+                trackNumber == songs.length - 1
+            // songTime * 1000 >= songs[trackNumber].length - 150
+            ) {
+          setState(() {
+            Wakelock.disable();
+            isPlaying = false;
+            songFinished = true;
+            timer.cancel();
+          });
+        }
+      });
 
-    // Future<int> duration = audioPlayer.getDuration();
-    // duration.then((value) =>
-    // songLength = value);
-
-    // if (result == 1) {
-    setState(() {
-      Wakelock.enable();
-      songFinished = false;
-      isPlaying = true;
-      paused = false;
-    });
-
-    audioPlayer.processingStateStream.listen((state) {
-      if (state == ProcessingState.completed) if (currentLineIndex ==
-                  lines.length - 1 &&
-              trackNumber == songs.length - 1
-          // songTime * 1000 >= songs[trackNumber].length - 150
-          ) {
-        setState(() {
-          Wakelock.disable();
-          isPlaying = false;
-          songFinished = true;
-          timer.cancel();
-        });
-      }
-    });
-
-    timer = Timer.periodic(
-        Duration(milliseconds: 100),
-        (Timer t) => updateUI(
-            audioPlayer.position, true, false, audioPlayer.currentIndex!));
-
-    // audioPlayer.onAudioPositionChanged.listen((Duration p) => {updateUI(p)});
+      timer = Timer.periodic(
+          Duration(milliseconds: 100),
+          (Timer t) => updateUI(
+              audioPlayer.position, true, false, audioPlayer.currentIndex!));
+    }
   }
 
   buildListView(List<Line> lines) {
@@ -716,7 +797,7 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
       duration: new Duration(milliseconds: 100),
       curve: Curves.decelerate,
     );
-    checkFirestorePermissions(true);
+    // checkFirestorePermissions(true);
     // play();
   }
 
@@ -859,8 +940,8 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
                           onPressed: () {
                             setSong(MAN);
                           },
-                          child: const Text(
-                            "גבר",
+                          child: Text(
+                            AppLocalizations.of(context)!.man,
                             style: TextStyle(
                               fontSize: 20,
                               color: Colors.white,
@@ -910,8 +991,8 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
                           onPressed: () {
                             setSong(WOMAN);
                           },
-                          child: const Text(
-                            "אשה",
+                          child: Text(
+                            AppLocalizations.of(context)!.woman,
                             style: TextStyle(
                               fontSize: 20,
                               color: Colors.white,
@@ -961,8 +1042,8 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
                           onPressed: () {
                             setSong(KID);
                           },
-                          child: const Text(
-                            "ילד",
+                          child: Text(
+                            AppLocalizations.of(context)!.kid,
                             style: TextStyle(
                               fontSize: 20,
                               color: Colors.white,
@@ -1032,62 +1113,6 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
     );
   }
 
-  checkFirestorePermissions(bool playSong) async {
-    bool valid = false;
-    // CollectionReference collectionRef =
-    //     FirebaseFirestore.instance.collection('collectionName');
-    final databaseReference = FirebaseFirestore.instance;
-
-    try {
-      var doc = databaseReference.collection('internetUsers').doc(id);
-      bool allowed = false;
-      var docExists = await doc.get();
-      if (docExists.exists) {
-        List<int> newList = [];
-        List<dynamic> users = docExists.get("users");
-        for (int user in users) {
-          if (allowed)
-            newList.add(user);
-          else {
-            if (user == 0) {
-              allowed = true;
-              newList.add(DateTime.now().microsecondsSinceEpoch +
-                  songLength.inMilliseconds);
-            } else {
-              if (user < DateTime.now().microsecondsSinceEpoch)
-                newList.add(user);
-              else {
-                allowed = true;
-                newList.add(DateTime.now().microsecondsSinceEpoch +
-                    songLength.inMilliseconds);
-              }
-            }
-          }
-        }
-        Map<String, List<int>> signIns = {};
-        signIns["users"] = newList;
-        await doc.update(signIns);
-        valid = true;
-        if (allowed) {
-          if (playSong) play();
-          return;
-        } else
-          setState(() {
-            accessDenied = true;
-          });
-        return;
-      } else {
-        setState(() {
-          accessDenied = true;
-        });
-      }
-    } catch (e) {
-      setState(() {
-        accessDenied = true;
-      });
-    }
-  }
-
   createAllBackgroundPictureArray() async {
     // CollectionReference collectionRef =
     //     FirebaseFirestore.instance.collection('collectionName');
@@ -1129,84 +1154,149 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
       );
     }
   }
+
+  void checkOrderNumber() async {
+
+    setState(() {
+      _loading = true;
+    });
+    String newId = _orderEditingController.text.toLowerCase();
+    try {
+      DocumentSnapshot<Map<String, dynamic>> doc = await checkFirebaseId(newId);
+      if (doc.exists) {
+        if (doc.get("email") != email) {
+          setState(() {
+            _errorMessage = AppLocalizations.of(context)!.matchError;
+            _loading = false;
+          });
+          return;
+        }
+        if (!timeIsStillAllocated(doc)) {
+          setState(() {
+            _errorMessage = AppLocalizations.of(context)!.outOfTimeError;
+            _loading = false;
+          });
+          return;
+        } else {
+          _accessDenied = false;
+          _loading = false;
+          _errorMessage = "";
+          id = newId;
+          return;
+        }
+      } else {
+        try {
+          final wp.WPResponse res =
+              await api.fetch('orders/' + newId, namespace: "wc/v2");
+          if (res.data['billing']['email'].toString().toLowerCase() == email) {
+            await addTimeToFirebase(res, newId);
+          } else {
+            setState(() {
+              _errorMessage = AppLocalizations.of(context)!.matchError;
+              _loading = false;
+            });
+          }
+          return;
+        } catch (e) {
+          try {
+            final wp.WPResponse res =
+                await api.fetch('orders', namespace: "wc/v2");
+            setState(() {
+              _errorMessage = AppLocalizations.of(context)!.noOrderNumberError;
+              _loading = false;
+            });
+          } catch (e) {
+            printConnectionError();
+          }
+        }
+      }
+    } catch (e) {
+      printConnectionError();
+    }
+  }
+
+  Future<DocumentSnapshot<Map<String, dynamic>>> checkFirebaseId(
+      String id) async {
+    try {
+      var collection = FirebaseFirestore.instance.collection('internetUsers');
+
+      var doc = await collection.doc(id).get();
+
+      return doc;
+    } catch (e) {
+      printConnectionError();
+      throw e;
+    }
+  }
+
+  bool timeIsStillAllocated(DocumentSnapshot<Map<String, dynamic>> doc) {
+    DateTime currentTime = DateTime.now().toUtc();
+    endTime = doc.get("endTime");
+    DateTime myDateTime = endTime.toDate();
+    return currentTime.compareTo(myDateTime) < 0;
+  }
+
+  addTimeToFirebase(wp.WPResponse res, String newId) {
+    int quantity = 0;
+    Map<String, dynamic> json = (res.data);
+    var itemObjsJson = json['line_items'] as List;
+    List<Item> items =
+        itemObjsJson.map((itemJson) => Item.fromJson(itemJson)).toList();
+    for (Item item in items) {
+      if (item.sku == '110011') {
+        quantity = item.quantity;
+      }
+    }
+    Map<String, dynamic> firestoreDoc = new Map<String, dynamic>();
+    endTime = Timestamp.fromDate(DateTime.now().add(Duration(hours: quantity)));
+    firestoreDoc['endTime'] = endTime;
+    firestoreDoc['email'] = email;
+
+    CollectionReference users =
+        FirebaseFirestore.instance.collection('internetUsers');
+
+    Future<void> addUser() {
+      return users
+          .doc(newId)
+          .set(firestoreDoc)
+          .then((value) => () {
+                setState(() {
+                  _accessDenied = false;
+                  _errorMessage = "";
+                  _loading = false;
+                  id = newId;
+                });
+              })
+          .catchError((error) => () {
+                setState(() {
+                  _errorMessage = error.toString();
+                });
+              });
+    }
+
+    addUser();
+  }
+
+  printConnectionError() {
+    setState(() {
+      _errorMessage = AppLocalizations.of(context)!.communicationError;
+      _loading = false;
+    });
+  }
 }
-// class WebcamPage extends StatefulWidget {
-//   String number;
-//
-//   WebcamPage(this.number);
-//
-//   @override
-//   _WebcamPageState createState() => _WebcamPageState(number);
-// }
-//
-// class _WebcamPageState extends State<WebcamPage> {
-//   // Webcam widget to insert into the tree
-//   late Widget _webcamWidget;
-//
-//   // VideoElement
-//   VideoElement _webcamVideoElement = VideoElement();
-//
-//   String number;
-//
-//   _WebcamPageState(this.number);
-//
-//   @override
-//   void dispose() {
-//     switchCameraOff();
-//     super.dispose();
-//   }
-//
-//   @override
-//   void initState() {
-//     super.initState();
-//     // size = MediaQuery.of(context).size;
-//     // deviceRatio = size.width / size.height;
-//     // Create a video element which will be provided with stream source
-//     _webcamVideoElement = VideoElement();
-//     _webcamWidget = HtmlElementView(key: UniqueKey(), viewType: number);
-//
-//     // Register an webcam
-//     if (!ui.platformViewRegistry.registerViewFactory(number,
-//         (int viewId) => _webcamVideoElement)) // return _webcamVideoElement;
-//       print("this is still causeing an issue" + number);
-//
-//     window.navigator.mediaDevices!
-//         .getUserMedia({"video": true}).then((MediaStream stream) {
-//       _webcamVideoElement
-//         ..srcObject = stream
-//         ..autoplay = true;
-//       return _webcamVideoElement;
-//     });
-//   }
-//
-//   @override
-//   Widget build(BuildContext context) => Scaffold(
-//           body: Center(
-//         child: Container(
-//             decoration: BoxDecoration(
-//                 gradient: RadialGradient(
-//               center: Alignment.center,
-//               radius: 0.8,
-//               colors: [
-//                 const Color(0xFF221A4D), // blue sky
-//                 const Color(0xFF000000), // yellow sun
-//               ],
-//             )),
-//             width: MediaQuery.of(context).size.width,
-//             height: MediaQuery.of(context).size.height - 300,
-//             child: _webcamWidget),
-//       ));
-//
-//   switchCameraOff() {
-//     if (_webcamVideoElement.srcObject!.active!) {
-//       var tracks = _webcamVideoElement.srcObject!.getTracks();
-//
-//       //stopping tracks and setting srcObject to null to switch camera off
-//       _webcamVideoElement.srcObject = null;
-//
-//       tracks.forEach((track) {
-//         track.stop();
-//       });
-//     }
-//   }
-// }
+
+class Item {
+  String sku;
+  int quantity;
+
+  Item(this.sku, this.quantity);
+
+  factory Item.fromJson(dynamic json) {
+    return Item(json['sku'] as String, json['quantity'] as int);
+  }
+
+  @override
+  String toString() {
+    return '{ ${this.sku}, ${this.quantity} }';
+  }
+}

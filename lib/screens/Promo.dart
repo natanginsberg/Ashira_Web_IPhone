@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 class Promo extends StatefulWidget {
   @override
@@ -13,17 +15,6 @@ final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 class _PromoState extends State<Promo> {
   late Timer timer;
 
-  // Future<String> get _localPath async {
-  //   final directory = await getApplicationDocumentsDirectory();
-  //
-  //   return directory.path;
-  // }
-
-  // Future<File> get _localFile async {
-  //   final path = await _localPath;
-  //   return File('$path/contractApproved.txt');
-  // }
-
   @override
   void dispose() {
     // TODO: implement dispose
@@ -34,8 +25,17 @@ class _PromoState extends State<Promo> {
   @override
   Widget build(BuildContext context) {
     timer = Timer(Duration(seconds: 1), () => moveToNextScreen(true));
-    // contractApproved().then((value) async => moveToNextScreen(value)));
     return MaterialApp(
+      localizationsDelegates: [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: [
+        const Locale('en', ''), // English, no country code
+        const Locale('iw', ''), // Hebrew, no country code
+      ],
       home: Scaffold(
         key: _scaffoldKey,
         body: Container(
@@ -57,7 +57,7 @@ class _PromoState extends State<Promo> {
                   fit: BoxFit.fill,
                 ),
                 Text(
-                  'Ashira',
+                    AppLocalizations.of(context)!.appName,
                   style: TextStyle(
                       fontSize: 50,
                       color: Colors.white,
@@ -70,7 +70,7 @@ class _PromoState extends State<Promo> {
                 ),
                 Text(
                   // "Jewish Karaoke App",
-                  'אפליקציה השירה היהודית',
+                  AppLocalizations.of(context)!.slogan,
                   style: TextStyle(
                       color: Color(0x99FFFFFF),
                       fontSize: 25,
@@ -100,8 +100,8 @@ class _PromoState extends State<Promo> {
                   height: 10.0,
                 ),
                 Text(
-                  // 'Copyright with ACUM',
-                  'שומרים על זכויות יוצרים עם אקו"ם',
+                  AppLocalizations.of(context)!.acum,
+                  // 'שומרים על זכויות יוצרים עם אקו"ם',
                   style: TextStyle(color: Color(0x80FFFFFF), fontSize: 18),
                 )
               ],
