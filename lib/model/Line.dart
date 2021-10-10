@@ -2,7 +2,7 @@ import 'Letter.dart';
 import 'Syllable.dart';
 
 class Line {
-  late double from;
+  double from = 0;
   late double to;
   String past = "";
   String splitWordPast = "";
@@ -41,7 +41,8 @@ class Line {
     future = "";
     for (Syllable syllable in syllables)
       if (syllable.isIn(position)) {
-        if (personalMoishie && syllable.text.contains(String.fromCharCode(0x2022))) {
+        if (personalMoishie &&
+            syllable.text.contains(String.fromCharCode(0x2022))) {
           assignNumber(syllable);
           return;
         }
@@ -52,13 +53,16 @@ class Line {
           } else
             future += letter.letter;
       }
-    //else if (syllable.text.contains(String.fromCharCode(0x2022))) {
+      //else if (syllable.text.contains(String.fromCharCode(0x2022))) {
       //  return;
       //}
       else if (syllable.isPast(position))
         past += syllable.text;
       else
         future += syllable.text;
+      // print(position);
+      // print("this is the line past " + past);
+      // print(future);
   }
 
   void resetSplitWord() {
@@ -68,7 +72,8 @@ class Line {
 
   String getFutureFromSyllable(bool personalMoishie) {
     String text = "";
-    if (personalMoishie && syllables[0].text.contains(String.fromCharCode(0x2022))) {
+    if (personalMoishie &&
+        syllables[0].text.contains(String.fromCharCode(0x2022))) {
       return String.fromCharCode(0x2022) * 6;
     }
     for (Syllable s in syllables) {
@@ -97,5 +102,9 @@ class Line {
     } else if (syllable.text == String.fromCharCode(0x2022) * 3 + " ") {
       past = 3.toString();
     }
+  }
+
+  bool containsDots() {
+    return syllables[0].text.contains(String.fromCharCode(0x2022));
   }
 }

@@ -1,8 +1,12 @@
 import 'dart:html';
 import 'dart:ui';
 
+import 'package:ashira_flutter/model/Song.dart';
+import 'package:ashira_flutter/screens/Sing.dart';
+import 'package:ashira_flutter/utils/WpHelper.dart' as wph;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -20,7 +24,7 @@ class SignIn extends StatefulWidget {
   _SignIn createState() => _SignIn();
 }
 
-final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+final GlobalKey<ScaffoldState> _scaffoldKey1 = GlobalKey<ScaffoldState>();
 
 const appleType = "apple";
 const androidType = "android";
@@ -34,11 +38,12 @@ class _SignIn extends State<SignIn> {
   bool hebrew = true;
 
   late DocumentReference dr;
-
+  wph.WordPressAPI api = wph.WordPressAPI('https://ashira-music.com');
 
   String errorMessage = "";
 
-  bool amIHovering = false;
+  bool amIHoveringOrder = false;
+  bool amIHoveringDemo = false;
 
   var _loading = false;
 
@@ -70,7 +75,7 @@ class _SignIn extends State<SignIn> {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-          key: _scaffoldKey,
+          key: _scaffoldKey1,
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -79,16 +84,6 @@ class _SignIn extends State<SignIn> {
                 child: Container(
                     width: MediaQuery.of(context).size.width,
                     decoration: BoxDecoration(
-                        //     gradient: RadialGradient(
-                        //   center: Alignment.center,
-                        //   radius: 0.8,
-                        //   colors: [
-                        //     //const Color(0xFF9812E0),
-                        //     const Color(0xFF2C2554), // yellow sun
-                        //     const Color(0xFF17131F), // blue sky
-                        //   ],
-                        // )
-
                         image: DecorationImage(
                       image: AssetImage('assets/compBack.jpg'),
                       fit: BoxFit.fill,
@@ -160,38 +155,62 @@ class _SignIn extends State<SignIn> {
                                 child: Text(
                                   AppLocalizations.of(context)!.enterPrompt,
                                   style: TextStyle(
-                                      fontSize: 15, color: Colors.white),
+                                      fontSize: 17, color: Colors.white),
                                 ),
                               )),
                               Center(
-                                child: Directionality(
-                                  textDirection: TextDirection.ltr,
-                                  child: MouseRegion(
-                                    cursor: SystemMouseCursors.click,
-                                    onEnter: (PointerEvent details) =>
-                                        setState(() => amIHovering = true),
-                                    onExit: (PointerEvent details) =>
-                                        setState(() {
-                                      amIHovering = false;
-                                    }),
-                                    child: RichText(
-                                        text: TextSpan(
-                                            text: AppLocalizations.of(context)!
-                                                .placeOrder,
-                                            style: TextStyle(
-                                              fontSize: 15,
-                                              color: amIHovering
-                                                  ? Colors.blue[300]
-                                                  : Colors.blue,
-                                              decoration:
-                                                  TextDecoration.underline,
-                                            ),
-                                            recognizer: TapGestureRecognizer()
-                                              ..onTap = () {
-                                                launch(
-                                                    'https://ashira-music.com/product/karaoke/');
-                                              })),
-                                  ),
+                                child: MouseRegion(
+                                  cursor: SystemMouseCursors.click,
+                                  onEnter: (PointerEvent details) =>
+                                      setState(() => amIHoveringOrder = true),
+                                  onExit: (PointerEvent details) =>
+                                      setState(() {
+                                    amIHoveringOrder = false;
+                                  }),
+                                  child: RichText(
+                                      text: TextSpan(
+                                          text: AppLocalizations.of(context)!
+                                              .placeOrder,
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                            color: amIHoveringOrder
+                                                ? Colors.blue[300]
+                                                : Colors.blue,
+                                            decoration:
+                                                TextDecoration.underline,
+                                          ),
+                                          recognizer: TapGestureRecognizer()
+                                            ..onTap = () {
+                                              launch(
+                                                  'https://ashira-music.com/product/karaoke/');
+                                            })),
+                                ),
+                              ),
+                              Center(
+                                child: MouseRegion(
+                                  cursor: SystemMouseCursors.click,
+                                  onEnter: (PointerEvent details) =>
+                                      setState(() => amIHoveringDemo = true),
+                                  onExit: (PointerEvent details) =>
+                                      setState(() {
+                                    amIHoveringDemo = false;
+                                  }),
+                                  child: RichText(
+                                      text: TextSpan(
+                                          text: AppLocalizations.of(context)!
+                                              .demo,
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: amIHoveringDemo
+                                                ? Colors.green[300]
+                                                : Colors.green,
+                                            decoration:
+                                                TextDecoration.underline,
+                                          ),
+                                          recognizer: TapGestureRecognizer()
+                                            ..onTap = () {
+                                              startDemo();
+                                            })),
                                 ),
                               ),
                               Center(
@@ -391,6 +410,7 @@ class _SignIn extends State<SignIn> {
             errorMessage = AppLocalizations.of(context)!.outOfTimeError;
             _loading = false;
           });
+          id = "";
           return;
         } else {
           startAllSongs();
@@ -405,19 +425,31 @@ class _SignIn extends State<SignIn> {
             await addTimeToFirebase(res);
           } else {
             setState(() {
-              errorMessage = AppLocalizations.of(context)!.matchError;
+              errorMessage = AppLocalizations.of(context)!.pendingError;
               _loading = false;
             });
+            id = "";
+          }
+          if (res.data["status"] == "pending") {
+            setState(() {
+              errorMessage = AppLocalizations.of(context)!.pendingError;
+              _loading = false;
+            });
+            id = "";
           }
           return;
         } catch (e) {
           try {
+            Map<String, dynamic> args = new Map();
+            args["billing-email"] = email;
             final wp.WPResponse res =
-                await api.fetch('orders', namespace: "wc/v2");
+                await api.fetch('orders', namespace: "wc/v2", args: args);
+            print(res.meta!.total);
             setState(() {
               errorMessage = AppLocalizations.of(context)!.noOrderNumberError;
               _loading = false;
             });
+            id = "";
           } catch (e) {
             printConnectionError();
           }
@@ -429,7 +461,6 @@ class _SignIn extends State<SignIn> {
   }
 
   void incrementByOne(QueryDocumentSnapshot doc) async {
-    String deviceIdentifier = "unknown";
     DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
 
     await deviceInfo.webBrowserInfo.then((value) => doc.reference.update({
@@ -437,20 +468,13 @@ class _SignIn extends State<SignIn> {
               value.userAgent! +
               value.hardwareConcurrency.toString()
         }));
-    // deviceIdentifier = webInfo.vendor! +
-    //     webInfo.userAgent! +
-    //     webInfo.hardwareConcurrency.toString();
-    // return deviceIdentifier;
   }
 
   bool isSmartphone() {
     final userAgent = html.window.navigator.userAgent.toString().toLowerCase();
     // smartphone
     return (userAgent.contains("iphone") ||
-        userAgent.contains("android")
-
-        // tablet
-        ||
+        userAgent.contains("android") ||
         userAgent.contains("ipad") ||
         (html.window.navigator.platform!.toLowerCase().contains("macintel") &&
             html.window.navigator.maxTouchPoints! > 0));
@@ -521,12 +545,61 @@ class _SignIn extends State<SignIn> {
       errorMessage = AppLocalizations.of(context)!.communicationError;
       _loading = false;
     });
+    id = "";
   }
 
   startAllSongs() {
     // add email to send and add the timestamp
     Navigator.pushReplacement(context,
-        MaterialPageRoute(builder: (_) => AllSongs(id, endTime, email)));
+        MaterialPageRoute(builder: (_) => AllSongs()));
+  }
+
+  void startDemo() async {
+    setState(() {
+      _loading = true;
+    });
+    try {
+      FirebaseAuth firebaseAuth = FirebaseAuth.instance;
+      await firebaseAuth.signInAnonymously();
+      DocumentSnapshot<Map<String, dynamic>> doc = await getDemoSong();
+      List<Song> songsPassed = [];
+      songsPassed.add(new Song(
+          artist: doc.get('artist'),
+          title: doc.get("title"),
+          imageResourceFile: doc.get("imageResourceFile"),
+          genre: doc.get("genre"),
+          songResourceFile: doc.get("songResourceFile"),
+          textResourceFile: doc.get("textResourceFile"),
+          womanToneResourceFile: doc.get("womanToneResourceFile"),
+          kidToneResourceFile: doc.get("kidToneResourceFile"),
+          length: doc.get("length")));
+      setState(() {
+        _loading = false;
+      });
+      Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (_) => Sing(songsPassed)));
+    } catch (e) {
+      printConnectionError();
+    }
+  }
+
+  Future<DocumentSnapshot<Map<String, dynamic>>> getDemoSong() async {
+    try {
+      var demoCollection =
+          FirebaseFirestore.instance.collection('randomFields');
+
+      var demoName = await demoCollection.doc("demo").get();
+
+      var collection = FirebaseFirestore.instance.collection('songs');
+
+      var doc = await collection.doc(demoName.get("songName")).get();
+
+      return doc;
+    } catch (e) {
+      rethrow;
+    }
   }
 }
 

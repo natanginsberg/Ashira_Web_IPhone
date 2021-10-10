@@ -10,6 +10,7 @@ class Parser {
     List<Line> lines = [];
     for (int i = 0; i < data.length - 1; i++) {
       String line = data[i];
+      // if (i > 15 && !line.contains('[')) break;
       if (line.startsWith("#MP3")) {
         continue;
       } else if (line.startsWith("#COVER")) {
@@ -19,6 +20,7 @@ class Parser {
         if (line.length == 0) {
           continue;
         }
+
         // tags
 
         if (line.startsWith("[ti")) {
@@ -54,22 +56,32 @@ class Parser {
                     lineWordsAndTimes.length > 2) {
               List<List<String>> textLines =
                   breakLineIntoManyLines(lineWordsAndTimes);
-              for (int k = 0; k < 2; k++) {
-                List<String> l = textLines[k];
-
-                Line nextLineInSong = parseLine(
-                    l,
-                    getLineTimeStamp(k == 0 ? (textLines[1])[0] : nextLine),
-                    isLastLine,
-                    personalMoishie);
-                lines.add(nextLineInSong);
-                if (lastWordIsUnproportionatelyLong(
-                    getLineTimeStamp(k == 0 ? textLines[1][0] : nextLine),
-                    nextLineInSong.to)) {
-                  lines.add(addIntroIndication(
-                      getLineTimeStamp(k == 0 ? textLines[1][0] : nextLine),
-                      false,
-                      personalMoishie));
+              for (int k = 0; k < textLines.length; k++) {
+                try {
+                  List<String> l = textLines[k];
+                  Line nextLineInSong = parseLine(
+                      l,
+                      getLineTimeStamp(k != textLines.length - 1
+                          ? getNextLine(k, textLines)
+                          : nextLine),
+                      isLastLine,
+                      personalMoishie);
+                  lines.add(nextLineInSong);
+                  if (lastWordIsUnproportionatelyLong(
+                      getLineTimeStamp(k != textLines.length - 1
+                          ? getNextLine(k, textLines)
+                          : nextLine),
+                      nextLineInSong.to)) {
+                    lines.add(addIntroIndication(
+                        getLineTimeStamp(k != textLines.length - 1
+                            ? getNextLine(k, textLines)
+                            : nextLine),
+                        false,
+                        personalMoishie));
+                  }
+                } catch (error) {
+                  // print(error.toString());
+                  // print(k);
                 }
               }
             } else {
@@ -96,14 +108,26 @@ class Parser {
     }
 
     // fix starts
-    for (Line line in lines)
-      if (line.from == 0 && line.syllables.length > 0)
+
+    for (Line line in lines) {
+      // try {
+      if (line.from == 0 && line.syllables.length > 0) {
+        // print(line.future);
+        // print(line.syllables[0].text);
+        // print(line.syllables[0].from);
         line.from = line.syllables[0].from;
+      }
+      // } catch (error) {
+      //   print(error.toString());
+      // }
+    }
     lines.insert(0, addIntroIndication(lines[0].from, true, personalMoishie));
     if (lines[lines.length - 1]
-       .syllables[0]
+        .syllables[0]
         .text
-        .contains(String.fromCharCode(0x2022))) lines.removeLast();
+        .contains(String.fromCharCode(0x2022))) {
+      lines.removeLast();
+    }
     return lines;
   }
 
@@ -118,26 +142,34 @@ class Parser {
   }
 
   List<List<String>> breakLineIntoManyLines(List<String> lineWordsAndTimes) {
+    // print(lineWordsAndTimes);
     List<List<String>> allLines = [];
-    int lengthOfNewSentence = (lineWordsAndTimes.length - 1) > 6
-        ? 4
-        : lineWordsAndTimes.length < 5
-            ? 2
-            : 3;
-    for (int k = 0; k < 2; k++)
+    int lengthOfNewSentence = 3;
+    bool lineContainsADollar = lineContainsDollar(lineWordsAndTimes);
+    for (int k = 0; k * lengthOfNewSentence < lineWordsAndTimes.length; k++) {
+      if (lineContainsDollar(lineWordsAndTimes) &&
+          k * lengthOfNewSentence == lineWordsAndTimes.length - 1) break;
       allLines.add(parsePartOfLine(
-          lineWordsAndTimes, lengthOfNewSentence, k * lengthOfNewSentence));
+          lineWordsAndTimes,
+          lengthOfNewSentence,
+          k * lengthOfNewSentence,
+          lineContainsADollar
+              ? (k + 1) * lengthOfNewSentence > lineWordsAndTimes.length - 1
+              : (k + 1) * lengthOfNewSentence > lineWordsAndTimes.length));
+    }
     return allLines;
   }
 
-  List<String> parsePartOfLine(
-      List<String> lineWordsAndTimes, int lengthOfNewSentence, int i) {
-    int lengthOfSentence = i == 0
+  List<String> parsePartOfLine(List<String> lineWordsAndTimes,
+      int lengthOfNewSentence, int i, bool lastOne) {
+    int lengthOfSentence = !lastOne
         ? lengthOfNewSentence + 1
         : lineWordsAndTimes.length - lengthOfNewSentence;
     List<String> nextLine = List<String>.filled(lengthOfSentence, "");
-    for (int j = 0; j < lengthOfSentence - 1; j++) {
-      if (i + j > lineWordsAndTimes.length - 2) break;
+    int counter = 0;
+    for (int j = 0; j < lengthOfSentence; j++) {
+      if (i + j > lineWordsAndTimes.length - 1) break;
+      counter = j;
       if (j == 0) {
         if (lineWordsAndTimes[i].contains("]")) {
           nextLine[0] = lineWordsAndTimes[0];
@@ -147,7 +179,9 @@ class Parser {
       } else
         nextLine[j] = lineWordsAndTimes[i + j];
     }
-    i = min(i + lengthOfSentence - 1, lineWordsAndTimes.length - 1);
+    // i = min(i + lengthOfSentence - 1, lineWordsAndTimes.length - 1);
+    i = i + counter;
+    // print("this is the i $i and the lenght of the sen $lengthOfSentence and this is the word " + lineWordsAndTimes[i]);
     if (lineContainsDollar(lineWordsAndTimes)) if (lineWordsAndTimes[i]
         .contains("\$"))
       nextLine[lengthOfSentence - 1] = lineWordsAndTimes[i];
@@ -155,18 +189,21 @@ class Parser {
       nextLine[lengthOfSentence - 1] = swapWordForDollar(lineWordsAndTimes[i]);
     else {
       if (i == lineWordsAndTimes.length - 1 &&
-          !(lengthOfSentence ==
-              lineWordsAndTimes.length)) if (lengthOfSentence == 1 &&
+          !(lengthOfSentence == lineWordsAndTimes.length) &&
+          lastOne) if (lengthOfSentence ==
+              1 &&
           !lineWordsAndTimes[i].contains("]"))
         nextLine[lengthOfSentence - 1] =
             addFrontBracketToSentence(lineWordsAndTimes[i]);
-      else
+      else {
+        return removeBlanks(nextLine);
         nextLine[lengthOfSentence - 1] = lineWordsAndTimes[i];
+      }
       else
         nextLine[lengthOfSentence - 1] =
-            swapWordForDollar(lineWordsAndTimes[i - 1]);
+            swapWordForDollar(lineWordsAndTimes[i]);
     }
-    return nextLine;
+    return removeBlanks(nextLine);
   }
 
   String addFrontBracketToSentence(String lineWordsAndTime) {
@@ -189,7 +226,7 @@ class Parser {
   Line addIntroIndication(double from, bool beginning, bool personalMoishie) {
     double nextSyllableStartsAt = from;
     Line indicatorLine = new Line();
-    indicatorLine.from = beginning ? 0 : from - 3;
+    indicatorLine.from = max(0, from - 3);
     indicatorLine.to = from;
     Syllable syllable;
     int introSeconds = 3;
@@ -212,6 +249,7 @@ class Parser {
 
   Line parseLine(List<String> line, double nextLineTimeStamp, bool lastLine,
       bool personalMoishie) {
+    // print(line);
     Line currentLine = new Line();
     Syllable syllable;
     double startTime = 0;
@@ -231,13 +269,13 @@ class Parser {
         }
       } else {
         List<String> wordAndTime = word.split(">");
-        if (i > 0) {
-          startTime = parseTimeStamp(wordAndTime[0]);
-        }
+        // if (i > 0) {
+        startTime = parseTimeStamp(wordAndTime[0]);
+        // }
         if (wordAndTime[1].contains("\$")) {
           endTime = nextLineTimeStamp;
           if (endTime - startTime > 5) {
-            endTime = startTime;
+            endTime = startTime + 1;
           }
           break;
         }
@@ -251,9 +289,13 @@ class Parser {
         } else {
           endTime = nextLineTimeStamp;
         }
-        if (endTime - startTime > 5) {
-          endTime = startTime + 2;
+        if (endTime - startTime > 4) {
+          endTime = startTime + 1;
         }
+      }
+
+      if (endTime == startTime) {
+        endTime = startTime + 1;
       }
       syllable.from = startTime;
       syllable.to = endTime;
@@ -261,8 +303,12 @@ class Parser {
       syllable.letters = addLettersToSyllable(syllable);
       currentLine.syllables.add(syllable);
       startTime = endTime;
+      // print(syllable.text);
+      // print(syllable.from);
+      // print(syllable.to);
     }
     currentLine.to = endTime;
+    // print("this is the line end " + currentLine.to.toString());
     currentLine.addSyllables(personalMoishie);
     return currentLine;
   }
@@ -306,5 +352,27 @@ class Parser {
 
   String getStringValue(String line, String tag) {
     return line.substring(tag.length + 1);
+  }
+
+  List<String> removeBlanks(List<String> nextLine) {
+    return [
+      for (var e in nextLine)
+        if (e != "") e
+    ];
+  }
+
+  getNextLine(int k, List<List<String>> textLines) {
+    if (textLines[k + 1].length > 1) {
+      // print(textLines[k + 1][0]);
+      return textLines[k + 1][0];
+    } else {
+      String line =
+          textLines[k + 1][0].replaceFirst("<", "[").replaceFirst(">", "]");
+      if (line[0] != "[") line = "[" + line;
+      // print("error");
+      // print(textLines[k + 1].toString());
+      // print(line);
+      return line;
+    }
   }
 }

@@ -1,12 +1,13 @@
 import 'package:ashira_flutter/screens/AllSongs.dart';
 import 'package:ashira_flutter/screens/Contracts.dart';
 import 'package:ashira_flutter/screens/Promo.dart';
-import 'package:ashira_flutter/screens/SignIn.dart';
+
+// import 'package:ashira_flutter/screens/SignIn.dart';
 import 'package:ashira_flutter/screens/Sing.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -38,8 +39,9 @@ class App extends StatelessWidget {
             ],
             supportedLocales: [
               const Locale('en', ''), // English, no country code
-              const Locale('iw', ''), // Hebrew, no country code
+              const Locale('he', ''), // Hebrew, no country code
             ],
+            // locale: Locale(""),
             theme: ThemeData(
               primarySwatch: Colors.blue,
             ),
@@ -47,9 +49,9 @@ class App extends StatelessWidget {
             routes: {
               '/': (context) => Promo(),
               '/contracts': (context) => Contracts(),
-              '/signIn': (context) => SignIn(),
-              '/allSongs': (context) => AllSongs(id, endTime, email),
-              '/sing': (context) => Sing(songs, id, endTime, email),
+              // '/signIn': (context) => SignIn(),
+              '/allSongs': (context) => AllSongs(),
+              '/sing': (context) => Sing(songs, ""),
             },
           );
         }

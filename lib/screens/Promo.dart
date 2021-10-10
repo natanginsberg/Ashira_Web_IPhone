@@ -112,7 +112,7 @@ class _PromoState extends State<Promo> {
 
   moveToNextScreen(bool approved) {
     // if (approved == true)
-    Navigator.pushReplacementNamed(context, '/signIn');
+    Navigator.pushReplacementNamed(context, '/allSongs');
     // else
     //   Navigator.pushReplacementNamed(context, '/contracts');
   }

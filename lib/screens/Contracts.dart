@@ -10,7 +10,7 @@ class Contracts extends StatefulWidget {
   _ContractsState createState() => _ContractsState();
 }
 
-final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+final GlobalKey<ScaffoldState> _scaffoldKey3 = GlobalKey<ScaffoldState>();
 
 class _ContractsState extends State<Contracts> {
   late Future _future;
@@ -29,7 +29,7 @@ class _ContractsState extends State<Contracts> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      key: _scaffoldKey,
+      key: _scaffoldKey3,
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
