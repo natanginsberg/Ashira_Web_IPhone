@@ -352,7 +352,7 @@ class _AllSongsState extends State<AllSongs> {
                                     // mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Text(
-                                        AppLocalizations.of(context)!.playlist,
+                                        AppLocalizations.of(context)!.display,
                                         style: TextStyle(
                                             color: Colors.white, fontSize: 20),
                                       ),
@@ -487,6 +487,14 @@ class _AllSongsState extends State<AllSongs> {
                                             ],
                                           ),
                                         ],
+                                      ),
+                                      SizedBox(
+                                        height: 10,
+                                      ),
+                                      Text(
+                                        AppLocalizations.of(context)!.playlist,
+                                        style: TextStyle(
+                                            color: Colors.white, fontSize: 20),
                                       ),
                                       // if (personalMoishie)
                                       //   Container(

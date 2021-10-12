@@ -36,6 +36,7 @@
     "man":"Man",
     "woman":"Woman",
     "kid":"Kid",
+    "display":"Display",
     "classic":"Classic",
     "advanced":"Advanced",
     "cameraOn":"Interactive",
