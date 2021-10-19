@@ -1,86 +1,187 @@
 import 'package:ashira_flutter/model/Song.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-class SongLayout extends StatelessWidget {
+class SongLayout extends StatefulWidget {
   final Song song;
   final int index;
-  int counter = 0;
-  bool clicked = false;
+  bool open;
+  int clickedIndex;
+  final VoidCallback onTapAction;
 
-  SongLayout({required this.song, required this.index});
+  bool isSmartphone;
+
+  var memberText;
+
+  SongLayout(
+      {required this.song,
+      required this.index,
+      required this.open,
+      required this.clickedIndex,
+      required this.onTapAction,
+      required this.isSmartphone,
+      required this.memberText});
+
+  @override
+  _SongLayoutState createState() => _SongLayoutState();
+}
+
+class _SongLayoutState extends State<SongLayout> {
+  bool amIHovering = false;
 
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton(
-      style: ButtonStyle(backgroundColor:
-          MaterialStateProperty.resolveWith<Color>((Set<MaterialState> states) {
-        return Colors.transparent;
-      })),
-      onPressed: () {
-        counter += 1;
-
-        // Navigator.pushNamed(context, '/sing', arguments: {'song':this.song});
-        // Navigator.push(
-        //     context,
-        //     MaterialPageRoute(
-        //         builder: (_) => Sing(
-        //             this.song, index.toString() + " " + counter.toString())));
-      },
-      child: Container(
-        decoration: clicked
-            ? BoxDecoration(
-                borderRadius: BorderRadius.circular(15.0),
-                color: Color(0xFF0A999A),
-                backgroundBlendMode: BlendMode.colorDodge)
-            : BoxDecoration(
-                borderRadius: BorderRadius.circular(15.0),
-                color: Color(0xFF840A9A),
-                backgroundBlendMode: BlendMode.colorDodge),
-        child: Column(
-          children: [
-            Expanded(
-              flex: 4,
-              child: Container(
-                  margin: EdgeInsets.all(5.0),
-                  child: ClipRRect(
+    return Container(
+      child: ElevatedButton(
+        style: ButtonStyle(backgroundColor:
+            MaterialStateProperty.resolveWith<Color>(
+                (Set<MaterialState> states) {
+          return Colors.transparent;
+        })),
+        onPressed: () {
+          widget.onTapAction();
+        },
+        child: Container(
+          decoration: widget.clickedIndex > 0
+              ? BoxDecoration(
+                  borderRadius: BorderRadius.circular(15.0),
+                  color: Color(0xFF8D3C8E),
+                  backgroundBlendMode: BlendMode.plus)
+              : widget.open
+                  ? BoxDecoration(
                       borderRadius: BorderRadius.circular(15.0),
-                      child: Image(
-                          fit: BoxFit.fill,
-                          image: NetworkImage(song.imageResourceFile)))),
-            ),
-            Expanded(
-              flex: 2,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
+                      color: Color(0xFF0A999A),
+                      backgroundBlendMode: BlendMode.colorDodge)
+                  : BoxDecoration(
+                      borderRadius: BorderRadius.circular(15.0),
+                      color: Color(0xFF656666)),
+          child: Stack(children: [
+            Column(
+              children: [
+                Expanded(
+                  flex: 4,
+                  child: Container(
+                      margin: EdgeInsets.all(5.0),
+                      child: ClipRRect(
+                          borderRadius: BorderRadius.circular(15.0),
+                          child: Image(
+                              fit: BoxFit.fill,
+                              image: NetworkImage(
+                                  widget.song.imageResourceFile)))),
+                ),
+                Expanded(
+                  flex: widget.isSmartphone ? 1 : 2,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          widget.song.title,
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontFamily: 'Normal',
+                              fontSize: 15),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(4.0),
+                        child: Center(
+                          child: Text(
+                            widget.song.artist,
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontFamily: 'Normal',
+                                fontSize: 15),
+                          ),
+                        ),
+                      )
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.all(8.0),
+                  child: Align(
+                    alignment: Alignment.bottomRight,
                     child: Text(
-                      song.title,
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontFamily: 'Normal',
-                          fontSize: 15),
+                      widget.clickedIndex > 0
+                          ? widget.clickedIndex.toString()
+                          : "",
+                      style: TextStyle(color: Colors.white),
                     ),
                   ),
+                ),
+                if (widget.isSmartphone && !widget.open)
                   Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: Center(
-                      child: Text(
-                        song.artist,
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontFamily: 'Normal',
-                            fontSize: 15),
+                    padding: EdgeInsets.all(10),
+                    child: Align(
+                      alignment: Alignment.bottomCenter,
+                      child: MouseRegion(
+                        cursor: SystemMouseCursors.click,
+                        onEnter: (PointerEvent details) => amIHovering = true,
+                        onExit: (PointerEvent details) => amIHovering = false,
+                        child: RichText(
+                            text: TextSpan(
+                                text: AppLocalizations.of(context)!.membersOnly,
+                                style: TextStyle(
+                                  color: amIHovering
+                                      ? Colors.red[300]
+                                      : Colors.red,
+                                  decoration: TextDecoration.underline,
+                                ),
+                                recognizer: TapGestureRecognizer()
+                                  ..onTap = () {
+                                    widget.onTapAction();
+                                  })),
                       ),
                     ),
                   )
-                ],
-              ),
+              ],
             ),
-          ],
+            if (!widget.open)
+              Padding(
+                padding: EdgeInsets.all(10),
+                child: Align(
+                  alignment: Alignment.bottomCenter,
+                  child: MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    onEnter: (PointerEvent details) {
+                      setState(() {
+                        amIHovering = true;
+                      });
+                    },
+                    onExit: (PointerEvent details) {
+                      setState(() {
+                        amIHovering = false;
+                      });
+                    },
+                    child: RichText(
+                        text: TextSpan(
+                            text: widget.memberText,
+                            style: TextStyle(
+                              color: amIHovering ? Colors.red[300] : Colors.red,
+                              decoration: TextDecoration.underline,
+                            ),
+                            recognizer: TapGestureRecognizer()
+                              ..onTap = () {
+                                widget.onTapAction();
+                              })),
+                  ),
+                ),
+              )
+          ]),
         ),
       ),
     );
+  }
+
+  hovering() {
+    amIHovering = true;
+  }
+
+  notHovering() {
+    amIHovering = false;
   }
 }

@@ -576,10 +576,10 @@ class _SignIn extends State<SignIn> {
       setState(() {
         _loading = false;
       });
-      Navigator.push(
-          context,
-          MaterialPageRoute(
-              builder: (_) => Sing(songsPassed)));
+      // Navigator.push(
+      //     context,
+      //     MaterialPageRoute(
+      //         builder: (_) => Sing(songsPassed)));
     } catch (e) {
       printConnectionError();
     }

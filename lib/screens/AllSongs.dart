@@ -3,12 +3,14 @@ import 'dart:html';
 import 'dart:math';
 import 'dart:ui';
 
+import 'package:ashira_flutter/customWidgets/SongLayout.dart';
 import 'package:ashira_flutter/model/Song.dart';
 import 'package:ashira_flutter/utils/WpHelper.dart' as wph;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -496,65 +498,6 @@ class _AllSongsState extends State<AllSongs> {
                                         style: TextStyle(
                                             color: Colors.white, fontSize: 20),
                                       ),
-                                      // if (personalMoishie)
-                                      //   Container(
-                                      //     width: 60,
-                                      //     height: 48,
-                                      //     decoration: BoxDecoration(
-                                      //         border: Border.all(
-                                      //             color: Color(0xFF8D3C8E),
-                                      //             width: 2),
-                                      //         borderRadius:
-                                      //             BorderRadius.circular(50),
-                                      //         gradient: RadialGradient(
-                                      //           center: Alignment.center,
-                                      //           radius: 4,
-                                      //           colors: [
-                                      //             const Color(0xFF221A4D),
-                                      //             // blue sky
-                                      //             const Color(0xFF000000),
-                                      //             // yellow sun
-                                      //           ],
-                                      //         )),
-                                      //     child: Row(
-                                      //         mainAxisAlignment:
-                                      //             MainAxisAlignment
-                                      //                 .spaceBetween,
-                                      //         children: [
-                                      //           SizedBox(
-                                      //             width: 55,
-                                      //             height: 48,
-                                      //             child: Center(
-                                      //               child: Directionality(
-                                      //                 textDirection:
-                                      //                     TextDirection.rtl,
-                                      //                 child: TextField(
-                                      //                     style: TextStyle(
-                                      //                         color:
-                                      //                             Colors.white),
-                                      //                     textAlign:
-                                      //                         TextAlign.center,
-                                      //                     controller:
-                                      //                         timeController,
-                                      //                     decoration:
-                                      //                         new InputDecoration(
-                                      //                       fillColor: Colors
-                                      //                           .transparent,
-                                      //                     ),
-                                      //                     onChanged:
-                                      //                         (String value) {
-                                      //                       if (value != "")
-                                      //                         changeTime =
-                                      //                             int.parse(
-                                      //                                 value);
-                                      //                       else
-                                      //                         changeTime = 0;
-                                      //                     }),
-                                      //               ),
-                                      //             ),
-                                      //           ),
-                                      //         ]),
-                                      //   ),
                                       SizedBox(
                                         height: 15,
                                         child: Text(
@@ -797,7 +740,8 @@ class _AllSongsState extends State<AllSongs> {
                 ]),
               ),
             ),
-            if (openSignIn) buildSignInPopup()
+            if (openSignIn)
+              if (kIsWeb) buildWebSignInPopup() else buildMobileSignIn()
           ])),
     );
   }
@@ -969,162 +913,16 @@ class _AllSongsState extends State<AllSongs> {
   }
 
   buildSongLayout(Song song, int index) {
-    return ElevatedButton(
-      style: ButtonStyle(backgroundColor:
-          MaterialStateProperty.resolveWith<Color>((Set<MaterialState> states) {
-        return Colors.transparent;
-      })),
-      onPressed: () {
-        if (signedIn || demoSongNames.contains(song.title))
-          setState(() {
-            songInSongsClicked(song)
-                ? songsClicked.removeWhere((element) =>
-                    element.songResourceFile == song.songResourceFile)
-                : songsClicked.add(song);
-          });
-        else {
-          setState(() {
-            openSignIn = true;
-          });
-        }
-      },
-      child: Container(
-        decoration: songInSongsClicked(song)
-            ? BoxDecoration(
-                borderRadius: BorderRadius.circular(15.0),
-                color: Color(0xFF8D3C8E),
-                backgroundBlendMode: BlendMode.plus)
-            : signedIn || demoSongNames.contains(song.title)
-                ? BoxDecoration(
-                    borderRadius: BorderRadius.circular(15.0),
-                    color: Color(0xFF0A999A),
-                    backgroundBlendMode: BlendMode.colorDodge)
-                : BoxDecoration(
-                    borderRadius: BorderRadius.circular(15.0),
-                    color: Color(0xFF656666)),
-        child: Stack(children: [
-          Column(
-            children: [
-              Expanded(
-                flex: 4,
-                child: Container(
-                    margin: EdgeInsets.all(5.0),
-                    child: ClipRRect(
-                        borderRadius: BorderRadius.circular(15.0),
-                        child: Image(
-                            fit: BoxFit.fill,
-                            image: NetworkImage(song.imageResourceFile)))),
-              ),
-              Expanded(
-                flex: _smartPhone ? 1 : 2,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(
-                        song.title,
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontFamily: 'Normal',
-                            fontSize: 15),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(4.0),
-                      child: Center(
-                        child: Text(
-                          song.artist,
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontFamily: 'Normal',
-                              fontSize: 15),
-                        ),
-                      ),
-                    )
-                  ],
-                ),
-              ),
-              Padding(
-                padding: EdgeInsets.all(8.0),
-                child: Align(
-                  alignment: Alignment.bottomRight,
-                  child: Text(
-                    songInSongsClicked(song)
-                        ? (songsClicked.indexWhere((element) =>
-                                    element.songResourceFile ==
-                                    song.songResourceFile) +
-                                1)
-                            .toString()
-                        : "",
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ),
-              ),
-              if (_smartPhone &&
-                  !signedIn &&
-                  !demoSongNames.contains(song.title))
-                Padding(
-                  padding: EdgeInsets.all(10),
-                  child: Align(
-                    alignment: Alignment.bottomCenter,
-                    child: MouseRegion(
-                      cursor: SystemMouseCursors.click,
-                      onEnter: (PointerEvent details) =>
-                          setState(() => amIHovering = true),
-                      onExit: (PointerEvent details) => setState(() {
-                        amIHovering = false;
-                      }),
-                      child: RichText(
-                          text: TextSpan(
-                              text: AppLocalizations.of(context)!.membersOnly,
-                              style: TextStyle(
-                                color:
-                                    amIHovering ? Colors.red[300] : Colors.red,
-                                decoration: TextDecoration.underline,
-                              ),
-                              recognizer: TapGestureRecognizer()
-                                ..onTap = () {
-                                  setState(() {
-                                    openSignIn = true;
-                                  });
-                                })),
-                    ),
-                  ),
-                )
-            ],
-          ),
-          if (!signedIn && !demoSongNames.contains(song.title))
-            Padding(
-              padding: EdgeInsets.all(10),
-              child: Align(
-                alignment: Alignment.bottomCenter,
-                child: MouseRegion(
-                  cursor: SystemMouseCursors.click,
-                  onEnter: (PointerEvent details) =>
-                      setState(() => amIHovering = true),
-                  onExit: (PointerEvent details) => setState(() {
-                    amIHovering = false;
-                  }),
-                  child: RichText(
-                      text: TextSpan(
-                          text: AppLocalizations.of(context)!.membersOnly,
-                          style: TextStyle(
-                            color: amIHovering ? Colors.red[300] : Colors.red,
-                            decoration: TextDecoration.underline,
-                          ),
-                          recognizer: TapGestureRecognizer()
-                            ..onTap = () {
-                              setState(() {
-                                openSignIn = true;
-                              });
-                            })),
-                ),
-              ),
-            )
-        ]),
-      ),
-    );
+    return SongLayout(
+        song: song,
+        index: index,
+        open: signedIn || demoSongNames.contains(song.title),
+        clickedIndex: songsClicked.indexWhere((element) =>
+                element.songResourceFile == song.songResourceFile) +
+            1,
+        onTapAction: () => _onSongPressed(song),
+        isSmartphone: _smartPhone,
+        memberText: AppLocalizations.of(context)!.membersOnly);
   }
 
   bool isSmartphone() {
@@ -1423,7 +1221,7 @@ class _AllSongsState extends State<AllSongs> {
     });
   }
 
-  buildSignInPopup() {
+  buildWebSignInPopup() {
     return Directionality(
       textDirection: Directionality.of(context),
       child: Column(
@@ -1439,14 +1237,6 @@ class _AllSongsState extends State<AllSongs> {
                       ? MediaQuery.of(context).size.width
                       : MediaQuery.of(context).size.width / 3,
                   decoration: BoxDecoration(
-                      // gradient: RadialGradient(
-                      //   center: Alignment.center,
-                      //   radius: 0.8,
-                      //   colors: [
-                      //     const Color(0xFF2C2554),
-                      //     const Color(0xFF17131F),
-                      //   ],
-                      // ),
                       color: Colors.black,
                       border: Border.all(color: Colors.purple),
                       borderRadius:
@@ -1467,93 +1257,6 @@ class _AllSongsState extends State<AllSongs> {
                             shape: BoxShape.rectangle,
                           ),
                         ),
-                        // Center(
-                        //     child: Directionality(
-                        //   textDirection: Directionality.of(context),
-                        //   child: Text(
-                        //     AppLocalizations.of(context)!.enterPrompt,
-                        //     style: TextStyle(fontSize: 17, color: Colors.white),
-                        //   ),
-                        // )),
-                        // Center(
-                        //     child: Directionality(
-                        //   textDirection: Directionality.of(context),
-                        //   child: Text(
-                        //     AppLocalizations.of(context)!.secondPrompt,
-                        //     style: TextStyle(fontSize: 17, color: Colors.white),
-                        //   ),
-                        // )),
-                        // Directionality(
-                        //   textDirection: Directionality.of(context),
-                        //   child: Row(
-                        //     mainAxisAlignment: MainAxisAlignment.center,
-                        //     children: [
-                        //       Row(
-                        //         children: [
-                        //           IconButton(
-                        //             icon: Icon(
-                        //               Icons.remove,
-                        //               color: Colors.white,
-                        //             ),
-                        //             onPressed: () {
-                        //               if (quantity > 0)
-                        //                 setState(() {
-                        //                   quantity -= 1;
-                        //                 });
-                        //             },
-                        //           ),
-                        //           Text(
-                        //               quantity.toString() +
-                        //                   " " +
-                        //                   AppLocalizations.of(context)!.hours,
-                        //               style: TextStyle(color: Colors.white)),
-                        //           IconButton(
-                        //             icon: Icon(
-                        //               Icons.add,
-                        //               color: Colors.white,
-                        //             ),
-                        //             onPressed: () {
-                        //               setState(() {
-                        //                 quantity += 1;
-                        //               });
-                        //             },
-                        //           ),
-                        //         ],
-                        //       ),
-                        //       SizedBox(
-                        //         width: 20,
-                        //       ),
-                        //       Center(
-                        //         child: MouseRegion(
-                        //           cursor: SystemMouseCursors.click,
-                        //           onEnter: (PointerEvent details) =>
-                        //               setState(() => amIHovering = true),
-                        //           onExit: (PointerEvent details) =>
-                        //               setState(() {
-                        //             amIHovering = false;
-                        //           }),
-                        //           child: RichText(
-                        //               text: TextSpan(
-                        //                   text: AppLocalizations.of(context)!
-                        //                       .placeOrder,
-                        //                   style: TextStyle(
-                        //                     fontSize: 18,
-                        //                     color: amIHovering
-                        //                         ? Colors.blue[300]
-                        //                         : Colors.blue,
-                        //                     decoration:
-                        //                         TextDecoration.underline,
-                        //                   ),
-                        //                   recognizer: TapGestureRecognizer()
-                        //                     ..onTap = () {
-                        //                       launch(
-                        //                           "https://ashira-music.com/checkout/?add-to-cart=1102&quantity=$quantity");
-                        //                     })),
-                        //         ),
-                        //       ),
-                        //     ],
-                        //   ),
-                        // ),
                         Center(
                           child: Container(
                               width: isSmartphone()
@@ -1948,6 +1651,295 @@ class _AllSongsState extends State<AllSongs> {
     });
     email = "";
     return;
+  }
+
+  buildMobileSignIn() {
+    return Directionality(
+      textDirection: Directionality.of(context),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+              child: Center(
+            child: Stack(children: [
+              Center(
+                child: Container(
+                  height: 3 * MediaQuery.of(context).size.height / 4,
+                  width: 2 * MediaQuery.of(context).size.width / 3,
+                  decoration: BoxDecoration(
+                      color: Colors.black,
+                      border: Border.all(color: Colors.purple),
+                      borderRadius:
+                          BorderRadius.all(new Radius.circular(20.0))),
+                  child: Stack(children: [
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Container(
+                          height: MediaQuery.of(context).size.height / 3.5,
+                          width: MediaQuery.of(context).size.height / 3.5,
+                          decoration: BoxDecoration(
+                            image: DecorationImage(
+                              image: AssetImage('assets/ashira.png'),
+                              fit: BoxFit.fill,
+                            ),
+                            shape: BoxShape.rectangle,
+                          ),
+                        ),
+                        Center(
+                          child: Container(
+                              width: MediaQuery.of(context).size.width / 2,
+                              height: 50,
+                              decoration: BoxDecoration(
+                                  border: Border.all(color: Colors.purple),
+                                  borderRadius: BorderRadius.all(
+                                      new Radius.circular(10.0))),
+                              child: ElevatedButton(
+                                onPressed: () {},
+                                child: Row(children: [
+                                  Flexible(
+                                      child: Container(
+                                    child: Text(
+                                      "Monthly Subscription",
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                  )),
+                                  Container(
+                                    color: Colors.pink,
+                                    child: Text("50₪",
+                                        style: TextStyle(color: Colors.white)),
+                                  )
+                                ]),
+                              )),
+                        ),
+                        Center(
+                          child: Container(
+                              width: MediaQuery.of(context).size.width / 2,
+                              height: 50,
+                              decoration: BoxDecoration(
+                                  border: Border.all(color: Colors.purple),
+                                  borderRadius: BorderRadius.all(
+                                      new Radius.circular(10.0))),
+                              child: ElevatedButton(
+                                onPressed: () {},
+                                child: Row(children: [
+                                  Flexible(
+                                      child: Container(
+                                    child: Text(
+                                      "Daily Subscription",
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                  )),
+                                  Container(
+                                    color: Colors.pink,
+                                    child: Text("10₪",
+                                        style: TextStyle(color: Colors.white)),
+                                  )
+                                ]),
+                              )),
+                        ),
+                        Center(
+                          child: Container(
+                              width: MediaQuery.of(context).size.width / 2,
+                              height: 50,
+                              decoration: BoxDecoration(
+                                  border: Border.all(color: Colors.purple),
+                                  borderRadius: BorderRadius.all(
+                                      new Radius.circular(20.0))),
+                              child: Center(
+                                child: Directionality(
+                                  textDirection: TextDirection.ltr,
+                                  child: TextField(
+                                    onSubmitted: (value) {
+                                      if (!_loading) checkEmailAndContinue();
+                                    },
+                                    textAlign: TextAlign.center,
+                                    decoration: new InputDecoration(
+                                      hintText:
+                                          AppLocalizations.of(context)!.coupon,
+                                      hintStyle:
+                                          TextStyle(color: Color(0xFF787676)),
+                                      fillColor: Colors.transparent,
+                                    ),
+                                    style: TextStyle(
+                                        fontSize: 15, color: Colors.white),
+                                    autofocus: true,
+                                    controller: _couponEditingController,
+                                  ),
+                                ),
+                              )),
+                        ),
+                        !_loading
+                            ? Container(
+                                decoration: BoxDecoration(
+                                    color: Colors.blue,
+                                    borderRadius: BorderRadius.all(
+                                        new Radius.circular(10))),
+                                child: Padding(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(8.0, 4, 8.0, 4),
+                                  child: TextButton(
+                                      onPressed: checkEmailAndContinue,
+                                      child: Directionality(
+                                        textDirection: TextDirection.ltr,
+                                        child: Text(
+                                          AppLocalizations.of(context)!.enter,
+                                          style: TextStyle(
+                                              fontSize: 20,
+                                              color: Colors.white),
+                                        ),
+                                      )),
+                                ),
+                              )
+                            : new Align(
+                                child: new Container(
+                                  color: Colors.transparent,
+                                  width: 70.0,
+                                  height: 70.0,
+                                  child: new Padding(
+                                      padding: const EdgeInsets.all(5.0),
+                                      child: new Center(
+                                          child:
+                                              new CircularProgressIndicator())),
+                                ),
+                                alignment: FractionalOffset.center,
+                              ),
+                        if (_errorMessage != "")
+                          Center(
+                              child: Directionality(
+                            textDirection: TextDirection.ltr,
+                            child: Text(
+                              _errorMessage,
+                              style: TextStyle(
+                                color: Colors.red,
+                                fontSize: 20,
+                              ),
+                            ),
+                          )),
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            // Center(
+                            //     child: Directionality(
+                            //   textDirection: TextDirection.rtl,
+                            //   child: Text(
+                            //     AppLocalizations.of(context)!.personalUse,
+                            //     // data,
+                            //     style: TextStyle(
+                            //       //   fontFamily: 'SignInFont',
+                            //       color: Colors.white,
+                            //       //wordSpacing: 5,
+                            //       fontSize: 20,
+                            //       //height: 1.4,
+                            //       //letterSpacing: 1.6
+                            //     ),
+                            //   ),
+                            // )),
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Center(
+                                  child: Text(
+                                AppLocalizations.of(context)!.publicUse,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  //fontFamily: 'SignInFont',
+                                  color: Colors.white,
+                                  // wordSpacing: 5,
+                                  fontSize: 20,
+                                  height: 1.5,
+
+                                  //height: 1.4,
+                                  // letterSpacing: 1.6
+                                ),
+                              )),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(5.0),
+                              child: Center(
+                                child: MouseRegion(
+                                  cursor: SystemMouseCursors.click,
+                                  onEnter: (PointerEvent details) =>
+                                      setState(() => amIWatsAppHovering = true),
+                                  onExit: (PointerEvent details) =>
+                                      setState(() {
+                                    amIWatsAppHovering = false;
+                                  }),
+                                  child: RichText(
+                                      text: TextSpan(
+                                          text: AppLocalizations.of(context)!
+                                              .watsappNumber,
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                            color: amIWatsAppHovering
+                                                ? Colors.green[300]
+                                                : Colors.blue,
+                                            decoration:
+                                                TextDecoration.underline,
+                                          ),
+                                          recognizer: TapGestureRecognizer()
+                                            ..onTap = () {
+                                              launch(
+                                                  "https://wa.me/message/6CROFFTK7A5BE1");
+                                            })),
+                                ),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(5.0),
+                              child: Center(
+                                  child: Text(
+                                AppLocalizations.of(context)!.emailUsAt,
+                                style: TextStyle(
+                                  //fontFamily: 'SignInFont',
+                                  color: Colors.white,
+                                  //wordSpacing: 5,
+                                  fontSize: 20,
+                                  // height: 1.4,
+                                  //letterSpacing: 1.6
+                                ),
+                              )),
+                            ),
+                          ],
+                        )
+                      ],
+                    ),
+                    Align(
+                      alignment: Alignment.topRight,
+                      child: IconButton(
+                        icon: Icon(Icons.close),
+                        color: Colors.white,
+                        onPressed: () {
+                          setState(() {
+                            openSignIn = false;
+                          });
+                        },
+                      ),
+                    ),
+                  ]),
+                ),
+              ),
+            ]),
+          )),
+        ],
+      ),
+    );
+  }
+
+  _onSongPressed(Song song) {
+    if (signedIn || demoSongNames.contains(song.title))
+      setState(() {
+        songInSongsClicked(song)
+            ? songsClicked.removeWhere(
+                (element) => element.songResourceFile == song.songResourceFile)
+            : songsClicked.add(song);
+      });
+    else {
+      setState(() {
+        openSignIn = true;
+      });
+    }
   }
 }
 
