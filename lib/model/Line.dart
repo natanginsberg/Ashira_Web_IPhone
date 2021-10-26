@@ -46,12 +46,17 @@ class Line {
           assignNumber(syllable);
           return;
         }
-        for (Letter letter in syllable.letters)
-          if (letter.isPast(position) || letter.isIn(position)) {
-            lastLetterInPosition = letter;
-            past += letter.letter;
-          } else
-            future += letter.letter;
+        else {
+          past += syllable.text;
+        }
+
+        ////  UPDATING LETTERS AND NOT WORDS ////////
+        // for (Letter letter in syllable.letters)
+        //   if (letter.isPast(position) || letter.isIn(position)) {
+        //     lastLetterInPosition = letter;
+        //     past += letter.letter;
+        //   } else
+        //     future += letter.letter;
       }
       //else if (syllable.text.contains(String.fromCharCode(0x2022))) {
       //  return;
@@ -107,4 +112,11 @@ class Line {
   bool containsDots() {
     return syllables[0].text.contains(String.fromCharCode(0x2022));
   }
+
+  // bool wordIsNotColored(double position) {
+  //   for (Syllable syllable in syllables)
+  //     if (syllable.isIn(position)) {
+  //       if (syllable)
+  //     }
+  // }
 }

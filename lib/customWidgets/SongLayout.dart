@@ -13,7 +13,7 @@ class SongLayout extends StatefulWidget {
 
   bool isSmartphone;
 
-  var memberText;
+  String memberText;
 
   SongLayout(
       {required this.song,
@@ -113,7 +113,7 @@ class _SongLayoutState extends State<SongLayout> {
                     ),
                   ),
                 ),
-                if (widget.isSmartphone && !widget.open)
+                if (!widget.open)
                   Padding(
                     padding: EdgeInsets.all(10),
                     child: Align(
@@ -124,7 +124,7 @@ class _SongLayoutState extends State<SongLayout> {
                         onExit: (PointerEvent details) => amIHovering = false,
                         child: RichText(
                             text: TextSpan(
-                                text: AppLocalizations.of(context)!.membersOnly,
+                                text: widget.memberText,
                                 style: TextStyle(
                                   color: amIHovering
                                       ? Colors.red[300]

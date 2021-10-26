@@ -1,9 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+
+import '../main.dart';
 
 class Promo extends StatefulWidget {
   @override
@@ -24,6 +27,7 @@ class _PromoState extends State<Promo> {
 
   @override
   Widget build(BuildContext context) {
+    // App.setLocale(context, Localizations.localeOf(context));
     timer = Timer(Duration(seconds: 1), () => moveToNextScreen(true));
     return MaterialApp(
       localizationsDelegates: [
@@ -40,14 +44,18 @@ class _PromoState extends State<Promo> {
         key: _scaffoldKey,
         body: Container(
             decoration: BoxDecoration(
-                gradient: RadialGradient(
-              center: Alignment.center,
-              radius: 0.8,
-              colors: [
-                const Color(0xFF221A4D), // blue sky
-                const Color(0xFF000000), // yellow sun
-              ],
-            )),
+              gradient: RadialGradient(
+                center: Alignment.center,
+                radius: 0.8,
+                colors: kIsWeb
+                    ? [const Color(0xFF221A4D), const Color(0xFF000000)]
+                    : [
+                        Colors.black,
+                        Colors.black87,
+                      ],
+              ),
+            ),
+            // color: Colors.black,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -57,7 +65,7 @@ class _PromoState extends State<Promo> {
                   fit: BoxFit.fill,
                 ),
                 Text(
-                    AppLocalizations.of(context)!.appName,
+                  AppLocalizations.of(context)!.appName,
                   style: TextStyle(
                       fontSize: 50,
                       color: Colors.white,
@@ -103,7 +111,39 @@ class _PromoState extends State<Promo> {
                   AppLocalizations.of(context)!.acum,
                   // 'שומרים על זכויות יוצרים עם אקו"ם',
                   style: TextStyle(color: Color(0x80FFFFFF), fontSize: 18),
-                )
+                ),
+                if (!kIsWeb)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      Container(
+                        height: 120.0,
+                        width: 350.0,
+                        decoration: BoxDecoration(
+                          image: DecorationImage(
+                            image: AssetImage('toker.jpg'),
+                            fit: BoxFit.fill,
+                          ),
+                          shape: BoxShape.rectangle,
+                        ),
+                      ),
+                      Container(
+                        height: 120.0,
+                        width: 350.0,
+                        decoration: BoxDecoration(
+                          image: DecorationImage(
+                            image: AssetImage('adi.jpg'),
+                            fit: BoxFit.fill,
+                          ),
+                          shape: BoxShape.rectangle,
+                        ),
+                        // child: FlatButton(
+                        //   onPressed: () {},
+                        //   child: Text(""),
+                        // ),
+                      ),
+                    ],
+                  ),
               ],
             )),
       ),
@@ -116,18 +156,4 @@ class _PromoState extends State<Promo> {
     // else
     //   Navigator.pushReplacementNamed(context, '/contracts');
   }
-
-// Future<bool> contractApproved() async {
-//   try {
-//     final file = await _localFile;
-//
-//     Read the file.
-// String contents = await file.readAsString();
-//
-// return contents == "32";
-// } catch (e) {
-//   If encountering an error, return 0.
-// return false;
-// }
-// }
 }

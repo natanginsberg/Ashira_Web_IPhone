@@ -9,30 +9,33 @@ class GenreButton extends StatelessWidget {
   final Function onPressed;
 
   const GenreButton({
-    required Key key,
     required this.child,
     required this.gradient,
     this.width = double.infinity,
     required this.height,
     required this.onPressed,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: width,
       height: height,
-      decoration: BoxDecoration(gradient: gradient, boxShadow: [
-        BoxShadow(
-          color: Colors.grey,
-          offset: Offset(0.0, 1.5),
-          blurRadius: 1.5,
-        ),
-      ]),
+      decoration: BoxDecoration(
+          borderRadius: BorderRadius.only(
+              bottomRight: Radius.circular(15.0),
+              bottomLeft: Radius.circular(15.0)),
+          gradient: gradient,
+          boxShadow: [
+            BoxShadow(
+              offset: Offset(0.0, 1.5),
+              blurRadius: 1.5,
+            ),
+          ]),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-            onTap: () {},
+            onTap: () => onPressed(),
             child: Center(
               child: child,
             )),

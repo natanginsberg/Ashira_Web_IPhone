@@ -1,8 +1,10 @@
 import 'dart:async';
-import 'dart:html';
 import 'dart:math';
+
+// import 'dart:html';
 import 'dart:ui';
 
+import 'package:ashira_flutter/customWidgets/GenreButton.dart';
 import 'package:ashira_flutter/customWidgets/SongLayout.dart';
 import 'package:ashira_flutter/model/Song.dart';
 import 'package:ashira_flutter/utils/WpHelper.dart' as wph;
@@ -13,6 +15,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/painting.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -21,6 +24,7 @@ import 'package:universal_html/html.dart' as html;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:wordpress_api/wordpress_api.dart' as wp;
 
+import '../main.dart';
 import 'Sing.dart';
 
 class AllSongs extends StatefulWidget {
@@ -34,7 +38,7 @@ final GlobalKey<ScaffoldState> _scaffoldKey2 = GlobalKey<ScaffoldState>();
 
 List<Song> songs = [];
 
-List<String> genres = ["All Songs", "hebrew"];
+List<String> genres = [""];
 
 List<List<Song>> searchPath = [];
 List<Song> gridSongs = [];
@@ -56,7 +60,7 @@ class _AllSongsState extends State<AllSongs> {
   bool menuOpen = false;
   late bool onSearchTextChanged;
 
-  String currentGenre = "All Songs";
+  String currentGenre = "";
 
   String previousValue = "";
 
@@ -97,9 +101,16 @@ class _AllSongsState extends State<AllSongs> {
 
   int songAccessDenied = -100;
 
-  var _passwordVisible = false;
-
   int quantity = 0;
+
+  List<String> hebrewGenres = ["כל השירים"];
+  List<String> englishGenres = ["All Songs"];
+
+  String myLocale = "he";
+
+  bool privacyShown = false;
+
+  bool openPrivacyOptions = false;
 
   _AllSongsState();
 
@@ -163,586 +174,293 @@ class _AllSongsState extends State<AllSongs> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: Scaffold(
-          key: _scaffoldKey2,
-          backgroundColor: Colors.transparent,
-          body: Stack(children: [
-            RawKeyboardListener(
-              autofocus: true,
-              focusNode: _focusNode,
-              onKey: _handleKeyEvent,
-              child: Container(
-                decoration: BoxDecoration(
-                    gradient: RadialGradient(
-                  center: Alignment.center,
-                  radius: 0.8,
-                  colors: [
-                    const Color(0xFF221A4D), // blue sky
-                    const Color(0xFF000000),
-                  ],
-                )),
-                child: Stack(children: [
-                  Column(
-                    children: [
-                      SafeArea(
-                        child: Directionality(
-                          textDirection: Directionality.of(context),
+      // locale: Localizations.localeOf(context),
+      home: Directionality(
+        textDirection: Directionality.of(context),
+        child: Scaffold(
+            drawer: Drawer(
+              // Add a ListView to the drawer. This ensures the user can scroll
+              // through the options in the drawer if there isn't enough vertical
+              // space to fit everything.
+              child: ListView(
+                // Important: Remove any padding from the ListView.
+                padding: EdgeInsets.zero,
+                children: [
+                  DrawerHeader(
+                    decoration: BoxDecoration(
+                        gradient: RadialGradient(
+                      center: Alignment.center,
+                      radius: 0.8,
+                      colors: [
+                        const Color(0xFF221A4D), // blue sky
+                        const Color(0xFF000000),
+                      ],
+                    )),
+                    child: Center(
+                      child: Text(
+                        AppLocalizations.of(context)!.menu,
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ),
+                  ListTile(
+                    title: Text(
+                      AppLocalizations.of(context)!.watsappUs,
+                    ),
+                    onTap: () {
+                      launch("https://wa.me/message/6CROFFTK7A5BE1");
+                      // Update the state of the app
+                      // ...
+                      // Then close the drawer
+                      _scaffoldKey2.currentState!.openEndDrawer();
+                    },
+                  ),
+                  ListTile(
+                    title: Text(
+                      AppLocalizations.of(context)!.language,
+                    ),
+                    onTap: () {
+                      // Update the state of the app
+                      // ...
+                      // Then close the drawer
+                      if (Localizations.localeOf(context).languageCode ==
+                          "he") {
+                        Locale newLocale = Locale('en', 'IL');
+                        App.setLocale(context, newLocale);
+                      } else {
+                        Locale newLocale = Locale('he', 'US');
+                        App.setLocale(context, newLocale);
+                      }
+
+                      _scaffoldKey2.currentState!.openEndDrawer();
+                    },
+                  ),
+                  if (!kIsWeb && !privacyShown)
+                    ListTile(
+                      title: Text(
+                        AppLocalizations.of(context)!.settings,
+                      ),
+                      onTap: () {
+                        // Update the state of the app
+                        // ...
+                        // Then close the drawer
+                        //todo need to deal with the policies
+                        setState(() {
+                          privacyShown = true;
+                        });
+                      },
+                    ),
+                  if (!kIsWeb && privacyShown)
+                    ListTile(
+                      title: Text(
+                        AppLocalizations.of(context)!.privacyPolicy,
+                      ),
+                      onTap: () {
+                        // Update the state of the app
+                        // ...
+                        // Then close the drawer
+                        //todo need to deal with the policies
+                        launch(
+                            "https://ashira-music.com/%D7%AA%D7%A7%D7%A0%D7%95%D7%9F/");
+                        _scaffoldKey2.currentState!.openEndDrawer();
+                      },
+                    ),
+                  if (!kIsWeb && privacyShown)
+                    ListTile(
+                      title: Text(
+                        AppLocalizations.of(context)!.about,
+                      ),
+                      onTap: () {
+                        launch("https://ashira-music.com");
+                        _scaffoldKey2.currentState!.openEndDrawer();
+                        // Update the state of the app
+                        // ...
+                        // Then close the drawer
+                        //todo need to deal with the policies
+                      },
+                    ),
+                ],
+              ),
+            ),
+            key: _scaffoldKey2,
+            backgroundColor: Colors.transparent,
+            body: Stack(children: [
+              RawKeyboardListener(
+                autofocus: true,
+                focusNode: _focusNode,
+                onKey: _handleKeyEvent,
+                child: Container(
+                  decoration: BoxDecoration(
+                      gradient: RadialGradient(
+                    center: Alignment.center,
+                    radius: 0.8,
+                    colors: [
+                      const Color(0xFF221A4D), // blue sky
+                      const Color(0xFF000000),
+                    ],
+                  )),
+                  child: Stack(children: [
+                    Column(
+                      children: [
+                        SafeArea(
+                          child: Container(
+                            height: 45,
+                            child: Directionality(
+                              textDirection: Directionality.of(context),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  IconButton(
+                                      icon: Icon(
+                                        Icons.menu,
+                                        color: Colors.white,
+                                      ),
+                                      onPressed: () => _scaffoldKey2
+                                          .currentState!
+                                          .openDrawer()),
+                                  Padding(
+                                    padding: const EdgeInsets.fromLTRB(
+                                        30.0, 10, 30, 10),
+                                    child: Directionality(
+                                      textDirection: TextDirection.ltr,
+                                      child: Text(
+                                        signedIn
+                                            ? AppLocalizations.of(context)!
+                                                    .timeRemaining +
+                                                duration
+                                            : "",
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                    ),
+                                  )
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        searchBar(),
+                        Expanded(
                           child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              if (_showGenreBar)
-                                Container(
-                                    height: 150,
-                                    width: 110,
+                              Expanded(
+                                child: Container(
                                     decoration: BoxDecoration(
-                                        gradient: LinearGradient(
-                                      colors: <Color>[Colors.pink, Colors.blue],
-                                    )),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceEvenly,
-                                      children: [
-                                        buildListView(),
-                                        Align(
-                                          alignment: Alignment.topCenter,
-                                          child: Transform.rotate(
-                                            angle: 270 * pi / 180,
-                                            child: IconButton(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                      horizontal: 4.0),
-                                              onPressed: () {
-                                                setState(() {
-                                                  _showGenreBar = false;
-                                                });
-                                              },
-                                              icon: const Icon(
-                                                  Icons.arrow_back_ios_rounded),
-                                              color: Colors.pink[300],
-                                            ),
-                                          ),
-                                        ),
+                                        gradient: RadialGradient(
+                                      center: Alignment.center,
+                                      radius: 0.8,
+                                      colors: [
+                                        const Color(0xFF221A4D),
+                                        // blue sky
+                                        const Color(0xFF000000),
+                                        // yellow sun
                                       ],
                                     )),
-                              if (signedIn)
-                                Padding(
-                                  padding: const EdgeInsets.fromLTRB(
-                                      30.0, 10, 30, 10),
-                                  child: Directionality(
-                                    textDirection: TextDirection.ltr,
-                                    child: Text(
-                                      AppLocalizations.of(context)!
-                                              .timeRemaining +
-                                          duration,
-                                      style: TextStyle(color: Colors.white),
-                                    ),
-                                  ),
-                                )
+                                    margin: const EdgeInsets.fromLTRB(
+                                        20.0, 0.0, 20.0, 0.0),
+                                    child: _accessDenied
+                                        ? expireWording()
+                                        : buildGridView(gridSongs)),
+                              ),
+                              if (!_smartPhone && songsClicked.length > 0)
+                                buildPlaylistWidget()
                             ],
                           ),
                         ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 15.0, horizontal: 8.0),
-                        child: Container(
-                          width: MediaQuery.of(context).size.width * 0.6,
-                          height: 48,
-                          decoration: BoxDecoration(
-                              border: Border.all(
-                                  color: Color(0xFF8D3C8E), width: 2),
-                              borderRadius: BorderRadius.circular(50),
-                              gradient: RadialGradient(
-                                center: Alignment.center,
-                                radius: 4,
-                                colors: [
-                                  const Color(0xFF221A4D), // blue sky
-                                  const Color(0xFF000000), // yellow sun
-                                ],
-                              )),
-                          child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Icon(
-                                    Icons.search,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                SizedBox(
-                                  width:
-                                      MediaQuery.of(context).size.width * 0.5,
-                                  height: 48,
-                                  child: Center(
-                                    child: Directionality(
-                                      textDirection: TextDirection.rtl,
-                                      child: TextField(
-                                        style: TextStyle(color: Colors.white),
-                                        textAlign: TextAlign.center,
-                                        controller: controller,
-                                        decoration: new InputDecoration(
-                                          hintText:
-                                              AppLocalizations.of(context)!
-                                                  .search,
-                                          hintStyle:
-                                              TextStyle(color: Colors.white),
-                                          fillColor: Colors.transparent,
-                                        ),
-                                        onChanged: (String value) {
-                                          if (value != previousValue)
-                                            setState(() {
-                                              // searchPath.add(new List.from(gridSongs));
-                                              gridSongs = songs
-                                                  .where((element) =>
-                                                      element.title
-                                                          .contains(value) ||
-                                                      element.artist
-                                                          .contains(value))
-                                                  .toList();
-                                              previousValue = value;
-                                            });
-                                        },
-                                      ),
+                        if (!signedIn)
+                          Container(
+                            height: 50,
+                            color: Colors.black,
+                            child: Directionality(
+                              textDirection: Directionality.of(context),
+                              child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      AppLocalizations.of(context)!.enterSystem,
+                                      style: TextStyle(
+                                          fontFamily: 'SignInFont',
+                                          color: Colors.white,
+                                          wordSpacing: 5,
+                                          height: 1.4,
+                                          letterSpacing: 1.6),
                                     ),
-                                  ),
-                                ),
-                                IconButton(
-                                  icon: new Icon(
-                                    Icons.cancel,
-                                    color: Colors.white,
-                                  ),
-                                  onPressed: () {
-                                    controller.clear();
-                                    previousValue = "";
-                                    setState(() {
-                                      gridSongs = List.from(searchPath.first);
-                                      searchPath.clear();
-                                    });
-                                  },
-                                ),
-                              ]),
-                        ),
-                      ),
-                      Expanded(
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Container(
-                                  decoration: BoxDecoration(
-                                      gradient: RadialGradient(
-                                    center: Alignment.center,
-                                    radius: 0.8,
-                                    colors: [
-                                      const Color(0xFF221A4D),
-                                      // blue sky
-                                      const Color(0xFF000000),
-                                      // yellow sun
-                                    ],
-                                  )),
-                                  margin: const EdgeInsets.fromLTRB(
-                                      20.0, 0.0, 20.0, 0.0),
-                                  child: _accessDenied
-                                      ? expireWording()
-                                      : buildGridView(gridSongs)),
+                                    SizedBox(
+                                      width: 15,
+                                    ),
+                                    Container(
+                                        decoration: BoxDecoration(
+                                            color: Colors.blue,
+                                            borderRadius: BorderRadius.all(
+                                                new Radius.circular(10))),
+                                        child: Padding(
+                                            padding: const EdgeInsets.fromLTRB(
+                                                8.0, 4, 8.0, 4),
+                                            child: TextButton(
+                                                onPressed: () {
+                                                  setState(() {
+                                                    openSignIn = true;
+                                                  });
+                                                },
+                                                child: Directionality(
+                                                  textDirection:
+                                                      TextDirection.ltr,
+                                                  child: Text(
+                                                    AppLocalizations.of(
+                                                            context)!
+                                                        .enter,
+                                                    style: TextStyle(
+                                                        color: Colors.white),
+                                                  ),
+                                                )))),
+                                  ]),
                             ),
-                            if (!_smartPhone && songsClicked.length > 0)
-                              Center(
-                                child: Container(
-                                  width: 350,
-                                  child: Column(
-                                    // mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        AppLocalizations.of(context)!.display,
-                                        style: TextStyle(
-                                            color: Colors.white, fontSize: 20),
-                                      ),
-                                      Column(
-                                        children: [
-                                          Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceEvenly,
-                                            children: [
-                                              Flexible(
-                                                child: RichText(
-                                                  text: TextSpan(children: [
-                                                    TextSpan(
-                                                        text:
-                                                            AppLocalizations.of(
-                                                                    context)!
-                                                                .classic,
-                                                        style: TextStyle(
-                                                          color: Colors.white,
-                                                        ),
-                                                        recognizer:
-                                                            TapGestureRecognizer()
-                                                              ..onTap = () {
-                                                                setState(() {
-                                                                  personalMoishie =
-                                                                      false;
-                                                                });
-                                                              }),
-                                                  ]),
-                                                ),
-                                              ),
-                                              Theme(
-                                                data: ThemeData(
-                                                    unselectedWidgetColor:
-                                                        Colors.red),
-                                                child: Checkbox(
-                                                  //    <-- label
-                                                  value: !personalMoishie &&
-                                                      !cameraMode,
-                                                  onChanged: (newValue) {
-                                                    setState(() {
-                                                      personalMoishie = false;
-                                                      cameraMode = false;
-                                                    });
-                                                  },
-                                                ),
-                                              ),
-                                              Flexible(
-                                                child: RichText(
-                                                  text: TextSpan(children: [
-                                                    TextSpan(
-                                                        text:
-                                                            AppLocalizations.of(
-                                                                    context)!
-                                                                .advanced,
-                                                        style: TextStyle(
-                                                          color: Colors.white,
-                                                        ),
-                                                        recognizer:
-                                                            TapGestureRecognizer()
-                                                              ..onTap = () {
-                                                                setState(() {
-                                                                  personalMoishie =
-                                                                      true;
-                                                                  cameraMode =
-                                                                      false;
-                                                                });
-                                                              }),
-                                                  ]),
-                                                ),
-                                              ),
-                                              Theme(
-                                                data: ThemeData(
-                                                    unselectedWidgetColor:
-                                                        Colors.red),
-                                                child: Checkbox(
-                                                  //    <-- label
-                                                  value: personalMoishie,
-                                                  onChanged: (newValue) {
-                                                    setState(() {
-                                                      personalMoishie = true;
-                                                      cameraMode = false;
-                                                    });
-                                                  },
-                                                ),
-                                              )
-                                            ],
-                                          ),
-                                          Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceEvenly,
-                                            children: [
-                                              Flexible(
-                                                child: RichText(
-                                                  text: TextSpan(children: [
-                                                    TextSpan(
-                                                        text:
-                                                            AppLocalizations.of(
-                                                                    context)!
-                                                                .cameraOn,
-                                                        style: TextStyle(
-                                                          color: Colors.white,
-                                                        ),
-                                                        recognizer:
-                                                            TapGestureRecognizer()
-                                                              ..onTap = () {
-                                                                setState(() {
-                                                                  cameraMode =
-                                                                      true;
-                                                                  personalMoishie =
-                                                                      false;
-                                                                });
-                                                              }),
-                                                  ]),
-                                                ),
-                                              ),
-                                              Theme(
-                                                data: ThemeData(
-                                                    unselectedWidgetColor:
-                                                        Colors.red),
-                                                child: Checkbox(
-                                                  //    <-- label
-                                                  value: cameraMode,
-                                                  onChanged: (newValue) {
-                                                    setState(() {
-                                                      cameraMode = true;
-                                                      personalMoishie = false;
-                                                    });
-                                                  },
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                      SizedBox(
-                                        height: 10,
-                                      ),
-                                      Text(
-                                        AppLocalizations.of(context)!.playlist,
-                                        style: TextStyle(
-                                            color: Colors.white, fontSize: 20),
-                                      ),
-                                      SizedBox(
-                                        height: 15,
-                                        child: Text(
-                                          overTime()
-                                              ? AppLocalizations.of(context)!
-                                                  .overtime
-                                              : "",
-                                          style: TextStyle(color: Colors.red),
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        height: 10,
-                                      ),
-                                      Text(
-                                          AppLocalizations.of(context)!
-                                                  .totalTime +
-                                              " " +
-                                              getClickedSongsLength(),
-                                          style: TextStyle(
-                                              color: overTime()
-                                                  ? Colors.red
-                                                  : Colors.white)),
-                                      Expanded(
-                                        child: SizedBox(
-                                          width: 350,
-                                          child: ListView.builder(
-                                              itemCount: songsClicked.length,
-                                              itemBuilder:
-                                                  (BuildContext ctx, index) {
-                                                return Container(
-                                                  color: Colors.transparent,
-                                                  alignment: Alignment.center,
-                                                  child: createSongLine(index,
-                                                      songsClicked[index]),
-                                                );
-                                              }),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              )
-                          ],
-                        ),
-                      ),
-                      Container(
-                        height: 50,
-                        color: Colors.black,
-                        child: Directionality(
-                          textDirection: Directionality.of(context),
-                          child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: signedIn
-                                  ? [
-                                      Text(
-                                        AppLocalizations.of(context)!.addTime +
-                                            " ",
-                                        style: TextStyle(
-                                            fontFamily: 'SignInFont',
-                                            color: Colors.white,
-                                            wordSpacing: 5,
-                                            height: 1.4,
-                                            letterSpacing: 1.6),
-                                      ),
-                                      _loading
-                                          ? new Container(
-                                              color: Colors.transparent,
-                                              width: 50.0,
-                                              height: 60.0,
-                                              child: new Padding(
-                                                  padding:
-                                                      const EdgeInsets.all(5.0),
-                                                  child: new Center(
-                                                      child:
-                                                          new CircularProgressIndicator())),
-                                            )
-                                          : Container(
-                                              decoration: BoxDecoration(
-                                                  color: Colors.blue,
-                                                  borderRadius:
-                                                      BorderRadius.all(
-                                                          new Radius.circular(
-                                                              10))),
-                                              child: Padding(
-                                                  padding:
-                                                      const EdgeInsets.fromLTRB(
-                                                          8.0, 4, 8.0, 4),
-                                                  child: TextButton(
-                                                      onPressed: addTime,
-                                                      child: Directionality(
-                                                        textDirection:
-                                                            TextDirection.ltr,
-                                                        child: Text(
-                                                          AppLocalizations.of(
-                                                                  context)!
-                                                              .submit,
-                                                          style: TextStyle(
-                                                              color:
-                                                                  Colors.white),
-                                                        ),
-                                                      )))),
-                                      Directionality(
-                                        textDirection:
-                                            Directionality.of(context),
-                                        child: Row(
-                                          children: [
-                                            Row(
-                                              children: [
-                                                IconButton(
-                                                  icon: Icon(
-                                                    Icons.remove,
-                                                    color: Colors.white,
-                                                  ),
-                                                  onPressed: () {
-                                                    if (quantity > 0)
-                                                      setState(() {
-                                                        quantity -= 1;
-                                                      });
-                                                  },
-                                                ),
-                                                Text(
-                                                  quantity.toString(),
-                                                  style: TextStyle(
-                                                      color: Colors.white),
-                                                ),
-                                                IconButton(
-                                                  icon: Icon(
-                                                    Icons.add,
-                                                    color: Colors.white,
-                                                  ),
-                                                  onPressed: () {
-                                                    setState(() {
-                                                      quantity += 1;
-                                                    });
-                                                  },
-                                                ),
-                                              ],
-                                            ),
-                                            Padding(
-                                              padding:
-                                                  const EdgeInsets.fromLTRB(
-                                                      15, 0, 15, 0),
-                                              child: MouseRegion(
-                                                cursor:
-                                                    SystemMouseCursors.click,
-                                                onEnter:
-                                                    (PointerEvent details) =>
-                                                        setState(() =>
-                                                            amIHovering = true),
-                                                onExit:
-                                                    (PointerEvent details) =>
-                                                        setState(() {
-                                                  amIHovering = false;
-                                                }),
-                                                child: RichText(
-                                                    text: TextSpan(
-                                                        text:
-                                                            AppLocalizations.of(
-                                                                    context)!
-                                                                .placeOrder,
-                                                        style: TextStyle(
-                                                          color: amIHovering
-                                                              ? Colors.blue[300]
-                                                              : Colors.blue,
-                                                          decoration:
-                                                              TextDecoration
-                                                                  .underline,
-                                                        ),
-                                                        recognizer:
-                                                            TapGestureRecognizer()
-                                                              ..onTap = () {
-                                                                launch(
-                                                                    'https://ashira-music.com/product/karaoke/');
-                                                              })),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ]
-                                  : [
-                                      Text(
-                                        AppLocalizations.of(context)!
-                                            .enterSystem,
-                                        style: TextStyle(
-                                            fontFamily: 'SignInFont',
-                                            color: Colors.white,
-                                            wordSpacing: 5,
-                                            height: 1.4,
-                                            letterSpacing: 1.6),
-                                      ),
-                                      SizedBox(
-                                        width: 15,
-                                      ),
-                                      Container(
-                                          decoration: BoxDecoration(
-                                              color: Colors.blue,
-                                              borderRadius: BorderRadius.all(
-                                                  new Radius.circular(10))),
-                                          child: Padding(
-                                              padding:
-                                                  const EdgeInsets.fromLTRB(
-                                                      8.0, 4, 8.0, 4),
-                                              child: TextButton(
-                                                  onPressed: () {
-                                                    setState(() {
-                                                      openSignIn = true;
-                                                    });
-                                                  },
-                                                  child: Directionality(
-                                                    textDirection:
-                                                        TextDirection.ltr,
-                                                    child: Text(
-                                                      AppLocalizations.of(
-                                                              context)!
-                                                          .enter,
-                                                      style: TextStyle(
-                                                          color: Colors.white),
-                                                    ),
-                                                  )))),
-                                    ]),
-                        ),
-                      )
-                    ],
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Align(
-                      alignment: Alignment.bottomRight,
-                      child: FloatingActionButton(
-                        onPressed: () => checkTime(),
-                        autofocus: true,
-                        child: Icon(Icons.play_arrow),
-                        backgroundColor: songsClicked.length > 0
-                            ? Color(0xFF8D3C8E)
-                            : Colors.black,
-                      ),
+                          )
+                      ],
                     ),
-                  )
-                ]),
+                    genreOptions(),
+                    Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Align(
+                        alignment: Alignment.bottomRight,
+                        child: FloatingActionButton(
+                          onPressed: () => checkTime(),
+                          autofocus: true,
+                          child: Icon(Icons.play_arrow),
+                          backgroundColor: songsClicked.length > 0
+                              ? Color(0xFF8D3C8E)
+                              : Colors.black,
+                        ),
+                      ),
+                    )
+                  ]),
+                ),
               ),
-            ),
-            if (openSignIn)
-              if (kIsWeb) buildWebSignInPopup() else buildMobileSignIn()
-          ])),
+              if (openSignIn)
+                if (kIsWeb) buildWebSignInPopup() else buildMobileSignIn(),
+              if (openPrivacyOptions)
+                Center(
+                    child: Container(
+                        decoration: BoxDecoration(
+                            gradient: RadialGradient(
+                          center: Alignment.center,
+                          radius: 0.8,
+                          colors: [
+                            const Color(0xFF221A4D), // blue sky
+                            const Color(0xFF000000),
+                          ],
+                        )),
+                        height: 150,
+                        width: 150,
+                        child: Column(
+                          children: [
+                            Text(""),
+                            Text(""),
+                            Text(""),
+                          ],
+                        )))
+            ])),
+      ),
     );
   }
 
@@ -762,7 +480,9 @@ class _AllSongsState extends State<AllSongs> {
   // }
 
   getSongs() {
+    myLocale = Localizations.localeOf(context).languageCode;
     getDemoSongs();
+    getGenres();
     incrementFirebaseByOne();
     FirebaseFirestore.instance
         .collection('songsNew')
@@ -863,26 +583,42 @@ class _AllSongsState extends State<AllSongs> {
                 EdgeInsets.symmetric(vertical: 4.0, horizontal: 2.0))),
         //adds padding inside the button),
         onPressed: () {
-          setState(() {
-            if (genre == "All Songs") {
+          if (genre == hebrewGenres[0] || genre == englishGenres[0]) {
+            setState(() {
               gridSongs = new List.from(songs);
-              for (String name in demoSongNames) {
-                gridSongs.insert(
-                    0,
-                    songs[
-                        songs.indexWhere((element) => element.title == name)]);
-              }
-            } else if (currentGenre != genre) {
-              gridSongs = new List.from(
-                  songs.where((element) => element.genre == genre).toList());
-            }
+              controller.clear();
+              previousValue = "";
+              if (!signedIn)
+                for (String name in demoSongNames)
+                  gridSongs.insert(
+                      0,
+                      songs[songs
+                          .indexWhere((element) => element.title == name)]);
+            });
+          } else if (currentGenre != genre) {
+            setState(() {
+              gridSongs = new List.from(songs
+                  .where((element) =>
+                      element.genre == hebrewGenres[genres.indexOf(genre)])
+                  .toList());
+              controller.clear();
+              previousValue = "";
+            });
+          }
+          setState(() {
             currentGenre = genre;
             _showGenreBar = false;
           });
         },
-        child: Text(
-          genre,
-          style: TextStyle(color: Colors.white),
+        child: Align(
+          alignment: Alignment.center,
+          child: Text(
+            genre,
+            style: TextStyle(
+              color: Colors.white,
+            ),
+            textAlign: TextAlign.center,
+          ),
         ));
   }
 
@@ -902,10 +638,15 @@ class _AllSongsState extends State<AllSongs> {
         songsPassed.add(song);
       }
       counter += 1;
-      Navigator.push(
-          context,
-          MaterialPageRoute(
-              builder: (_) => Sing(songsPassed, counter.toString())));
+      if (email == "אשר") {
+        Navigator.push(context,
+            MaterialPageRoute(builder: (_) => Sing(songsPassed, email)));
+      } else {
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (_) => Sing(songsPassed, counter.toString())));
+      }
       setState(() {
         songsClicked.clear();
       });
@@ -926,12 +667,16 @@ class _AllSongsState extends State<AllSongs> {
   }
 
   bool isSmartphone() {
-    final userAgent = html.window.navigator.userAgent.toString().toLowerCase();
-    return (userAgent.contains("iphone") ||
-        userAgent.contains("android") ||
-        userAgent.contains("ipad") ||
-        (html.window.navigator.platform!.toLowerCase().contains("macintel") &&
-            html.window.navigator.maxTouchPoints! > 0));
+    if (kIsWeb) {
+      final userAgent =
+          html.window.navigator.userAgent.toString().toLowerCase();
+      return (userAgent.contains("iphone") ||
+          userAgent.contains("android") ||
+          userAgent.contains("ipad") ||
+          (html.window.navigator.platform!.toLowerCase().contains("macintel") &&
+              html.window.navigator.maxTouchPoints! > 0));
+    } else
+      return false;
   }
 
   songInSongsClicked(Song song) {
@@ -1533,8 +1278,8 @@ class _AllSongsState extends State<AllSongs> {
           await api.fetch('orders', namespace: "wc/v2", args: pageArgs);
       try {
         Map<String, int> ret = checkForIdInData(email, res.data);
-        print("ret");
-        print(ret.runtimeType);
+        // print("ret");
+        // print(ret.runtimeType);
 
         return ret;
       } catch (error) {
@@ -1579,9 +1324,14 @@ class _AllSongsState extends State<AllSongs> {
       var demoCollection =
           FirebaseFirestore.instance.collection('randomFields');
 
-      var demoName = await demoCollection.doc("allDemoSongs").get();
-
-      demoSongNames = List.from(demoName.get("songs"));
+      if (kIsWeb) {
+        var demoName = await demoCollection.doc("allDemoSongs").get();
+        demoSongNames = List.from(demoName.get("songs"));
+      }
+      else {
+        var demoName = await demoCollection.doc("phoneDemoSongs").get();
+        demoSongNames = List.from(demoName.get("songs"));
+      }
     } catch (e) {
       demoSongNames = [];
     }
@@ -1941,6 +1691,354 @@ class _AllSongsState extends State<AllSongs> {
       });
     }
   }
+
+  buildPlaylistWidget() {
+    return Center(
+      child: Container(
+        width: 350,
+        child: Column(
+          // mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              AppLocalizations.of(context)!.display,
+              style: TextStyle(color: Colors.white, fontSize: 20),
+            ),
+            Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Flexible(
+                      child: RichText(
+                        text: TextSpan(children: [
+                          TextSpan(
+                              text: AppLocalizations.of(context)!.classic,
+                              style: TextStyle(
+                                color: Colors.white,
+                              ),
+                              recognizer: TapGestureRecognizer()
+                                ..onTap = () {
+                                  setState(() {
+                                    personalMoishie = false;
+                                  });
+                                }),
+                        ]),
+                      ),
+                    ),
+                    Theme(
+                      data: ThemeData(unselectedWidgetColor: Colors.red),
+                      child: Checkbox(
+                        //    <-- label
+                        value: !personalMoishie && !cameraMode,
+                        onChanged: (newValue) {
+                          setState(() {
+                            personalMoishie = false;
+                            cameraMode = false;
+                          });
+                        },
+                      ),
+                    ),
+                    Flexible(
+                      child: RichText(
+                        text: TextSpan(children: [
+                          TextSpan(
+                              text: AppLocalizations.of(context)!.advanced,
+                              style: TextStyle(
+                                color: Colors.white,
+                              ),
+                              recognizer: TapGestureRecognizer()
+                                ..onTap = () {
+                                  setState(() {
+                                    personalMoishie = true;
+                                    cameraMode = false;
+                                  });
+                                }),
+                        ]),
+                      ),
+                    ),
+                    Theme(
+                      data: ThemeData(unselectedWidgetColor: Colors.red),
+                      child: Checkbox(
+                        //    <-- label
+                        value: personalMoishie,
+                        onChanged: (newValue) {
+                          setState(() {
+                            personalMoishie = true;
+                            cameraMode = false;
+                          });
+                        },
+                      ),
+                    )
+                  ],
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Flexible(
+                      child: RichText(
+                        text: TextSpan(children: [
+                          TextSpan(
+                              text: AppLocalizations.of(context)!.cameraOn,
+                              style: TextStyle(
+                                color: Colors.white,
+                              ),
+                              recognizer: TapGestureRecognizer()
+                                ..onTap = () {
+                                  setState(() {
+                                    cameraMode = true;
+                                    personalMoishie = false;
+                                  });
+                                }),
+                        ]),
+                      ),
+                    ),
+                    Theme(
+                      data: ThemeData(unselectedWidgetColor: Colors.red),
+                      child: Checkbox(
+                        //    <-- label
+                        value: cameraMode,
+                        onChanged: (newValue) {
+                          setState(() {
+                            cameraMode = true;
+                            personalMoishie = false;
+                          });
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            SizedBox(
+              height: 10,
+            ),
+            Text(
+              AppLocalizations.of(context)!.playlist,
+              style: TextStyle(color: Colors.white, fontSize: 20),
+            ),
+            SizedBox(
+              height: 15,
+              child: Text(
+                overTime() ? AppLocalizations.of(context)!.overtime : "",
+                style: TextStyle(color: Colors.red),
+              ),
+            ),
+            SizedBox(
+              height: 10,
+            ),
+            Text(
+                AppLocalizations.of(context)!.totalTime +
+                    " " +
+                    getClickedSongsLength(),
+                style:
+                    TextStyle(color: overTime() ? Colors.red : Colors.white)),
+            Expanded(
+              child: SizedBox(
+                width: 350,
+                child: ListView.builder(
+                    itemCount: songsClicked.length,
+                    itemBuilder: (BuildContext ctx, index) {
+                      return Container(
+                        color: Colors.transparent,
+                        alignment: Alignment.center,
+                        child: createSongLine(index, songsClicked[index]),
+                      );
+                    }),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void getGenres() async {
+    try {
+      var demoCollection = FirebaseFirestore.instance.collection('genres');
+
+      var demoName = await demoCollection.doc("genres").get();
+      hebrewGenres = List.from(demoName.get("hebrew"));
+      englishGenres = List.from(demoName.get("english"));
+      myLocale == "he"
+          ? genres = List.from(hebrewGenres)
+          : genres = List.from(englishGenres);
+    } catch (e) {
+      demoSongNames = [];
+    }
+  }
+
+  searchBar() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 15.0, horizontal: 8.0),
+      child: Container(
+        width: MediaQuery.of(context).size.width * 0.6,
+        height: 48,
+        decoration: BoxDecoration(
+            border: Border.all(color: Color(0xFF8D3C8E), width: 2),
+            borderRadius: BorderRadius.circular(50),
+            gradient: RadialGradient(
+              center: Alignment.center,
+              radius: 4,
+              colors: [
+                const Color(0xFF221A4D), // blue sky
+                const Color(0xFF000000), // yellow sun
+              ],
+            )),
+        child:
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Icon(
+              Icons.search,
+              color: Colors.white,
+            ),
+          ),
+          SizedBox(
+            width: MediaQuery.of(context).size.width * 0.5,
+            height: 48,
+            child: Center(
+              child: Directionality(
+                textDirection: TextDirection.rtl,
+                child: TextField(
+                  style: TextStyle(color: Colors.white),
+                  textAlign: TextAlign.center,
+                  controller: controller,
+                  decoration: new InputDecoration(
+                    hintText: AppLocalizations.of(context)!.search,
+                    hintStyle: TextStyle(color: Colors.white),
+                    fillColor: Colors.transparent,
+                  ),
+                  onChanged: (String value) {
+                    if (value != previousValue)
+                      setState(() {
+                        // searchPath.add(new List.from(gridSongs));
+                        if (currentGenre != "" &&
+                            currentGenre != hebrewGenres[0] &&
+                            currentGenre != englishGenres[0]) {
+                          gridSongs = songs
+                              .where((element) =>
+                                  (element.title.contains(value) ||
+                                      element.artist.contains(value)) &&
+                                  element.genre ==
+                                      hebrewGenres[
+                                          genres.indexOf(currentGenre)])
+                              .toList();
+                        } else {
+                          gridSongs = songs
+                              .where((element) =>
+                                  element.title.contains(value) ||
+                                  element.artist.contains(value))
+                              .toList();
+                        }
+                        previousValue = value;
+                      });
+                  },
+                ),
+              ),
+            ),
+          ),
+          IconButton(
+            icon: new Icon(
+              Icons.cancel,
+              color: Colors.white,
+            ),
+            onPressed: () {
+              controller.clear();
+              previousValue = "";
+              setState(() {
+                gridSongs = List.from(searchPath.first);
+                searchPath.clear();
+              });
+            },
+          ),
+        ]),
+      ),
+    );
+  }
+
+  genreOptions() {
+    if (_showGenreBar)
+      return SafeArea(
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: Container(
+              height: 150,
+              width: 200,
+              decoration: BoxDecoration(
+                  borderRadius: BorderRadius.only(
+                      bottomRight: Radius.circular(15.0),
+                      bottomLeft: Radius.circular(15.0)),
+                  gradient: LinearGradient(
+                    colors: <Color>[Colors.pink, Colors.blue],
+                  )),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  buildListView(),
+                  Align(
+                    alignment: Alignment.topCenter,
+                    child: Transform.rotate(
+                      angle: 270 * pi / 180,
+                      child: IconButton(
+                        padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                        onPressed: () {
+                          setState(() {
+                            _showGenreBar = false;
+                          });
+                        },
+                        icon: const Icon(Icons.arrow_back_ios_rounded),
+                        color: Colors.pink[300],
+                      ),
+                    ),
+                  )
+                ],
+              )),
+        ),
+      );
+    else
+      return SafeArea(
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: GenreButton(
+              height: 40,
+              width: 200,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  Text(
+                    currentGenre == ""
+                        ? AppLocalizations.of(context)!.categoryChoice
+                        : currentGenre,
+                    style: TextStyle(color: Colors.white),
+                    textAlign: TextAlign.center,
+                  ),
+                  Icon(
+                    Icons.arrow_back_ios_rounded,
+                    color: Colors.pink[300],
+                  ),
+                ],
+              ),
+              gradient: LinearGradient(
+                colors: <Color>[Colors.pink, Colors.blue],
+              ),
+              onPressed: () {
+                setState(() {
+                  _showGenreBar = true;
+                });
+              }),
+        ),
+      );
+  }
+
+// void changeLanguage() {
+//   {
+//     if (myLocale == "en") {
+//       AllSongs.of(context).setLocale(Locale.fromSubtags(languageCode: 'de'));
+//     } else {
+//       AllSongs.of(context).setLocale(Locale.fromSubtags(languageCode: 'de'))
+//     }
+//   }
+// }
 }
 
 class Item {

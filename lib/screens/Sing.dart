@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:html';
+// import 'dart:html';
 import 'dart:math';
 import 'dart:ui' as ui;
 
@@ -234,17 +234,6 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
                                         fontSize: 18, color: Colors.white),
                                   ),
                                 ),
-                                // ),
-                                // Type of View
-                                // _isSmartphone
-                                //     ? Container(width: 390.0, height: 0.0)
-                                //     : Container(
-                                //         width: 390,
-                                //         height: 40,
-                                //         child:
-                                //       )
-                                // ],
-                                // ),
                                 Expanded(
                                   child: Row(
                                     crossAxisAlignment:
@@ -285,7 +274,7 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
                                               },
                                             ),
                                           ),
-                                          if (!isPlaying)
+                                          if (!(isPlaying && counter == "אשר"))
                                             Padding(
                                               padding:
                                                   const EdgeInsets.fromLTRB(
@@ -355,7 +344,7 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
                                                 ),
                                               ),
                                             ),
-                                          if (!isPlaying)
+                                          if (!(isPlaying && counter == "אשר"))
                                             _loading
                                                 ? new Container(
                                                     color: Colors.transparent,
@@ -1130,7 +1119,7 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
     // (p.inMilliseconds - (seek ? splits[trackNumber] : 0)) / 1000.toDouble();
     for (int j = 0; j < lines.length; j++) {
       Line line = lines[j];
-      if (line.isIn(time)) {
+      if (line.isIn(time) ) {
         currentLineIndex = j;
         updateCounter = 0;
         if (!disposed)
@@ -1418,7 +1407,7 @@ class _WebcamPageState extends State<WebcamPage> {
   late Widget _webcamWidget;
 
   // VideoElement
-  VideoElement _webcamVideoElement = VideoElement();
+  html.VideoElement _webcamVideoElement = html.VideoElement();
 
   String number;
 
@@ -1436,7 +1425,7 @@ class _WebcamPageState extends State<WebcamPage> {
     // size = MediaQuery.of(context).size;
     // deviceRatio = size.width / size.height;
     // Create a video element which will be provided with stream source
-    _webcamVideoElement = VideoElement();
+    _webcamVideoElement = html.VideoElement();
     _webcamWidget = HtmlElementView(key: UniqueKey(), viewType: number);
 
     // Register an webcam
@@ -1444,8 +1433,8 @@ class _WebcamPageState extends State<WebcamPage> {
         (int viewId) => _webcamVideoElement)) // return _webcamVideoElement;
       print("this is still causeing an issue" + number);
 
-    window.navigator.mediaDevices!
-        .getUserMedia({"video": true}).then((MediaStream stream) {
+    html.window.navigator.mediaDevices!
+        .getUserMedia({"video": true}).then((html.MediaStream stream) {
       _webcamVideoElement
         ..srcObject = stream
         ..autoplay = true;
