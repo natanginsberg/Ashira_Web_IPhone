@@ -1,14 +1,17 @@
 import 'dart:async';
 import 'dart:convert';
+
 // import 'dart:html';
 import 'dart:math';
-import 'dart:ui' as ui;
 
 import 'package:ashira_flutter/model/Line.dart';
 import 'package:ashira_flutter/model/Song.dart';
+import 'package:ashira_flutter/utils/FakeUi.dart'
+    if (dart.library.html) 'dart:ui' as ui;
 import 'package:ashira_flutter/utils/Parser.dart';
 import 'package:ashira_flutter/utils/WpHelper.dart' as wph;
 import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
+import 'package:camera/camera.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -109,6 +112,30 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
 
   int trackNumber = 0;
 
+  CameraController? controller;
+  XFile? imageFile;
+  XFile? videoFile;
+
+  // VideoPlayerController? videoController;
+  VoidCallback? videoPlayerListener;
+  bool enableAudio = true;
+  double _minAvailableExposureOffset = 0.0;
+  double _maxAvailableExposureOffset = 0.0;
+  double _currentExposureOffset = 0.0;
+  late AnimationController _flashModeControlRowAnimationController;
+  late Animation<double> _flashModeControlRowAnimation;
+  late AnimationController _exposureModeControlRowAnimationController;
+  late Animation<double> _exposureModeControlRowAnimation;
+  late AnimationController _focusModeControlRowAnimationController;
+  late Animation<double> _focusModeControlRowAnimation;
+  double _minAvailableZoom = 1.0;
+  double _maxAvailableZoom = 1.0;
+  double _currentScale = 1.0;
+  double _baseScale = 1.0;
+
+  // Counting pointers (number of user fingers on screen)
+  int _pointers = 0;
+
   // Wakelock.toggle(enable: isPlaying);
 
   @override
@@ -154,10 +181,6 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
       pause();
       timer.cancel();
     }
-
-    // } else if (state == AppLifecycleState.resumed) {
-    //   play();
-    //   }
   }
 
   _parseLines() async {
@@ -181,6 +204,247 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    return kIsWeb ? webPage() : phonePage();
+  }
+
+  phonePage() {
+    return MaterialApp(
+      home: WillPopScope(
+          onWillPop: () {
+            timer.cancel();
+            disposed = true;
+            return Future.value(true);
+          },
+          child: Scaffold(
+            body: Container(
+              height: MediaQuery.of(context).size.height,
+              width: MediaQuery.of(context).size.width,
+              decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                center: Alignment.center,
+                radius: 0.8,
+                colors: [
+                  const Color(0xFF221A4D), // blue sky
+                  const Color(0xFF000000), // yellow sun
+                ],
+              )),
+              child: !_accessDenied
+                  ? Padding(
+                      padding:
+                          const EdgeInsets.fromLTRB(15.0, 25.0, 15.0, 25.0),
+                      child: Container(
+                        decoration: BoxDecoration(
+                            image: getPreviousImage(),
+                            border: Border.all(color: Colors.purple),
+                            borderRadius:
+                                BorderRadius.all(new Radius.circular(20.0))),
+                        child: Container(
+                          decoration: BoxDecoration(
+                              image: getImage(),
+                              border: Border.all(color: Colors.purple),
+                              borderRadius:
+                                  BorderRadius.all(new Radius.circular(20.0))),
+                          child: Stack(children: [
+                            Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                // Row(
+                                //   mainAxisAlignment:
+                                //       MainAxisAlignment.spaceBetween,
+                                //   children: [
+                                //     Container(width: 390.0, height: 0.0),
+                                //     Center(
+                                SafeArea(
+                                  child: Text(
+                                    songs[trackNumber].title,
+                                    style: TextStyle(
+                                        fontSize: 18, color: Colors.white),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceEvenly,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
+                                        children: [
+                                          Container(
+                                            height: MediaQuery.of(context)
+                                                    .size
+                                                    .height /
+                                                4,
+                                            child: FutureBuilder(
+                                              future: parseFuture,
+                                              builder: (context, snapShot) {
+                                                if (snapShot.hasData) {
+                                                  return buildListView(
+                                                      (allLines[trackNumber]));
+                                                } else if (snapShot.hasError) {
+                                                  return Icon(
+                                                    Icons.error_outline,
+                                                    color: Colors.red,
+                                                  );
+                                                } else {
+                                                  return Image(
+                                                    fit: BoxFit.fill,
+                                                    image: NetworkImage(
+                                                        songs[trackNumber]
+                                                            .imageResourceFile),
+                                                  );
+                                                }
+                                              },
+                                            ),
+                                          ),
+                                          if (!(isPlaying && counter == "אשר"))
+                                            Padding(
+                                              padding:
+                                                  const EdgeInsets.fromLTRB(
+                                                      0, 20, 0, 0),
+                                              child: Container(
+                                                width: _isSmartphone
+                                                    ? MediaQuery.of(context)
+                                                            .size
+                                                            .width -
+                                                        60
+                                                    : personalMoishie
+                                                        ? MediaQuery.of(context)
+                                                                .size
+                                                                .width /
+                                                            2
+                                                        : MediaQuery.of(context)
+                                                                .size
+                                                                .width /
+                                                            3,
+                                                height: 50,
+                                                decoration: BoxDecoration(
+                                                    border: Border.all(
+                                                        color: Colors.purple),
+                                                    borderRadius:
+                                                        BorderRadius.all(
+                                                            new Radius.circular(
+                                                                30.0))),
+                                                child: Padding(
+                                                  padding:
+                                                      const EdgeInsets.fromLTRB(
+                                                          8.0, 4, 8, 4),
+                                                  child: Center(
+                                                    child: ProgressBar(
+                                                      total: songLength,
+                                                      progressBarColor:
+                                                          Colors.blue,
+                                                      progress: _progressValue,
+                                                      thumbColor: Colors.white,
+                                                      timeLabelTextStyle:
+                                                          TextStyle(
+                                                              color:
+                                                                  Colors.white),
+                                                      barHeight: 4,
+                                                      thumbRadius: 9,
+                                                      timeLabelLocation:
+                                                          TimeLabelLocation
+                                                              .sides,
+                                                      onSeek:
+                                                          (Duration duration) {
+                                                        _progressValue =
+                                                            duration;
+                                                        updateUI(
+                                                            duration,
+                                                            false,
+                                                            true,
+                                                            trackNumber);
+                                                        audioPlayer.seek(
+                                                            new Duration(
+                                                                milliseconds: duration
+                                                                        .inMilliseconds -
+                                                                    splits[
+                                                                        trackNumber]),
+                                                            index: trackNumber);
+                                                      },
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          if (!(isPlaying && counter == "אשר"))
+                                            _loading
+                                                ? new Container(
+                                                    color: Colors.transparent,
+                                                    width: 50.0,
+                                                    height: 50.0,
+                                                    child: new Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(5.0),
+                                                        child: new Center(
+                                                            child:
+                                                                new CircularProgressIndicator())),
+                                                  )
+                                                : isPlaying && !paused
+                                                    ? IconButton(
+                                                        iconSize: 50,
+                                                        icon: Icon(
+                                                          Icons.pause,
+                                                          color: Colors.white,
+                                                        ),
+                                                        onPressed: () {
+                                                          pause();
+                                                        })
+                                                    : songFinished
+                                                        ? IconButton(
+                                                            iconSize: 50,
+                                                            icon: Icon(
+                                                              Icons
+                                                                  .replay_rounded,
+                                                              color:
+                                                                  Colors.white,
+                                                            ),
+                                                            onPressed: () {
+                                                              restart();
+                                                              setState(() {
+                                                                songFinished =
+                                                                    false;
+                                                              });
+                                                            })
+                                                        : IconButton(
+                                                            iconSize: 50,
+                                                            icon: Icon(
+                                                              Icons.play_arrow,
+                                                              color:
+                                                                  Colors.white,
+                                                            ),
+                                                            onPressed: () {
+                                                              if (songPicked)
+                                                                play();
+                                                            },
+                                                          ),
+                                          SizedBox(
+                                            height: 20,
+                                          )
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (!songPicked) tonePicker()
+                          ]),
+                        ),
+                      ),
+                    )
+                  : expireWording(),
+            ),
+          )),
+    );
+  }
+
+  webPage() {
     return MaterialApp(
       home: WillPopScope(
           onWillPop: () {
@@ -650,7 +914,7 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
           width: _isSmartphone
               ? MediaQuery.of(context).size.width - 30
               : personalMoishie
-                  ? MediaQuery.of(context).size.width - 60
+                  ? MediaQuery.of(context).size.width - 45
                   : MediaQuery.of(context).size.width / 3,
           child: ListView.builder(
               controller: this.listViewController,
@@ -1119,7 +1383,7 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
     // (p.inMilliseconds - (seek ? splits[trackNumber] : 0)) / 1000.toDouble();
     for (int j = 0; j < lines.length; j++) {
       Line line = lines[j];
-      if (line.isIn(time) ) {
+      if (line.isIn(time)) {
         currentLineIndex = j;
         updateCounter = 0;
         if (!disposed)
@@ -1391,6 +1655,55 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
       );
     }
   }
+
+  /// Display the preview from the camera (or a message if the preview is not available).
+  Widget _cameraPreviewWidget() {
+    final CameraController? cameraController = controller;
+
+    if (cameraController == null || !cameraController.value.isInitialized) {
+      return const Text(
+        'Tap a camera',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 24.0,
+          fontWeight: FontWeight.w900,
+        ),
+      );
+    } else {
+      return Listener(
+        onPointerDown: (_) => _pointers++,
+        onPointerUp: (_) => _pointers--,
+        child: CameraPreview(
+          controller!,
+          child: LayoutBuilder(
+              builder: (BuildContext context, BoxConstraints constraints) {
+            return GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onScaleStart: _handleScaleStart,
+              onScaleUpdate: _handleScaleUpdate,
+              // onTapDown: (details) => onViewFinderTap(details, constraints),
+            );
+          }),
+        ),
+      );
+    }
+  }
+
+  void _handleScaleStart(ScaleStartDetails details) {
+    _baseScale = _currentScale;
+  }
+
+  Future<void> _handleScaleUpdate(ScaleUpdateDetails details) async {
+    // When there are not exactly two fingers on screen don't scale
+    if (controller == null || _pointers != 2) {
+      return;
+    }
+
+    _currentScale = (_baseScale * details.scale)
+        .clamp(_minAvailableZoom, _maxAvailableZoom);
+
+    await controller!.setZoomLevel(_currentScale);
+  }
 }
 
 class WebcamPage extends StatefulWidget {
@@ -1462,15 +1775,20 @@ class _WebcamPageState extends State<WebcamPage> {
       ));
 
   switchCameraOff() {
-    if (_webcamVideoElement.srcObject!.active!) {
-      var tracks = _webcamVideoElement.srcObject!.getTracks();
+    try {
+      if (_webcamVideoElement.srcObject!.active!) {
+        var tracks = _webcamVideoElement.srcObject!.getTracks();
 
-      //stopping tracks and setting srcObject to null to switch camera off
-      _webcamVideoElement.srcObject = null;
+        //stopping tracks and setting srcObject to null to switch camera off
+        _webcamVideoElement.srcObject = null;
 
-      tracks.forEach((track) {
-        track.stop();
-      });
+        tracks.forEach((track) {
+          // track.stop();
+        });
+      }
+    } catch (error)
+    {
+
     }
   }
 }

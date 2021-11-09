@@ -1,7 +1,5 @@
 import 'dart:async';
 import 'dart:math';
-
-// import 'dart:html';
 import 'dart:ui';
 
 import 'package:ashira_flutter/customWidgets/GenreButton.dart';
@@ -9,6 +7,8 @@ import 'package:ashira_flutter/customWidgets/SongLayout.dart';
 import 'package:ashira_flutter/model/Song.dart';
 import 'package:ashira_flutter/utils/WpHelper.dart' as wph;
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dart_ipify/dart_ipify.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -52,6 +52,7 @@ int changeTime = 7;
 
 class _AllSongsState extends State<AllSongs> {
   // Locale _locale = Locale.fromSubtags(languageCode: "he");
+  static final DeviceInfoPlugin deviceInfoPlugin = DeviceInfoPlugin();
   final TextEditingController controller = new TextEditingController();
   final TextEditingController timeController = new TextEditingController();
   bool _smartPhone = false;
@@ -112,6 +113,10 @@ class _AllSongsState extends State<AllSongs> {
 
   bool openPrivacyOptions = false;
 
+  late Map<String, dynamic> deviceData;
+
+  String ipAddress = "";
+
   _AllSongsState();
 
   void signInAnon() async {
@@ -122,6 +127,7 @@ class _AllSongsState extends State<AllSongs> {
   void initState() {
     // TODO: implement initState
     super.initState();
+
     // setState(() {
     _mainController = ScrollController();
     _orderEditingController = TextEditingController(text: "");
@@ -132,6 +138,34 @@ class _AllSongsState extends State<AllSongs> {
     timer =
         Timer.periodic(Duration(seconds: 1), (Timer t) => _getTimeRemaining());
     // });
+  }
+
+  void _readWebBrowserInfo() async {
+    //         });
+    await Ipify.ipv64(format: Format.TEXT).then((value) {
+      ipAddress = value;
+      FirebaseFirestore.instance
+          .collection('internetUsers')
+          .where("endTime", isGreaterThan: DateTime.now())
+          .get()
+          .then((QuerySnapshot querySnapshot) {
+        querySnapshot.docs.forEach((doc) {
+          if (doc.exists) {
+            Map document = doc.data() as Map;
+            if (document.containsKey("ips")) {
+              List<String> ips = List.from(document["ips"]);
+              if (ips.contains(value)) {
+                setState(() {
+                  signedIn = true;
+                  endTime = doc.get("endTime");
+                  gridSongs = new List.from(songs);
+                });
+              }
+            }
+          }
+        });
+      });
+    });
   }
 
   @override
@@ -483,6 +517,9 @@ class _AllSongsState extends State<AllSongs> {
     myLocale = Localizations.localeOf(context).languageCode;
     getDemoSongs();
     getGenres();
+    if (kIsWeb) {
+      _readWebBrowserInfo();
+    }
     incrementFirebaseByOne();
     FirebaseFirestore.instance
         .collection('songsNew')
@@ -638,9 +675,9 @@ class _AllSongsState extends State<AllSongs> {
         songsPassed.add(song);
       }
       counter += 1;
-      if (email == "אשר") {
+      if (email == "הקלטותשלאשר") {
         Navigator.push(context,
-            MaterialPageRoute(builder: (_) => Sing(songsPassed, email)));
+            MaterialPageRoute(builder: (_) => Sing(songsPassed, "אשר")));
       } else {
         Navigator.push(
             context,
@@ -896,6 +933,21 @@ class _AllSongsState extends State<AllSongs> {
       var collection = FirebaseFirestore.instance.collection('internetUsers');
 
       var doc = await collection.doc(id).get();
+      // DocumentSnapshot emailDoc;
+      // FirebaseFirestore.instance
+      //     .collection('internetUsers')
+      //     .where("endTime", isGreaterThan: DateTime.now()).where("email", isEqualTo: id)
+      //     .get()
+      //     .then((QuerySnapshot querySnapshot) {
+      //   querySnapshot.docs.forEach((doc) {
+      //     if (doc.exists) {
+      //       Map document = doc.data() as Map;
+      //       if (document.containsKey("email")) {
+      //         emailDoc = doc;
+      //       }
+      //     }
+      //   });
+      // });
 
       return doc;
     } catch (e) {
@@ -1250,6 +1302,7 @@ class _AllSongsState extends State<AllSongs> {
             validateCoupon(code, coupon);
           }
         } else {
+          checkIfDeviceRegistered(doc, !(coupon != "" && coupon == code[0]));
           setState(() {
             gridSongs = new List.from(songs);
             signedIn = true;
@@ -1264,6 +1317,7 @@ class _AllSongsState extends State<AllSongs> {
         getPurchaseFromStore(true, false);
       }
     } catch (error) {
+      print(error);
       printConnectionError();
     }
   }
@@ -1327,8 +1381,7 @@ class _AllSongsState extends State<AllSongs> {
       if (kIsWeb) {
         var demoName = await demoCollection.doc("allDemoSongs").get();
         demoSongNames = List.from(demoName.get("songs"));
-      }
-      else {
+      } else {
         var demoName = await demoCollection.doc("phoneDemoSongs").get();
         demoSongNames = List.from(demoName.get("songs"));
       }
@@ -1388,10 +1441,10 @@ class _AllSongsState extends State<AllSongs> {
   }
 
   void validateCoupon(List<String> code, String coupon) {
-    for (int i = 0; i < code.length; i++) {
+    for (int i = 1; i < code.length; i++) {
       String c = code[i];
       if (coupon.contains(c) && c.length == coupon.length) {
-        addTimeToFirebase(i + 1);
+        addTimeToFirebase(i);
         return;
       }
     }
@@ -1571,22 +1624,6 @@ class _AllSongsState extends State<AllSongs> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            // Center(
-                            //     child: Directionality(
-                            //   textDirection: TextDirection.rtl,
-                            //   child: Text(
-                            //     AppLocalizations.of(context)!.personalUse,
-                            //     // data,
-                            //     style: TextStyle(
-                            //       //   fontFamily: 'SignInFont',
-                            //       color: Colors.white,
-                            //       //wordSpacing: 5,
-                            //       fontSize: 20,
-                            //       //height: 1.4,
-                            //       //letterSpacing: 1.6
-                            //     ),
-                            //   ),
-                            // )),
                             Padding(
                               padding: const EdgeInsets.all(8.0),
                               child: Center(
@@ -2028,6 +2065,39 @@ class _AllSongsState extends State<AllSongs> {
               }),
         ),
       );
+  }
+
+  void checkIfDeviceRegistered(
+      DocumentSnapshot<Map<String, dynamic>> doc, bool saveIp) {
+    if (saveIp)
+      try {
+        List<String> ips = List.from(doc.get("ips"));
+        if (!ips.contains(ipAddress)) {
+          ips.add(ipAddress);
+          addIpAddressToDocument(doc, ips);
+        }
+      } catch (error) {
+        addIpAddressToDocument(doc, [ipAddress]);
+      }
+    // print(deviceData);
+    // print(ipAddress);
+  }
+
+  void addIpAddressToDocument(
+      DocumentSnapshot<Map<String, dynamic>> doc, List<String> ips) {
+    Map<String, dynamic> firestoreDoc = new Map<String, dynamic>();
+    firestoreDoc['endTime'] = doc.get("endTime");
+    firestoreDoc['email'] = doc.get("email");
+    firestoreDoc['ips'] = ips;
+
+    CollectionReference users =
+        FirebaseFirestore.instance.collection('internetUsers');
+
+    Future<void> addUser() {
+      return users.doc(email).set(firestoreDoc).catchError((error) => {});
+    }
+
+    addUser();
   }
 
 // void changeLanguage() {
