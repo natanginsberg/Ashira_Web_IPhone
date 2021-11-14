@@ -6,8 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
-import '../main.dart';
-
 class Promo extends StatefulWidget {
   @override
   _PromoState createState() => _PromoState();
@@ -104,9 +102,10 @@ class _PromoState extends State<Promo> {
                   //   child: Text(""),
                   // ),
                 ),
-                SizedBox(
-                  height: 10.0,
-                ),
+                if (kIsWeb)
+                  SizedBox(
+                    height: 10.0,
+                  ),
                 Text(
                   AppLocalizations.of(context)!.acum,
                   // 'שומרים על זכויות יוצרים עם אקו"ם',
@@ -117,22 +116,22 @@ class _PromoState extends State<Promo> {
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       Container(
-                        height: 120.0,
-                        width: 350.0,
+                        height: MediaQuery.of(context).size.height / 10,
+                        width: MediaQuery.of(context).size.height / 5,
                         decoration: BoxDecoration(
                           image: DecorationImage(
-                            image: AssetImage('toker.jpg'),
+                            image: AssetImage('assets/toker.jpg'),
                             fit: BoxFit.fill,
                           ),
                           shape: BoxShape.rectangle,
                         ),
                       ),
                       Container(
-                        height: 120.0,
-                        width: 350.0,
+                        height: MediaQuery.of(context).size.height / 10,
+                        width: MediaQuery.of(context).size.height / 5,
                         decoration: BoxDecoration(
                           image: DecorationImage(
-                            image: AssetImage('adi.jpg'),
+                            image: AssetImage('assets/adi.jpg'),
                             fit: BoxFit.fill,
                           ),
                           shape: BoxShape.rectangle,

@@ -5,6 +5,7 @@ import 'dart:ui';
 import 'package:ashira_flutter/customWidgets/GenreButton.dart';
 import 'package:ashira_flutter/customWidgets/SongLayout.dart';
 import 'package:ashira_flutter/model/Song.dart';
+import 'package:ashira_flutter/screens/MobileSing.dart';
 import 'package:ashira_flutter/utils/WpHelper.dart' as wph;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dart_ipify/dart_ipify.dart';
@@ -396,7 +397,9 @@ class _AllSongsState extends State<AllSongs> {
                                         ? expireWording()
                                         : buildGridView(gridSongs)),
                               ),
-                              if (!_smartPhone && songsClicked.length > 0)
+                              if (kIsWeb &&
+                                  !_smartPhone &&
+                                  songsClicked.length > 0)
                                 buildPlaylistWidget()
                             ],
                           ),
@@ -453,20 +456,21 @@ class _AllSongsState extends State<AllSongs> {
                       ],
                     ),
                     genreOptions(),
-                    Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Align(
-                        alignment: Alignment.bottomRight,
-                        child: FloatingActionButton(
-                          onPressed: () => checkTime(),
-                          autofocus: true,
-                          child: Icon(Icons.play_arrow),
-                          backgroundColor: songsClicked.length > 0
-                              ? Color(0xFF8D3C8E)
-                              : Colors.black,
-                        ),
-                      ),
-                    )
+                    // if (kIsWeb)
+                    //   Padding(
+                    //     padding: const EdgeInsets.all(20.0),
+                    //     child: Align(
+                    //       alignment: Alignment.bottomRight,
+                    //       child: FloatingActionButton(
+                    //         onPressed: () => checkTime(),
+                    //         autofocus: true,
+                    //         child: Icon(Icons.play_arrow),
+                    //         backgroundColor: songsClicked.length > 0
+                    //             ? Color(0xFF8D3C8E)
+                    //             : Colors.black,
+                    //       ),
+                    //     ),
+                    //   )
                   ]),
                 ),
               ),
@@ -537,14 +541,18 @@ class _AllSongsState extends State<AllSongs> {
             kidToneResourceFile: doc.get("kidToneResourceFile"),
             length: doc.get("length")));
       });
+
       setState(() {
         if (songs.length > 0) {
           gridSongs = new List.from(songs);
-          for (String name in demoSongNames) {
-            int index = songs.indexWhere((element) => element.title == name);
-            gridSongs.remove(songs[index]);
-            gridSongs.insert(0, songs[index]);
-          }
+          if (kIsWeb)
+            for (String name in demoSongNames) {
+              int index = songs.indexWhere((element) => element.title == name);
+              if (index >= 0) {
+                gridSongs.remove(songs[index]);
+                gridSongs.insert(0, songs[index]);
+              }
+            }
         }
       });
     });
@@ -675,14 +683,21 @@ class _AllSongsState extends State<AllSongs> {
         songsPassed.add(song);
       }
       counter += 1;
-      if (email == "הקלטותשלאשר") {
-        Navigator.push(context,
-            MaterialPageRoute(builder: (_) => Sing(songsPassed, "אשר")));
+      if (kIsWeb) {
+        if (email == "הקלטותשלאשר") {
+          Navigator.push(context,
+              MaterialPageRoute(builder: (_) => Sing(songsPassed, "אשר")));
+        } else {
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => Sing(songsPassed, counter.toString())));
+        }
       } else {
         Navigator.push(
             context,
             MaterialPageRoute(
-                builder: (_) => Sing(songsPassed, counter.toString())));
+                builder: (_) => MobileSing(songsPassed, counter.toString())));
       }
       setState(() {
         songsClicked.clear();
@@ -1542,154 +1557,6 @@ class _AllSongsState extends State<AllSongs> {
                                 ]),
                               )),
                         ),
-                        Center(
-                          child: Container(
-                              width: MediaQuery.of(context).size.width / 2,
-                              height: 50,
-                              decoration: BoxDecoration(
-                                  border: Border.all(color: Colors.purple),
-                                  borderRadius: BorderRadius.all(
-                                      new Radius.circular(20.0))),
-                              child: Center(
-                                child: Directionality(
-                                  textDirection: TextDirection.ltr,
-                                  child: TextField(
-                                    onSubmitted: (value) {
-                                      if (!_loading) checkEmailAndContinue();
-                                    },
-                                    textAlign: TextAlign.center,
-                                    decoration: new InputDecoration(
-                                      hintText:
-                                          AppLocalizations.of(context)!.coupon,
-                                      hintStyle:
-                                          TextStyle(color: Color(0xFF787676)),
-                                      fillColor: Colors.transparent,
-                                    ),
-                                    style: TextStyle(
-                                        fontSize: 15, color: Colors.white),
-                                    autofocus: true,
-                                    controller: _couponEditingController,
-                                  ),
-                                ),
-                              )),
-                        ),
-                        !_loading
-                            ? Container(
-                                decoration: BoxDecoration(
-                                    color: Colors.blue,
-                                    borderRadius: BorderRadius.all(
-                                        new Radius.circular(10))),
-                                child: Padding(
-                                  padding:
-                                      const EdgeInsets.fromLTRB(8.0, 4, 8.0, 4),
-                                  child: TextButton(
-                                      onPressed: checkEmailAndContinue,
-                                      child: Directionality(
-                                        textDirection: TextDirection.ltr,
-                                        child: Text(
-                                          AppLocalizations.of(context)!.enter,
-                                          style: TextStyle(
-                                              fontSize: 20,
-                                              color: Colors.white),
-                                        ),
-                                      )),
-                                ),
-                              )
-                            : new Align(
-                                child: new Container(
-                                  color: Colors.transparent,
-                                  width: 70.0,
-                                  height: 70.0,
-                                  child: new Padding(
-                                      padding: const EdgeInsets.all(5.0),
-                                      child: new Center(
-                                          child:
-                                              new CircularProgressIndicator())),
-                                ),
-                                alignment: FractionalOffset.center,
-                              ),
-                        if (_errorMessage != "")
-                          Center(
-                              child: Directionality(
-                            textDirection: TextDirection.ltr,
-                            child: Text(
-                              _errorMessage,
-                              style: TextStyle(
-                                color: Colors.red,
-                                fontSize: 20,
-                              ),
-                            ),
-                          )),
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Center(
-                                  child: Text(
-                                AppLocalizations.of(context)!.publicUse,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  //fontFamily: 'SignInFont',
-                                  color: Colors.white,
-                                  // wordSpacing: 5,
-                                  fontSize: 20,
-                                  height: 1.5,
-
-                                  //height: 1.4,
-                                  // letterSpacing: 1.6
-                                ),
-                              )),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.all(5.0),
-                              child: Center(
-                                child: MouseRegion(
-                                  cursor: SystemMouseCursors.click,
-                                  onEnter: (PointerEvent details) =>
-                                      setState(() => amIWatsAppHovering = true),
-                                  onExit: (PointerEvent details) =>
-                                      setState(() {
-                                    amIWatsAppHovering = false;
-                                  }),
-                                  child: RichText(
-                                      text: TextSpan(
-                                          text: AppLocalizations.of(context)!
-                                              .watsappNumber,
-                                          style: TextStyle(
-                                            fontSize: 18,
-                                            color: amIWatsAppHovering
-                                                ? Colors.green[300]
-                                                : Colors.blue,
-                                            decoration:
-                                                TextDecoration.underline,
-                                          ),
-                                          recognizer: TapGestureRecognizer()
-                                            ..onTap = () {
-                                              launch(
-                                                  "https://wa.me/message/6CROFFTK7A5BE1");
-                                            })),
-                                ),
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.all(5.0),
-                              child: Center(
-                                  child: Text(
-                                AppLocalizations.of(context)!.emailUsAt,
-                                style: TextStyle(
-                                  //fontFamily: 'SignInFont',
-                                  color: Colors.white,
-                                  //wordSpacing: 5,
-                                  fontSize: 20,
-                                  // height: 1.4,
-                                  //letterSpacing: 1.6
-                                ),
-                              )),
-                            ),
-                          ],
-                        )
                       ],
                     ),
                     Align(
@@ -1715,14 +1582,15 @@ class _AllSongsState extends State<AllSongs> {
   }
 
   _onSongPressed(Song song) {
-    if (signedIn || demoSongNames.contains(song.title))
+    if (signedIn || demoSongNames.contains(song.title)) {
       setState(() {
         songInSongsClicked(song)
             ? songsClicked.removeWhere(
                 (element) => element.songResourceFile == song.songResourceFile)
             : songsClicked.add(song);
       });
-    else {
+      if (!kIsWeb) playSongs();
+    } else {
       setState(() {
         openSignIn = true;
       });
@@ -1849,6 +1717,24 @@ class _AllSongsState extends State<AllSongs> {
             SizedBox(
               height: 10,
             ),
+            Container(
+              width: 275,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.purple),
+                borderRadius: BorderRadius.circular(50),
+                color: Colors.purple,
+              ),
+              child: IconButton(
+                onPressed: () => checkTime(),
+                icon: Icon(
+                  Icons.play_arrow,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+            SizedBox(
+              height: 10,
+            ),
             Text(
               AppLocalizations.of(context)!.playlist,
               style: TextStyle(color: Colors.white, fontSize: 20),
@@ -1908,7 +1794,9 @@ class _AllSongsState extends State<AllSongs> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 15.0, horizontal: 8.0),
       child: Container(
-        width: MediaQuery.of(context).size.width * 0.6,
+        width: _smartPhone || !kIsWeb
+            ? MediaQuery.of(context).size.width * 0.9
+            : MediaQuery.of(context).size.width * 0.6,
         height: 48,
         decoration: BoxDecoration(
             border: Border.all(color: Color(0xFF8D3C8E), width: 2),

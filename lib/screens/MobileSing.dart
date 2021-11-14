@@ -6,8 +6,6 @@ import 'dart:math';
 
 import 'package:ashira_flutter/model/Line.dart';
 import 'package:ashira_flutter/model/Song.dart';
-import 'package:ashira_flutter/utils/FakeUi.dart'
-    if (dart.library.html) 'dart:ui' as ui;
 import 'package:ashira_flutter/utils/Parser.dart';
 import 'package:ashira_flutter/utils/WpHelper.dart' as wph;
 import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
@@ -29,19 +27,19 @@ import 'package:wordpress_api/wordpress_api.dart' as wp;
 import 'AllSongs.dart';
 // List<CameraDescription> cameras;
 
-class Sing extends StatefulWidget {
+class MobileSing extends StatefulWidget {
   final List<Song> songs;
   final String counter;
 
-  Sing(this.songs, this.counter);
+  MobileSing(this.songs, this.counter);
 
   // Sing({Key key, @required this.song}) : super(key: key);
 
   @override
-  _SingState createState() => _SingState(songs, counter);
+  _MobileSingState createState() => _MobileSingState(songs, counter);
 }
 
-class _SingState extends State<Sing> with WidgetsBindingObserver {
+class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
   int MAN = 0;
   int WOMAN = 1;
   int KID = 2;
@@ -108,7 +106,9 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
 
   var songStarted = false;
 
-  _SingState(this.songs, this.counter);
+  bool songStopped = false;
+
+  _MobileSingState(this.songs, this.counter);
 
   Duration _progressValue = new Duration(seconds: 0);
   Duration songLength = new Duration(seconds: 1);
@@ -169,6 +169,7 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
       splits.add(totalLength);
       totalLength += songs[i].length;
     }
+    getCameras();
     print(splits);
     songLength = new Duration(milliseconds: totalLength - 150);
     // checkFirestorePermissions(false);
@@ -177,6 +178,26 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
     }
     createAllBackgroundPictureArray();
     _isSmartphone = isSmartphone();
+  }
+
+  void getCameras() async {
+    try {
+      WidgetsFlutterBinding.ensureInitialized();
+      cameras = await availableCameras();
+      controller = CameraController(
+        cameras[1],
+        ResolutionPreset.medium,
+        enableAudio: enableAudio,
+        imageFormatGroup: ImageFormatGroup.jpeg,
+      );
+      controller!.initialize().then((value) {
+        setState(() {
+          cameraReady = true;
+        });
+      });
+    } on CameraException catch (e) {
+      // logError(e.code, e.description);
+    }
   }
 
   @override
@@ -210,10 +231,10 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    return webPage();
+    return phonePage();
   }
 
-  webPage() {
+  phonePage() {
     return MaterialApp(
       home: WillPopScope(
           onWillPop: () {
@@ -235,256 +256,181 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
                 ],
               )),
               child: !_accessDenied
-                  ? Padding(
-                      padding:
-                          const EdgeInsets.fromLTRB(15.0, 25.0, 15.0, 25.0),
-                      child: Container(
-                        decoration: BoxDecoration(
-                            image: getPreviousImage(),
-                            border: Border.all(color: Colors.purple),
-                            borderRadius:
-                                BorderRadius.all(new Radius.circular(20.0))),
-                        child: Container(
-                          decoration: BoxDecoration(
-                              image: getImage(),
-                              border: Border.all(color: Colors.purple),
-                              borderRadius:
-                                  BorderRadius.all(new Radius.circular(20.0))),
-                          child: Stack(children: [
-                            Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                // Row(
-                                //   mainAxisAlignment:
-                                //       MainAxisAlignment.spaceBetween,
-                                //   children: [
-                                //     Container(width: 390.0, height: 0.0),
-                                //     Center(
-                                SafeArea(
-                                  child: Text(
-                                    songs[trackNumber].title,
-                                    style: TextStyle(
-                                        fontSize: 18, color: Colors.white),
-                                  ),
+                  ? Stack(children: [
+                      Column(
+                        children: [
+                          SafeArea(
+                            child: Align(
+                              alignment: Alignment.topCenter,
+                              child: Container(
+                                height: MediaQuery.of(context).size.height / 8,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          songs[trackNumber].artist,
+                                          style: TextStyle(
+                                              fontSize: 13,
+                                              color: Colors.white),
+                                        ),
+                                        Text(
+                                          songs[trackNumber].title,
+                                          style: TextStyle(
+                                              fontSize: 18,
+                                              color: Colors.white),
+                                        ),
+                                      ],
+                                    ),
+                                    Image(
+                                      fit: BoxFit.fitWidth,
+                                      image: NetworkImage(
+                                          songs[trackNumber].imageResourceFile),
+                                    ),
+                                  ],
                                 ),
-                                Expanded(
-                                  child: Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.center,
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceEvenly,
-                                    children: [
-                                      Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceEvenly,
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.center,
-                                        children: [
-                                          Container(
-                                            height: MediaQuery.of(context)
-                                                    .size
-                                                    .height /
-                                                2,
-                                            child: FutureBuilder(
-                                              future: parseFuture,
-                                              builder: (context, snapShot) {
-                                                if (snapShot.hasData) {
-                                                  return buildListView(
-                                                      (allLines[trackNumber]));
-                                                } else if (snapShot.hasError) {
-                                                  return Icon(
-                                                    Icons.error_outline,
-                                                    color: Colors.red,
-                                                  );
-                                                } else {
-                                                  return Image(
-                                                    fit: BoxFit.fill,
-                                                    image: NetworkImage(
-                                                        songs[trackNumber]
-                                                            .imageResourceFile),
-                                                  );
-                                                }
-                                              },
-                                            ),
-                                          ),
-                                          if (!(isPlaying && counter == "אשר"))
-                                            Padding(
-                                              padding:
-                                                  const EdgeInsets.fromLTRB(
-                                                      0, 20, 0, 0),
-                                              child: Container(
-                                                width: _isSmartphone
-                                                    ? MediaQuery.of(context)
-                                                            .size
-                                                            .width -
-                                                        60
-                                                    : personalMoishie
-                                                        ? MediaQuery.of(context)
-                                                                .size
-                                                                .width /
-                                                            2
-                                                        : MediaQuery.of(context)
-                                                                .size
-                                                                .width /
-                                                            3,
-                                                height: 50,
-                                                decoration: BoxDecoration(
-                                                    border: Border.all(
-                                                        color: Colors.purple),
-                                                    borderRadius:
-                                                        BorderRadius.all(
-                                                            new Radius.circular(
-                                                                30.0))),
-                                                child: Padding(
-                                                  padding:
-                                                      const EdgeInsets.fromLTRB(
-                                                          8.0, 4, 8, 4),
-                                                  child: Center(
-                                                    child: ProgressBar(
-                                                      total: songLength,
-                                                      progressBarColor:
-                                                          Colors.blue,
-                                                      progress: _progressValue,
-                                                      thumbColor: Colors.white,
-                                                      timeLabelTextStyle:
-                                                          TextStyle(
-                                                              color:
-                                                                  Colors.white),
-                                                      barHeight: 4,
-                                                      thumbRadius: 9,
-                                                      timeLabelLocation:
-                                                          TimeLabelLocation
-                                                              .sides,
-                                                      onSeek:
-                                                          (Duration duration) {
-                                                        _progressValue =
-                                                            duration;
-                                                        updateUI(
-                                                            duration,
-                                                            false,
-                                                            true,
-                                                            trackNumber);
-                                                        audioPlayer.seek(
-                                                            new Duration(
-                                                                milliseconds: duration
-                                                                        .inMilliseconds -
-                                                                    splits[
-                                                                        trackNumber]),
-                                                            index: trackNumber);
-                                                      },
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          if (!(isPlaying && counter == "אשר"))
-                                            _loading
-                                                ? new Container(
-                                                    color: Colors.transparent,
-                                                    width: 50.0,
-                                                    height: 50.0,
-                                                    child: new Padding(
-                                                        padding:
-                                                            const EdgeInsets
-                                                                .all(5.0),
-                                                        child: new Center(
-                                                            child:
-                                                                new CircularProgressIndicator())),
-                                                  )
-                                                : isPlaying && !paused
-                                                    ? IconButton(
-                                                        iconSize: 50,
-                                                        icon: Icon(
-                                                          Icons.pause,
-                                                          color: Colors.white,
-                                                        ),
-                                                        onPressed: () {
-                                                          pause();
-                                                        })
-                                                    : songFinished
-                                                        ? IconButton(
-                                                            iconSize: 50,
-                                                            icon: Icon(
-                                                              Icons
-                                                                  .replay_rounded,
-                                                              color:
-                                                                  Colors.white,
-                                                            ),
-                                                            onPressed: () {
-                                                              restart();
-                                                              setState(() {
-                                                                songFinished =
-                                                                    false;
-                                                              });
-                                                            })
-                                                        : IconButton(
-                                                            iconSize: 50,
-                                                            icon: Icon(
-                                                              Icons.play_arrow,
-                                                              color:
-                                                                  Colors.white,
-                                                            ),
-                                                            onPressed: () {
-                                                              if (songPicked)
-                                                                play();
-                                                            },
-                                                          ),
-                                          SizedBox(
-                                            height: 20,
-                                          )
-                                        ],
-                                      ),
-                                      if (!personalMoishie && !_isSmartphone)
-                                        Container(
-                                          decoration: BoxDecoration(
-                                              border: Border.all(
-                                                  color: Colors.purple),
-                                              borderRadius: BorderRadius.all(
-                                                  new Radius.circular(15))),
-                                          child: Padding(
-                                            padding: const EdgeInsets.all(8.0),
-                                            child: cameraMode
-                                                ? Container(
-                                                    color: Colors.transparent,
-                                                    height:
-                                                        MediaQuery.of(context)
-                                                                .size
-                                                                .width /
-                                                            2.7,
-                                                    width:
-                                                        MediaQuery.of(context)
-                                                                .size
-                                                                .width /
-                                                            2.7,
-                                                    child: WebcamPage(counter))
-                                                : ClipRRect(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            15.0),
-                                                    child: Image(
-                                                      width:
-                                                          MediaQuery.of(context)
-                                                                  .size
-                                                                  .width /
-                                                              3,
-                                                      fit: BoxFit.fitWidth,
-                                                      image: NetworkImage(songs[
-                                                              trackNumber]
-                                                          .imageResourceFile),
-                                                    ),
-                                                  ),
-                                          ),
-                                        )
-                                    ],
-                                  ),
-                                ),
-                              ],
+                              ),
                             ),
-                            if (!songPicked) tonePicker()
-                          ]),
+                          ),
+                          Container(
+                            height: MediaQuery.of(context).size.height / 5,
+                            width: MediaQuery.of(context).size.height - 30,
+                            child: FutureBuilder(
+                              future: parseFuture,
+                              builder: (context, snapShot) {
+                                if (snapShot.hasData) {
+                                  return buildListView((allLines[trackNumber]));
+                                } else if (snapShot.hasError) {
+                                  return Icon(
+                                    Icons.error_outline,
+                                    color: Colors.red,
+                                  );
+                                } else {
+                                  return Image(
+                                    fit: BoxFit.fill,
+                                    image: NetworkImage(
+                                        songs[trackNumber].imageResourceFile),
+                                  );
+                                }
+                              },
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(8.0, 0, 8, 0),
+                            child: Center(
+                              child: ProgressBar(
+                                total: songLength,
+                                progressBarColor: Colors.blue,
+                                progress: _progressValue,
+                                thumbRadius: 1,
+                                timeLabelTextStyle:
+                                    TextStyle(color: Colors.white),
+                                barHeight: 8,
+                                timeLabelLocation: TimeLabelLocation.sides,
+                              ),
+                            ),
+                          ),
+                          if (cameraReady)
+                            Expanded(
+                                child: Container(
+                                    child: Align(
+                                        alignment: Alignment.topCenter,
+                                        child: _cameraPreviewWidget()))),
+                        ],
+                      ),
+                      SafeArea(
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Align(
+                            alignment: Alignment.topLeft,
+                            child: IconButton(
+                              icon: Icon(
+                                Icons.arrow_back_sharp,
+                                color: Colors.white,
+                              ),
+                              onPressed: () {
+                                backButton();
+                              },
+                            ),
+                          ),
                         ),
                       ),
-                    )
+                      Padding(
+                        padding: const EdgeInsets.all(30.0),
+                        child: Align(
+                          alignment: Alignment.bottomCenter,
+                          child: _loading
+                              ? new Container(
+                                  color: Colors.transparent,
+                                  width: 60.0,
+                                  height: 60.0,
+                                  child: new Padding(
+                                      padding: const EdgeInsets.all(5.0),
+                                      child: new Center(
+                                          child:
+                                              new CircularProgressIndicator())),
+                                )
+                              : isPlaying && !paused
+                                  ? IconButton(
+                                      iconSize: 60,
+                                      icon: Icon(
+                                        Icons.pause,
+                                        color: Colors.white,
+                                      ),
+                                      onPressed: () {
+                                        pause();
+                                      })
+                                  : songStarted
+                                      ? Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            IconButton(
+                                              iconSize: 80,
+                                              icon: Icon(
+                                                Icons.stop,
+                                                color: Colors.white,
+                                              ),
+                                              onPressed: () {
+                                                // setState(() {
+                                                //   songStopped = true;
+                                                // });
+                                                endOfSongMenu();
+                                              },
+                                            ),
+                                            IconButton(
+                                              iconSize: 80,
+                                              icon: Icon(
+                                                Icons.play_arrow,
+                                                color: Colors.white,
+                                              ),
+                                              onPressed: () {
+                                                if (songPicked) play();
+                                              },
+                                            )
+                                          ],
+                                        )
+                                      : IconButton(
+                                          iconSize: 80,
+                                          icon: Icon(
+                                            Icons.play_arrow,
+                                            color: Colors.white,
+                                          ),
+                                          onPressed: () {
+                                            songStarted = true;
+                                            if (songPicked) play();
+                                          },
+                                        ),
+                          //todo songFinished means song is over
+                        ),
+                      ),
+                      if (!songPicked) tonePicker(),
+                      // if (songStopped) endOfSongMenu()
+                    ])
                   : expireWording(),
             ),
           )),
@@ -637,6 +583,7 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
   }
 
   void play() async {
+    controller!.startVideoRecording();
     if (timesUp()) {
       setState(() {
         _accessDenied = true;
@@ -677,12 +624,8 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
     return Column(children: [
       Expanded(
         child: SizedBox(
-          height: MediaQuery.of(context).size.height / 3,
-          width: _isSmartphone
-              ? MediaQuery.of(context).size.width - 30
-              : personalMoishie
-                  ? MediaQuery.of(context).size.width - 45
-                  : MediaQuery.of(context).size.width / 3,
+          height: MediaQuery.of(context).size.height / 6,
+          width: MediaQuery.of(context).size.width - 30,
           child: ListView.builder(
               controller: this.listViewController,
               itemCount: lines.length,
@@ -699,18 +642,12 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
   }
 
   createTextWidget(int index, {required Line line}) {
-    double size = personalMoishie
-        ? MediaQuery.of(context).size.height / 6
-        : _isSmartphone
-            ? 28
-            : 34;
+    double size = 28;
     Color pastFontColor = personalMoishie ? Colors.green : Colors.white;
     Color futureFontColor = personalMoishie ? Colors.white : Colors.white30;
     FontWeight weight = personalMoishie ? FontWeight.bold : FontWeight.normal;
     return Container(
-      height: personalMoishie
-          ? (MediaQuery.of(context).size.height / 4).toDouble()
-          : 41,
+      height: 33,
       child: Center(
         child: Stack(children: [
           RichText(
@@ -843,6 +780,7 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
 
   pause() {
     audioPlayer.pause();
+    controller!.pauseVideoRecording();
     timer.cancel();
     setState(() {
       Wakelock.disable();
@@ -1180,10 +1118,7 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
 
   void animateLyrics(bool animation) {
     listViewController.animateTo(
-      personalMoishie
-          ? currentLineIndex *
-              (MediaQuery.of(context).size.height / 4).toDouble()
-          : currentLineIndex * 41.toDouble(),
+      33.toDouble() * currentLineIndex,
       duration: animation
           ? new Duration(milliseconds: 400)
           : new Duration(milliseconds: 20),
@@ -1477,95 +1412,179 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
     await controller!.setZoomLevel(_currentScale);
   }
 
+  endOfSongMenu() {
+    showDialog(
+        // barrierDismissible: true,
+        context: context,
+        builder: (BuildContext context) {
+          return Dialog(
+            backgroundColor: Colors.transparent,
+            child: Center(
+              child: Directionality(
+                textDirection: Directionality.of(context),
+                child: Container(
+                  height: MediaQuery.of(context).size.height * 0.7,
+                  width: MediaQuery.of(context).size.width * 0.7,
+                  decoration: BoxDecoration(
+                      border: Border.all(color: Colors.purple),
+                      borderRadius: BorderRadius.all(new Radius.circular(20.0)),
+                      gradient: RadialGradient(
+                        center: Alignment.center,
+                        radius: 0.8,
+                        colors: [
+                          const Color(0xFF221A4D), // blue sky
+                          const Color(0xFF000000), // yellow sun
+                        ],
+                      )),
+                  child: Stack(children: [
+                    Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Container(
+                            height: MediaQuery.of(context).size.height * 0.2,
+                            child: Align(
+                              alignment: Alignment.center,
+                              child: Text(
+                                songFinished ? "Song finished" : "Song stopped",
+                                style: TextStyle(
+                                    color: Colors.white, fontSize: 30),
+                              ),
+                            ),
+                          ),
+                          ClipRRect(
+                              borderRadius: BorderRadius.circular(4),
+                              child: Stack(children: <Widget>[
+                                Positioned.fill(
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.purple,
+                                      // border: Border.all(color: Colors.tealAccent),
+                                      borderRadius: BorderRadius.all(
+                                          new Radius.circular(60.0)),
+                                      gradient: RadialGradient(
+                                        colors: <Color>[
+                                          Colors.purple.shade200,
+                                          Colors.purple.shade800,
+                                          Colors.purple.shade500,
+                                        ],
+                                        stops: [0.2, 0.7, 1],
+                                        center: Alignment(0.1, 0.3),
+                                        focal: Alignment(-0.1, 0.6),
+                                        focalRadius: 2,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                Container(
+                                  width:
+                                      MediaQuery.of(context).size.width * 0.6,
+                                  child: TextButton(
+                                      onPressed: () {},
+                                      child: Text(
+                                        "Download",
+                                        style: TextStyle(
+                                            fontSize: 22,
+                                            color: Colors.white,
+                                            letterSpacing: 1.5),
+                                      )),
+                                ),
+                              ])),
+                          Container(
+                            child: TextButton(
+                                onPressed: () {
+                                  stopVideoRecording();
+                                },
+                                child: Text(
+                                  "Watch",
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    color: Colors.white,
+                                    //letterSpacing: 1.5
+                                  ),
+                                )),
+                          ),
+                          const Divider(
+                            thickness: 1,
+                            // thickness of the line
+                            indent: 30,
+                            // empty space to the leading edge of divider.
+                            endIndent: 30,
+                            // empty space to the trailing edge of the divider.
+                            color: Colors
+                                .white, // The color to use when painting the line.
+                            // height: 20, // The divider's height extent.
+                          ),
+                          Container(
+                            child: TextButton(
+                                onPressed: () {
+                                  restart();
+                                  setState(() {
+                                    songFinished = false;
+                                    songStarted = false;
+                                  });
+                                },
+                                child: Text(
+                                  "Play again",
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    color: Colors.white,
+                                    //    letterSpacing: 1.5
+                                  ),
+                                )),
+                          ),
+                          const Divider(
+                            thickness: 1,
+                            // thickness of the line
+                            indent: 30,
+                            // empty space to the leading edge of divider.
+                            endIndent: 30,
+                            // empty space to the trailing edge of the divider.
+                            color: Colors
+                                .white, // The color to use when painting the line.
+                            // height: 20, // The divider's height extent.
+                          ),
+                          Container(
+                            child: TextButton(
+                                onPressed: () {
+                                  backButton();
+                                },
+                                child: Text(
+                                  "Exit",
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    color: Colors.white,
+                                    //    letterSpacing: 1.5
+                                  ),
+                                )),
+                          ),
+                        ]),
+                    SafeArea(
+                      child: Align(
+                        alignment: Alignment.topRight,
+                        child: IconButton(
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                            },
+                            icon: Icon(
+                              Icons.cancel_outlined,
+                              color: Colors.white,
+                            )),
+                      ),
+                    )
+                  ]),
+                ),
+              ),
+            ),
+          );
+        });
+  }
+
   void stopVideoRecording() {
     controller!.stopVideoRecording().then((file) {
       videoFile = file;
       print("this is the file" + file.name);
     });
-  }
-}
-
-class WebcamPage extends StatefulWidget {
-  String number;
-
-  WebcamPage(this.number);
-
-  @override
-  _WebcamPageState createState() => _WebcamPageState(number);
-}
-
-class _WebcamPageState extends State<WebcamPage> {
-  // Webcam widget to insert into the tree
-  late Widget _webcamWidget;
-
-  // VideoElement
-  html.VideoElement _webcamVideoElement = html.VideoElement();
-
-  String number;
-
-  _WebcamPageState(this.number);
-
-  @override
-  void dispose() {
-    switchCameraOff();
-    super.dispose();
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    // size = MediaQuery.of(context).size;
-    // deviceRatio = size.width / size.height;
-    // Create a video element which will be provided with stream source
-    _webcamVideoElement = html.VideoElement();
-    _webcamWidget = HtmlElementView(key: UniqueKey(), viewType: number);
-    // Register an webcam
-    if (!ui.platformViewRegistry.registerViewFactory(number,
-        (int viewId) => _webcamVideoElement)) // return _webcamVideoElement;
-      print("this is still causeing an issue" + number);
-
-    html.window.navigator.mediaDevices!
-        .getUserMedia({"video": true}).then((html.MediaStream stream) {
-      _webcamVideoElement
-        ..srcObject = stream
-        ..autoplay = true;
-      return _webcamVideoElement;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) => Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Center(
-        child: Container(
-            decoration: BoxDecoration(
-                borderRadius: BorderRadius.all(new Radius.circular(20.0)),
-                gradient: RadialGradient(
-                  center: Alignment.center,
-                  radius: 0.8,
-                  colors: [
-                    const Color(0xFF221A4D), // blue sky
-                    const Color(0xFF000000), // yellow sun
-                  ],
-                )),
-            width: MediaQuery.of(context).size.width,
-            child: _webcamWidget),
-      ));
-
-  switchCameraOff() {
-    try {
-      if (_webcamVideoElement.srcObject!.active!) {
-        var tracks = _webcamVideoElement.srcObject!.getTracks();
-
-        //stopping tracks and setting srcObject to null to switch camera off
-        _webcamVideoElement.srcObject = null;
-
-        tracks.forEach((track) {
-          // todo took off for mobile
-          // track.stop();
-        });
-      }
-    } catch (error) {}
   }
 }
 

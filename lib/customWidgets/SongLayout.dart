@@ -1,8 +1,8 @@
 import 'package:ashira_flutter/model/Song.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class SongLayout extends StatefulWidget {
   final Song song;
@@ -72,18 +72,18 @@ class _SongLayoutState extends State<SongLayout> {
                                   widget.song.imageResourceFile)))),
                 ),
                 Expanded(
-                  flex: widget.isSmartphone ? 1 : 2,
+                  flex: kIsWeb && widget.isSmartphone ? 1 : 2,
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Padding(
-                        padding: const EdgeInsets.all(8.0),
+                        padding: const EdgeInsets.all(5.0),
                         child: Text(
                           widget.song.title,
                           style: TextStyle(
                               color: Colors.white,
                               fontFamily: 'Normal',
-                              fontSize: 15),
+                              fontSize: kIsWeb ? 15 : 12),
                         ),
                       ),
                       Padding(
@@ -94,7 +94,7 @@ class _SongLayoutState extends State<SongLayout> {
                             style: TextStyle(
                                 color: Colors.white,
                                 fontFamily: 'Normal',
-                                fontSize: 15),
+                                fontSize: kIsWeb ? 15 : 12),
                           ),
                         ),
                       )
@@ -113,31 +113,31 @@ class _SongLayoutState extends State<SongLayout> {
                     ),
                   ),
                 ),
-                if (!widget.open)
-                  Padding(
-                    padding: EdgeInsets.all(10),
-                    child: Align(
-                      alignment: Alignment.bottomCenter,
-                      child: MouseRegion(
-                        cursor: SystemMouseCursors.click,
-                        onEnter: (PointerEvent details) => amIHovering = true,
-                        onExit: (PointerEvent details) => amIHovering = false,
-                        child: RichText(
-                            text: TextSpan(
-                                text: widget.memberText,
-                                style: TextStyle(
-                                  color: amIHovering
-                                      ? Colors.red[300]
-                                      : Colors.red,
-                                  decoration: TextDecoration.underline,
-                                ),
-                                recognizer: TapGestureRecognizer()
-                                  ..onTap = () {
-                                    widget.onTapAction();
-                                  })),
-                      ),
-                    ),
-                  )
+                // if (!widget.open)
+                //   Padding(
+                //     padding: EdgeInsets.all(10),
+                //     child: Align(
+                //       alignment: Alignment.bottomCenter,
+                //       child: MouseRegion(
+                //         cursor: SystemMouseCursors.click,
+                //         onEnter: (PointerEvent details) => amIHovering = true,
+                //         onExit: (PointerEvent details) => amIHovering = false,
+                //         child: RichText(
+                //             text: TextSpan(
+                //                 text: widget.memberText,
+                //                 style: TextStyle(
+                //                   color: amIHovering
+                //                       ? Colors.red[300]
+                //                       : Colors.red,
+                //                   decoration: TextDecoration.underline,
+                //                 ),
+                //                 recognizer: TapGestureRecognizer()
+                //                   ..onTap = () {
+                //                     widget.onTapAction();
+                //                   })),
+                //       ),
+                //     ),
+                //   )
               ],
             ),
             if (!widget.open)
