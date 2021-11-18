@@ -435,9 +435,12 @@ class _AllSongsState extends State<AllSongs> {
                                                 8.0, 4, 8.0, 4),
                                             child: TextButton(
                                                 onPressed: () {
-                                                  setState(() {
-                                                    openSignIn = true;
-                                                  });
+                                                  if (kIsWeb)
+                                                    setState(() {
+                                                      openSignIn = true;
+                                                    });
+                                                  else
+                                                    buildMobileSignIn();
                                                 },
                                                 child: Directionality(
                                                   textDirection:
@@ -475,7 +478,7 @@ class _AllSongsState extends State<AllSongs> {
                 ),
               ),
               if (openSignIn)
-                if (kIsWeb) buildWebSignInPopup() else buildMobileSignIn(),
+                if (kIsWeb) buildWebSignInPopup(),
               if (openPrivacyOptions)
                 Center(
                     child: Container(
@@ -501,21 +504,6 @@ class _AllSongsState extends State<AllSongs> {
       ),
     );
   }
-
-  // updateDocument(title) {
-  //   Map<String, dynamic> stringsToAdd = Map();
-  //
-  //   stringsToAdd["imageResourceFile"] =
-  //       "https://s3.wasabisys.com/playbacks/Update Background/expiredpng.png";
-  //   stringsToAdd["textResourceFile"] = "";
-  //   stringsToAdd["artist"] = "יש לעדכן את האפליקציה";
-  //   stringsToAdd["date"] = "";
-  //   stringsToAdd["timesPlayed"] = 0;
-  //   var collection = FirebaseFirestore.instance.collection('songs');
-  //   collection
-  //       .doc(title) // <-- Doc ID where data should be updated.
-  //       .update(stringsToAdd);
-  // }
 
   getSongs() {
     myLocale = Localizations.localeOf(context).languageCode;
@@ -1221,6 +1209,25 @@ class _AllSongsState extends State<AllSongs> {
                               )),
                             ),
                             Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Center(
+                                  child: Text(
+                                AppLocalizations.of(context)!
+                                    .questionsAndInquiries,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  //fontFamily: 'SignInFont',
+                                  color: Colors.white,
+                                  // wordSpacing: 5,
+                                  fontSize: 20,
+                                  height: 1.5,
+
+                                  //height: 1.4,
+                                  // letterSpacing: 1.6
+                                ),
+                              )),
+                            ),
+                            Padding(
                               padding: const EdgeInsets.all(5.0),
                               child: Center(
                                 child: MouseRegion(
@@ -1472,113 +1479,128 @@ class _AllSongsState extends State<AllSongs> {
   }
 
   buildMobileSignIn() {
-    return Directionality(
-      textDirection: Directionality.of(context),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-              child: Center(
-            child: Stack(children: [
-              Center(
-                child: Container(
-                  height: 3 * MediaQuery.of(context).size.height / 4,
-                  width: 2 * MediaQuery.of(context).size.width / 3,
-                  decoration: BoxDecoration(
-                      color: Colors.black,
-                      border: Border.all(color: Colors.purple),
-                      borderRadius:
-                          BorderRadius.all(new Radius.circular(20.0))),
-                  child: Stack(children: [
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Container(
-                          height: MediaQuery.of(context).size.height / 3.5,
-                          width: MediaQuery.of(context).size.height / 3.5,
+    showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return Dialog(
+            backgroundColor: Colors.transparent,
+            child: Directionality(
+              textDirection: Directionality.of(context),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                      child: Center(
+                    child: Stack(children: [
+                      Center(
+                        child: Container(
                           decoration: BoxDecoration(
-                            image: DecorationImage(
-                              image: AssetImage('assets/ashira.png'),
-                              fit: BoxFit.fill,
+                              color: Colors.black,
+                              border: Border.all(color: Colors.purple),
+                              borderRadius:
+                                  BorderRadius.all(new Radius.circular(20.0))),
+                          child: Stack(children: [
+                            Column(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Container(
+                                  height:
+                                      MediaQuery.of(context).size.height / 3.5,
+                                  width:
+                                      MediaQuery.of(context).size.height / 3.5,
+                                  decoration: BoxDecoration(
+                                    image: DecorationImage(
+                                      image: AssetImage('assets/ashira.png'),
+                                      fit: BoxFit.fill,
+                                    ),
+                                    shape: BoxShape.rectangle,
+                                  ),
+                                ),
+                                Center(
+                                  child: Container(
+                                      width:
+                                          MediaQuery.of(context).size.width / 2,
+                                      height: 50,
+                                      decoration: BoxDecoration(
+                                          border:
+                                              Border.all(color: Colors.purple),
+                                          borderRadius: BorderRadius.all(
+                                              new Radius.circular(10.0))),
+                                      child: ElevatedButton(
+                                        onPressed: () {},
+                                        child: Row(children: [
+                                          Flexible(
+                                              child: Container(
+                                            child: Text(
+                                              AppLocalizations.of(context)!
+                                                  .monthlySub,
+                                              style: TextStyle(
+                                                  color: Colors.white),
+                                            ),
+                                          )),
+                                          Container(
+                                            color: Colors.pink,
+                                            child: Text("50₪",
+                                                style: TextStyle(
+                                                    color: Colors.white)),
+                                          )
+                                        ]),
+                                      )),
+                                ),
+                                Center(
+                                  child: Container(
+                                      width:
+                                          MediaQuery.of(context).size.width / 2,
+                                      height: 50,
+                                      decoration: BoxDecoration(
+                                          border:
+                                              Border.all(color: Colors.purple),
+                                          borderRadius: BorderRadius.all(
+                                              new Radius.circular(10.0))),
+                                      child: ElevatedButton(
+                                        onPressed: () {},
+                                        child: Row(children: [
+                                          Flexible(
+                                              child: Container(
+                                            child: Text(
+                                              AppLocalizations.of(context)!
+                                                  .dailySub,
+                                              style: TextStyle(
+                                                  color: Colors.white),
+                                            ),
+                                          )),
+                                          Container(
+                                            color: Colors.pink,
+                                            child: Text("10₪",
+                                                style: TextStyle(
+                                                    color: Colors.white)),
+                                          )
+                                        ]),
+                                      )),
+                                ),
+                              ],
                             ),
-                            shape: BoxShape.rectangle,
-                          ),
+                            Align(
+                              alignment: Alignment.topRight,
+                              child: IconButton(
+                                icon: Icon(Icons.close),
+                                color: Colors.white,
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                },
+                              ),
+                            ),
+                          ]),
                         ),
-                        Center(
-                          child: Container(
-                              width: MediaQuery.of(context).size.width / 2,
-                              height: 50,
-                              decoration: BoxDecoration(
-                                  border: Border.all(color: Colors.purple),
-                                  borderRadius: BorderRadius.all(
-                                      new Radius.circular(10.0))),
-                              child: ElevatedButton(
-                                onPressed: () {},
-                                child: Row(children: [
-                                  Flexible(
-                                      child: Container(
-                                    child: Text(
-                                      "Monthly Subscription",
-                                      style: TextStyle(color: Colors.white),
-                                    ),
-                                  )),
-                                  Container(
-                                    color: Colors.pink,
-                                    child: Text("50₪",
-                                        style: TextStyle(color: Colors.white)),
-                                  )
-                                ]),
-                              )),
-                        ),
-                        Center(
-                          child: Container(
-                              width: MediaQuery.of(context).size.width / 2,
-                              height: 50,
-                              decoration: BoxDecoration(
-                                  border: Border.all(color: Colors.purple),
-                                  borderRadius: BorderRadius.all(
-                                      new Radius.circular(10.0))),
-                              child: ElevatedButton(
-                                onPressed: () {},
-                                child: Row(children: [
-                                  Flexible(
-                                      child: Container(
-                                    child: Text(
-                                      "Daily Subscription",
-                                      style: TextStyle(color: Colors.white),
-                                    ),
-                                  )),
-                                  Container(
-                                    color: Colors.pink,
-                                    child: Text("10₪",
-                                        style: TextStyle(color: Colors.white)),
-                                  )
-                                ]),
-                              )),
-                        ),
-                      ],
-                    ),
-                    Align(
-                      alignment: Alignment.topRight,
-                      child: IconButton(
-                        icon: Icon(Icons.close),
-                        color: Colors.white,
-                        onPressed: () {
-                          setState(() {
-                            openSignIn = false;
-                          });
-                        },
                       ),
-                    ),
-                  ]),
-                ),
+                    ]),
+                  )),
+                ],
               ),
-            ]),
-          )),
-        ],
-      ),
-    );
+            ),
+          );
+        });
   }
 
   _onSongPressed(Song song) {
@@ -1591,9 +1613,12 @@ class _AllSongsState extends State<AllSongs> {
       });
       if (!kIsWeb) playSongs();
     } else {
-      setState(() {
-        openSignIn = true;
-      });
+      if (kIsWeb)
+        setState(() {
+          openSignIn = true;
+        });
+      else
+        buildMobileSignIn();
     }
   }
 

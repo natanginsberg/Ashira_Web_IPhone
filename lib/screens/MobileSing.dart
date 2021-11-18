@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-
-// import 'dart:html';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:ashira_flutter/model/Line.dart';
@@ -11,16 +10,22 @@ import 'package:ashira_flutter/utils/WpHelper.dart' as wph;
 import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
 import 'package:camera/camera.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:flutter/widgets.dart';
+import 'package:flutter_ffmpeg/flutter_ffmpeg.dart';
+import 'package:flutter_ffmpeg/statistics.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:gallery_saver/gallery_saver.dart';
 import 'package:http/http.dart' as http;
 import 'package:just_audio/just_audio.dart';
-import 'package:universal_html/html.dart' as html;
+import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:video_player/video_player.dart';
 import 'package:wakelock/wakelock.dart';
 import 'package:wordpress_api/wordpress_api.dart' as wp;
 
@@ -43,6 +48,7 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
   int MAN = 0;
   int WOMAN = 1;
   int KID = 2;
+  final Object? STAY_ON_PAGE = "stay on page";
   var songPicked = false;
   List<Song> songs = [];
   List<int> splits = [];
@@ -81,7 +87,6 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
   late TextEditingController _orderEditingController;
 
   bool _loading = false;
-  bool _isSmartphone = false;
 
   String _errorMessage = "";
 
@@ -107,6 +112,32 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
   var songStarted = false;
 
   bool songStopped = false;
+
+  String audioDownloadPath = "";
+
+  double delay = 0;
+
+  String concatedFile = "";
+
+  int countdown = 0;
+
+  Timer startTimer = Timer(new Duration(hours: 30), () {});
+
+  bool playPressed = false;
+
+  String watermarkPath = "";
+
+  double _sliderValue = 0.0;
+
+  bool waitingForDownloadToWatch = false;
+
+  bool fileDownloaded = false;
+
+  bool readyToDownload = false;
+
+  CancelToken cancelToken = CancelToken();
+
+  bool backButtonPressed = false;
 
   _MobileSingState(this.songs, this.counter);
 
@@ -142,16 +173,21 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
   // Counting pointers (number of user fingers on screen)
   int _pointers = 0;
 
+  final FlutterFFmpeg _flutterFFmpeg = new FlutterFFmpeg();
+  final FlutterFFmpegConfig _flutterFFmpegConfig = new FlutterFFmpegConfig();
+
   // Wakelock.toggle(enable: isPlaying);
 
   @override
   Future<void> dispose() async {
-    timer.cancel();
+    if (timer.isActive) timer.cancel();
+    if (startTimer.isActive) startTimer.cancel();
     disposed = true;
     if (isPlaying) {
       pause();
       await audioPlayer.stop();
     }
+    cancelToken.cancel();
     audioPlayer.dispose();
     WidgetsBinding.instance!.removeObserver(this);
     super.dispose();
@@ -177,7 +213,7 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
       personalMoishie = true;
     }
     createAllBackgroundPictureArray();
-    _isSmartphone = isSmartphone();
+    _flutterFFmpegConfig.enableStatisticsCallback(this.statisticsCallback);
   }
 
   void getCameras() async {
@@ -186,7 +222,7 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
       cameras = await availableCameras();
       controller = CameraController(
         cameras[1],
-        ResolutionPreset.medium,
+        ResolutionPreset.high,
         enableAudio: enableAudio,
         imageFormatGroup: ImageFormatGroup.jpeg,
       );
@@ -225,7 +261,9 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
   }
 
   void backButton() {
+    backButtonPressed = true;
     timer.cancel();
+    if (startTimer.isActive) startTimer.cancel();
     Navigator.pop(context);
   }
 
@@ -296,28 +334,48 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
                               ),
                             ),
                           ),
-                          Container(
-                            height: MediaQuery.of(context).size.height / 5,
-                            width: MediaQuery.of(context).size.height - 30,
-                            child: FutureBuilder(
-                              future: parseFuture,
-                              builder: (context, snapShot) {
-                                if (snapShot.hasData) {
-                                  return buildListView((allLines[trackNumber]));
-                                } else if (snapShot.hasError) {
-                                  return Icon(
-                                    Icons.error_outline,
-                                    color: Colors.red,
-                                  );
-                                } else {
-                                  return Image(
-                                    fit: BoxFit.fill,
-                                    image: NetworkImage(
-                                        songs[trackNumber].imageResourceFile),
-                                  );
-                                }
-                              },
-                            ),
+                          Stack(
+                            children: [
+                              Container(
+                                height: MediaQuery.of(context).size.height / 5,
+                                width: MediaQuery.of(context).size.height - 30,
+                                child: FutureBuilder(
+                                  future: parseFuture,
+                                  builder: (context, snapShot) {
+                                    if (snapShot.hasData) {
+                                      return buildListView(
+                                          (allLines[trackNumber]));
+                                    } else if (snapShot.hasError) {
+                                      return Icon(
+                                        Icons.error_outline,
+                                        color: Colors.red,
+                                      );
+                                    } else {
+                                      return Image(
+                                        fit: BoxFit.fill,
+                                        image: NetworkImage(songs[trackNumber]
+                                            .imageResourceFile),
+                                      );
+                                    }
+                                  },
+                                ),
+                              ),
+                              if (!(playPressed || songStarted))
+                                Container(
+                                  color: Colors.black,
+                                  height:
+                                      MediaQuery.of(context).size.height / 5,
+                                  width:
+                                      MediaQuery.of(context).size.height - 30,
+                                  child: Center(
+                                    child: Text(
+                                        AppLocalizations.of(context)!
+                                            .attachEarphones,
+                                        style: TextStyle(
+                                            color: Colors.white, fontSize: 17)),
+                                  ),
+                                ),
+                            ],
                           ),
                           Padding(
                             padding: const EdgeInsets.fromLTRB(8.0, 0, 8, 0),
@@ -359,76 +417,92 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
                           ),
                         ),
                       ),
-                      Padding(
-                        padding: const EdgeInsets.all(30.0),
-                        child: Align(
-                          alignment: Alignment.bottomCenter,
-                          child: _loading
-                              ? new Container(
-                                  color: Colors.transparent,
-                                  width: 60.0,
-                                  height: 60.0,
-                                  child: new Padding(
-                                      padding: const EdgeInsets.all(5.0),
-                                      child: new Center(
-                                          child:
-                                              new CircularProgressIndicator())),
-                                )
-                              : isPlaying && !paused
-                                  ? IconButton(
-                                      iconSize: 60,
-                                      icon: Icon(
-                                        Icons.pause,
-                                        color: Colors.white,
-                                      ),
-                                      onPressed: () {
-                                        pause();
-                                      })
-                                  : songStarted
-                                      ? Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            IconButton(
-                                              iconSize: 80,
-                                              icon: Icon(
-                                                Icons.stop,
-                                                color: Colors.white,
-                                              ),
-                                              onPressed: () {
-                                                // setState(() {
-                                                //   songStopped = true;
-                                                // });
-                                                endOfSongMenu();
-                                              },
-                                            ),
-                                            IconButton(
-                                              iconSize: 80,
-                                              icon: Icon(
-                                                Icons.play_arrow,
-                                                color: Colors.white,
-                                              ),
-                                              onPressed: () {
-                                                if (songPicked) play();
-                                              },
-                                            )
-                                          ],
-                                        )
-                                      : IconButton(
-                                          iconSize: 80,
-                                          icon: Icon(
-                                            Icons.play_arrow,
-                                            color: Colors.white,
-                                          ),
-                                          onPressed: () {
-                                            songStarted = true;
-                                            if (songPicked) play();
-                                          },
+                      if (!playPressed)
+                        Padding(
+                          padding: const EdgeInsets.all(30.0),
+                          child: Align(
+                            alignment: Alignment.bottomCenter,
+                            child: _loading
+                                ? new Container(
+                                    color: Colors.transparent,
+                                    width: 60.0,
+                                    height: 60.0,
+                                    child: new Padding(
+                                        padding: const EdgeInsets.all(5.0),
+                                        child: new Center(
+                                            child:
+                                                new CircularProgressIndicator())),
+                                  )
+                                : isPlaying && !paused
+                                    ? IconButton(
+                                        iconSize: 60,
+                                        icon: Icon(
+                                          Icons.pause,
+                                          color: Colors.white,
                                         ),
-                          //todo songFinished means song is over
+                                        onPressed: () {
+                                          pause();
+                                        })
+                                    : songStarted
+                                        ? Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              IconButton(
+                                                iconSize: 80,
+                                                icon: Icon(
+                                                  Icons.stop,
+                                                  color: Colors.white,
+                                                ),
+                                                onPressed: () {
+                                                  // setState(() {
+                                                  //   songStopped = true;
+                                                  // });
+                                                  endOfSongMenu();
+                                                },
+                                              ),
+                                              IconButton(
+                                                iconSize: 80,
+                                                icon: Icon(
+                                                  Icons.play_arrow,
+                                                  color: Colors.white,
+                                                ),
+                                                onPressed: () {
+                                                  if (songPicked) {
+                                                    play();
+                                                    setState(() {
+                                                      playPressed = true;
+                                                    });
+                                                  }
+                                                },
+                                              )
+                                            ],
+                                          )
+                                        : IconButton(
+                                            iconSize: 80,
+                                            icon: Icon(
+                                              Icons.play_arrow,
+                                              color: Colors.white,
+                                            ),
+                                            onPressed: () {
+                                              if (songPicked) {
+                                                play();
+                                                setState(() {
+                                                  playPressed = true;
+                                                });
+                                              }
+                                            },
+                                          ),
+                          ),
                         ),
-                      ),
                       if (!songPicked) tonePicker(),
+                      if (countdown > 0)
+                        Center(
+                          child: Text(
+                            countdown.toString(),
+                            style: TextStyle(color: Colors.white, fontSize: 20),
+                          ),
+                        )
                       // if (songStopped) endOfSongMenu()
                     ])
                   : expireWording(),
@@ -583,7 +657,25 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
   }
 
   void play() async {
-    controller!.startVideoRecording();
+    startDownloadingAudioFile();
+    countdown = 3;
+    startTimer = new Timer.periodic(Duration(seconds: 1), (timer) {
+      setState(() {
+        countdown--;
+      });
+      if (countdown == 1) {
+        if (songStarted)
+          controller!.resumeVideoRecording();
+        else
+          controller!.startVideoRecording();
+      } else if (countdown == 0) {
+        startTimer.cancel();
+        startKaraokeSession();
+      }
+    });
+  }
+
+  void startKaraokeSession() {
     if (timesUp()) {
       setState(() {
         _accessDenied = true;
@@ -591,10 +683,12 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
     } else {
       audioPlayer.play();
       setState(() {
+        songStarted = true;
         Wakelock.enable();
         songFinished = false;
         isPlaying = true;
         paused = false;
+        playPressed = false;
       });
 
       audioPlayer.processingStateStream.listen((state) {
@@ -606,6 +700,7 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
             isPlaying = false;
             songFinished = true;
             timer.cancel();
+            endOfSongMenu();
           });
         } else if (state == ProcessingState.buffering ||
             state == ProcessingState.loading) {
@@ -780,7 +875,7 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
 
   pause() {
     audioPlayer.pause();
-    controller!.pauseVideoRecording();
+    if (controller != null) controller!.pauseVideoRecording();
     timer.cancel();
     setState(() {
       Wakelock.disable();
@@ -790,7 +885,7 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
   }
 
   void restart() {
-    pause();
+    // pause();
     _progressValue = new Duration();
     changeSong(0);
     changeAudio(0);
@@ -801,7 +896,24 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
       duration: new Duration(milliseconds: 100),
       curve: Curves.decelerate,
     );
+    resetValues();
     // checkFirestorePermissions(true);
+  }
+
+  void resetValues() async {
+    if (controller == null)
+      getCameras();
+    else
+      await controller!.stopVideoRecording();
+    videoFile = null;
+    if (concatedFile != "") File(concatedFile).delete();
+    concatedFile = "";
+    delay = 0;
+    _sliderValue = 0;
+    setState(() {
+      cameraReady = true;
+      isPlaying = false;
+    });
   }
 
   void resetLines(double time) {
@@ -917,35 +1029,17 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
                   child: Stack(children: <Widget>[
                     Positioned.fill(
                       child: Container(
-                        decoration: personalMoishie || _isSmartphone
-                            ? BoxDecoration(
-                                borderRadius:
-                                    BorderRadius.all(new Radius.circular(50.0)),
-                                gradient: LinearGradient(
-                                  colors: <Color>[
-                                    Color(0xFF0D47A1),
-                                    Color(0xFF1976D2),
-                                    Color(0xFF42A5F5),
-                                  ],
-                                ),
-                              )
-                            : BoxDecoration(
-                                color: Colors.purple,
-                                // border: Border.all(color: Colors.tealAccent),
-                                borderRadius:
-                                    BorderRadius.all(new Radius.circular(60.0)),
-                                gradient: RadialGradient(
-                                  colors: <Color>[
-                                    Colors.purple.shade200,
-                                    Colors.purple.shade800,
-                                    Colors.purple.shade500,
-                                  ],
-                                  stops: [0.2, 0.7, 1],
-                                  center: Alignment(0.1, 0.3),
-                                  focal: Alignment(-0.1, 0.6),
-                                  focalRadius: 2,
-                                ),
-                              ),
+                        decoration: BoxDecoration(
+                          borderRadius:
+                              BorderRadius.all(new Radius.circular(50.0)),
+                          gradient: LinearGradient(
+                            colors: <Color>[
+                              Color(0xFF0D47A1),
+                              Color(0xFF1976D2),
+                              Color(0xFF42A5F5),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                     Container(
@@ -970,33 +1064,17 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
                   child: Stack(children: <Widget>[
                     Positioned.fill(
                       child: Container(
-                        decoration: personalMoishie || _isSmartphone
-                            ? BoxDecoration(
-                                borderRadius:
-                                    BorderRadius.all(new Radius.circular(60.0)),
-                                gradient: LinearGradient(
-                                  colors: <Color>[
-                                    Color(0xFF630DA1),
-                                    Color(0xFF7A37E5),
-                                    Color(0xFFB47DF1),
-                                  ],
-                                ),
-                              )
-                            : BoxDecoration(
-                                gradient: RadialGradient(
-                                  colors: <Color>[
-                                    Colors.purple.shade200,
-                                    Colors.purple.shade800,
-                                    Colors.purple.shade500,
-                                  ],
-                                  stops: [0.2, 0.7, 1],
-                                  center: Alignment(0.1, 0.3),
-                                  focal: Alignment(-0.1, 0.6),
-                                  focalRadius: 3,
-                                ),
-                                borderRadius:
-                                    BorderRadius.all(new Radius.circular(75.0)),
-                              ),
+                        decoration: BoxDecoration(
+                          borderRadius:
+                              BorderRadius.all(new Radius.circular(60.0)),
+                          gradient: LinearGradient(
+                            colors: <Color>[
+                              Color(0xFF630DA1),
+                              Color(0xFF7A37E5),
+                              Color(0xFFB47DF1),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                     Container(
@@ -1021,33 +1099,17 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
                   child: Stack(children: <Widget>[
                     Positioned.fill(
                       child: Container(
-                        decoration: personalMoishie || _isSmartphone
-                            ? BoxDecoration(
-                                borderRadius:
-                                    BorderRadius.all(new Radius.circular(60.0)),
-                                gradient: LinearGradient(
-                                  colors: <Color>[
-                                    Color(0xFF0D47A1),
-                                    Color(0xFF19D247),
-                                    Color(0xFFF5AD42),
-                                  ],
-                                ),
-                              )
-                            : BoxDecoration(
-                                gradient: RadialGradient(
-                                  colors: <Color>[
-                                    Colors.purple.shade200,
-                                    Colors.purple.shade800,
-                                    Colors.purple.shade500,
-                                  ],
-                                  stops: [0.2, 0.7, 1],
-                                  center: Alignment(0.1, 0.3),
-                                  focal: Alignment(-0.1, 0.6),
-                                  focalRadius: 4,
-                                ),
-                                borderRadius:
-                                    BorderRadius.all(new Radius.circular(90.0)),
-                              ),
+                        decoration: BoxDecoration(
+                          borderRadius:
+                              BorderRadius.all(new Radius.circular(60.0)),
+                          gradient: LinearGradient(
+                            colors: <Color>[
+                              Color(0xFF0D47A1),
+                              Color(0xFF19D247),
+                              Color(0xFFF5AD42),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                     Container(
@@ -1143,15 +1205,6 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
         error = e.toString();
       });
     }
-  }
-
-  bool isSmartphone() {
-    final userAgent = html.window.navigator.userAgent.toString().toLowerCase();
-    return (userAgent.contains("iphone") ||
-        userAgent.contains("android") ||
-        userAgent.contains("ipad") ||
-        (html.window.navigator.platform!.toLowerCase().contains("macintel") &&
-            html.window.navigator.maxTouchPoints! > 0));
   }
 
   getImage() {
@@ -1368,13 +1421,9 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
     // final CameraController? cameraController = controller;
     // print(cameras);
     if (controller == null || !controller!.value.isInitialized) {
-      return const Text(
-        'Tap a camera',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 24.0,
-          fontWeight: FontWeight.w900,
-        ),
+      return const Icon(
+        Icons.cloud,
+        color: Colors.white,
       );
     } else {
       return Listener(
@@ -1412,9 +1461,8 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
     await controller!.setZoomLevel(_currentScale);
   }
 
-  endOfSongMenu() {
+  endOfSongMenu([String loadingWords = "", int totalProgress = 0]) {
     showDialog(
-        // barrierDismissible: true,
         context: context,
         builder: (BuildContext context) {
           return Dialog(
@@ -1423,8 +1471,8 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
               child: Directionality(
                 textDirection: Directionality.of(context),
                 child: Container(
-                  height: MediaQuery.of(context).size.height * 0.7,
-                  width: MediaQuery.of(context).size.width * 0.7,
+                  // height: MediaQuery.of(context).size.height * 0.7,
+                  // width: MediaQuery.of(context).size.width * 0.7,
                   decoration: BoxDecoration(
                       border: Border.all(color: Colors.purple),
                       borderRadius: BorderRadius.all(new Radius.circular(20.0)),
@@ -1442,14 +1490,31 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Container(
-                            height: MediaQuery.of(context).size.height * 0.2,
-                            child: Align(
-                              alignment: Alignment.center,
-                              child: Text(
-                                songFinished ? "Song finished" : "Song stopped",
-                                style: TextStyle(
-                                    color: Colors.white, fontSize: 30),
-                              ),
+                            height: MediaQuery.of(context).size.height * 0.25,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Text(
+                                  songFinished
+                                      ? AppLocalizations.of(context)!
+                                          .songFinished
+                                      : AppLocalizations.of(context)!
+                                          .stoppedInMiddle,
+                                  style: TextStyle(
+                                      color: Colors.white, fontSize: 30),
+                                ),
+                                if (totalProgress == 100)
+                                  Text(
+                                    AppLocalizations.of(context)!
+                                        .downloadFinished,
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 20,
+                                    ),
+                                  ),
+                              ],
                             ),
                           ),
                           ClipRRect(
@@ -1480,9 +1545,22 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
                                   width:
                                       MediaQuery.of(context).size.width * 0.6,
                                   child: TextButton(
-                                      onPressed: () {},
+                                      onPressed: () async {
+                                        if (!(totalProgress > 0 &&
+                                                totalProgress < 100) &&
+                                            loadingWords == "") {
+                                          endOfSongMenu(
+                                              AppLocalizations.of(context)!
+                                                  .loading);
+                                          await finishVideoRecording();
+                                          shrinkFileAndDownload();
+                                        }
+                                      },
                                       child: Text(
-                                        "Download",
+                                        AppLocalizations.of(context)!.download +
+                                            (totalProgress > 0
+                                                ? (" $totalProgress%")
+                                                : ""),
                                         style: TextStyle(
                                             fontSize: 22,
                                             color: Colors.white,
@@ -1492,11 +1570,23 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
                               ])),
                           Container(
                             child: TextButton(
-                                onPressed: () {
-                                  stopVideoRecording();
+                                onPressed: () async {
+                                  setState(() {
+                                    cameraReady = false;
+                                  });
+                                  endOfSongMenu(
+                                      AppLocalizations.of(context)!.loading);
+                                  if (videoFile == null)
+                                    await finishVideoRecording();
+                                  if (concatedFile == "")
+                                    await concatFiles(
+                                        delay, new Duration(seconds: 0));
+                                  else
+                                    watchRecording(
+                                        delay, new Duration(seconds: 0));
                                 },
                                 child: Text(
-                                  "Watch",
+                                  AppLocalizations.of(context)!.watch,
                                   style: TextStyle(
                                     fontSize: 20,
                                     color: Colors.white,
@@ -1523,9 +1613,10 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
                                     songFinished = false;
                                     songStarted = false;
                                   });
+                                  Navigator.of(context).pop(STAY_ON_PAGE);
                                 },
                                 child: Text(
-                                  "Play again",
+                                  AppLocalizations.of(context)!.playAgain,
                                   style: TextStyle(
                                     fontSize: 20,
                                     color: Colors.white,
@@ -1547,10 +1638,12 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
                           Container(
                             child: TextButton(
                                 onPressed: () {
-                                  backButton();
+                                  songFinished = true;
+                                  Navigator.of(context).pop();
+                                  // backButton();
                                 },
                                 child: Text(
-                                  "Exit",
+                                  AppLocalizations.of(context)!.exit,
                                   style: TextStyle(
                                     fontSize: 20,
                                     color: Colors.white,
@@ -1571,20 +1664,337 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
                               color: Colors.white,
                             )),
                       ),
-                    )
+                    ),
+                    if (loadingWords != "") loadingIndicator(loadingWords)
                   ]),
                 ),
               ),
             ),
           );
-        });
+        }).then((value) {
+      if (songFinished && value != STAY_ON_PAGE) backButton();
+    });
   }
 
-  void stopVideoRecording() {
-    controller!.stopVideoRecording().then((file) {
-      videoFile = file;
-      print("this is the file" + file.name);
+  Future<XFile> stopVideoRecording() async {
+    songFinished = true;
+    if (timer.isActive) timer.cancel();
+    if (videoFile == null)
+      return controller!.stopVideoRecording();
+    else
+      return videoFile!;
+  }
+
+  watchRecording(double initialDelay, Duration currentPosition,
+      [bool syncing = false]) async {
+    Navigator.of(context).pop(STAY_ON_PAGE); // removing the loading page
+
+    VideoPlayerController _controller =
+        VideoPlayerController.file(File(concatedFile));
+    if (!syncing) {
+      await _controller.initialize();
+      _controller.seekTo(currentPosition);
+      if (currentPosition.inSeconds > 0) _controller.play();
+    }
+    showDialog(
+        // barrierDismissible: true,
+        context: context,
+        builder: (BuildContext context) {
+          return Dialog(
+              backgroundColor: Colors.transparent,
+              child: Center(
+                  child: Directionality(
+                      textDirection: Directionality.of(context),
+                      child: Container(
+                        height: MediaQuery.of(context).size.height * 0.8,
+                        width: MediaQuery.of(context).size.width * 0.8,
+                        decoration: BoxDecoration(
+                            border: Border.all(color: Colors.purple),
+                            borderRadius:
+                                BorderRadius.all(new Radius.circular(20.0)),
+                            gradient: RadialGradient(
+                              center: Alignment.center,
+                              radius: 0.8,
+                              colors: [
+                                const Color(0xFF221A4D), // blue sky
+                                const Color(0xFF000000), // yellow sun
+                              ],
+                            )),
+                        child: Stack(
+                          children: [
+                            SafeArea(
+                              child: Align(
+                                alignment: Alignment.topRight,
+                                child: IconButton(
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                    },
+                                    icon: Icon(
+                                      Icons.cancel_outlined,
+                                      color: Colors.white,
+                                    )),
+                              ),
+                            ),
+                            if (!syncing)
+                              ClipRRect(
+                                  borderRadius: BorderRadius.circular(20.0),
+                                  child: StatefulBuilder(
+                                      builder: (context, setState) {
+                                    return VideoPlayer(_controller);
+                                  })),
+                            if (!syncing)
+                              StatefulBuilder(builder: (context, setState) {
+                                return Center(
+                                  child: IconButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        _controller.value.isPlaying
+                                            ? _controller.pause()
+                                            : _controller.play();
+                                      });
+                                    },
+                                    iconSize: 50,
+                                    icon: Icon(
+                                      _controller.value.isPlaying
+                                          ? Icons.pause
+                                          : Icons.play_arrow,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                );
+                              }),
+                            VideoProgressIndicator(_controller,
+                                allowScrubbing: true),
+                            if (!syncing)
+                              StatefulBuilder(
+                                builder: (context, setState) {
+                                  return Align(
+                                    alignment: Alignment.bottomCenter,
+                                    child: Container(
+                                      height: 70,
+                                      child: Column(
+                                        children: [
+                                          Text(
+                                            AppLocalizations.of(context)!.sync,
+                                            style:
+                                                TextStyle(color: Colors.white),
+                                          ),
+                                          Slider.adaptive(
+                                            value: _sliderValue,
+                                            min: -4,
+                                            max: 4,
+                                            label: "$_sliderValue",
+                                            divisions: 8,
+                                            onChangeEnd: (double value) async {
+                                              if (value * 0.1 + initialDelay !=
+                                                  delay) {
+                                                setState(() {
+                                                  _sliderValue = value;
+                                                });
+                                                watchRecording(
+                                                    0,
+                                                    new Duration(seconds: 0),
+                                                    true);
+                                                delay =
+                                                    value * 0.1 + initialDelay;
+                                                currentPosition =
+                                                    (await _controller
+                                                        .position)!;
+                                                _controller.dispose();
+                                                await concatFiles(initialDelay,
+                                                    currentPosition);
+                                              }
+                                            },
+                                            onChanged: (double value) {
+                                              setState(() {
+                                                _sliderValue = value;
+                                              });
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            if (syncing)
+                              loadingIndicator(
+                                  AppLocalizations.of(context)!.syncing)
+                          ],
+                        ),
+                      ))));
+        }).then((val) {
+      _controller.dispose();
     });
+  }
+
+  void startDownloadingAudioFile() async {
+    if (!fileDownloaded) {
+      Dio dio = Dio();
+      var dir = await getApplicationDocumentsDirectory();
+      downloadFileToWatermarkPath(dir);
+      audioDownloadPath = '${dir.path}/audio.mp3';
+      bool fileExists = await File(audioDownloadPath).exists();
+      if (fileExists) File(audioDownloadPath).delete();
+      await dio.download(songs[0].songResourceFile, audioDownloadPath,
+          onReceiveProgress: (received, total) {
+        var progress = (received / total) * 100;
+        // debugPrint('Rec: $received , Total: $total, $progress%');
+        // print(received.toDouble() / total.toDouble());
+        if (mounted)
+          setState(() {
+            // downloadProgress = received.toDouble() / total.toDouble();
+          });
+      }, cancelToken: cancelToken);
+      fileDownloaded = true;
+      if (waitingForDownloadToWatch)
+        concatFiles(delay, new Duration(seconds: 0));
+      else if (readyToDownload) shrinkFileAndDownload();
+    }
+  }
+
+  Future<double> getDelay() async {
+    if (delay == 0) {
+      VideoPlayerController controller =
+          VideoPlayerController.file(File(videoFile!.path));
+      await controller.initialize();
+      return (controller.value.duration.inMilliseconds -
+              audioPlayer.position.inMilliseconds) /
+          1000;
+    } else
+      return delay;
+  }
+
+  concatFiles(double initialDelay, Duration currentPosition) async {
+    var dir = await getApplicationDocumentsDirectory();
+    concatedFile = '${dir.path}/audio_.mp4';
+    bool fileExists = await File(concatedFile).exists();
+    if (fileExists) File(concatedFile).delete();
+    waitingForDownloadToWatch = true;
+    if (fileDownloaded)
+      _flutterFFmpeg
+          .execute("-ss " +
+              delay.toString() +
+              " -i " +
+              videoFile!.path +
+              " -i " +
+              audioDownloadPath +
+              " -filter_complex \"[1:a]volume=" +
+              "0.8" +
+              "[a1]; [0:a][a1]amerge=inputs=2[a]\" -map 0:v -map \"[a]\" -c:v copy -ac 2 -shortest " +
+              concatedFile)
+          .then((value) {
+        watchRecording(initialDelay, currentPosition);
+      });
+  }
+
+  void downloadConcatenatedFile(String shrinkedFileToDownload) {
+    readyToDownload = false;
+    GallerySaver.saveVideo(shrinkedFileToDownload).then((success) {
+      if (mounted)
+        setState(() {
+          if (success!) {
+            print('Video is saved');
+            // final snackBar = SnackBar(
+            //   content: Text('Download Complete'),
+            //   duration: Duration(seconds: 2),
+            // );
+            //
+            // // Find the ScaffoldMessenger in the widget tree
+            // // and use it to show a SnackBar.
+            // ScaffoldMessenger.of(context).showSnackBar(snackBar);
+          } else {
+            // print("Video not saved");
+            // final snackBar = SnackBar(
+            //   content: Text('Download Failed'),
+            //   duration: Duration(seconds: 2),
+            // );
+            // // Find the ScaffoldMessenger in the widget tree
+            // // and use it to show a SnackBar.
+            // ScaffoldMessenger.of(context).showSnackBar(snackBar);
+          }
+        });
+    });
+    if (mounted) {
+      Navigator.of(context).pop(STAY_ON_PAGE);
+      endOfSongMenu("", 100);
+    }
+  }
+
+  void downloadFileToWatermarkPath(Directory dir) async {
+    watermarkPath = '${dir.path}/watermarkOutline.png';
+    var data = await rootBundle.load('assets/ashiraOutline.png');
+    await (File(watermarkPath)).writeAsBytes(
+        data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes));
+  }
+
+  void shrinkFileAndDownload() async {
+    readyToDownload = true;
+    if (fileDownloaded) {
+      var dir = await getApplicationDocumentsDirectory();
+      var shrinkedFileToDownload = '${dir.path}/ashira_' +
+          DateTime.now().millisecondsSinceEpoch.toString() +
+          '.mp4';
+      _flutterFFmpeg
+          .execute("-ss " +
+              delay.toString() +
+              " -i " +
+              videoFile!.path +
+              " -i " +
+              watermarkPath +
+              " -i " +
+              audioDownloadPath +
+              " -filter_complex \"[1]scale=iw/2:-1[wm];[0:v][wm]overlay=main_w-overlay_w-5:main_h-overlay_h-5[v0];[2:a]volume=" +
+              "0.5" +
+              "[a2];[0:a][a2]amerge=inputs=2[a]\" -map \"[v0]\" -map \"[a]\" -ac 2 -shortest -b:v 1M " +
+              shrinkedFileToDownload)
+          .then((value) => downloadConcatenatedFile(shrinkedFileToDownload));
+    }
+  }
+
+  void statisticsCallback(Statistics statistics) {
+    if (mounted && !backButtonPressed) if (readyToDownload) {
+      var totalProgress =
+          (statistics.time * 100) ~/ audioPlayer.position.inMilliseconds;
+      // print("Statistics: executionId: ${statistics.executionId}, time: ${statistics.time}, size: ${statistics.size}, bitrate: ${statistics.bitrate}, speed: ${statistics.speed}, videoFrameNumber: ${statistics.videoFrameNumber}, videoQuality: ${statistics.videoQuality}, videoFps: ${statistics.videoFps}");
+      if (0 < totalProgress && totalProgress <= 100) {
+        Navigator.of(context).pop(STAY_ON_PAGE);
+        endOfSongMenu("", totalProgress);
+      }
+    }
+  }
+
+  finishVideoRecording() async {
+    videoFile = await stopVideoRecording();
+    if (controller != null) {
+      controller!.dispose();
+      controller = null;
+    }
+    delay = await getDelay();
+  }
+
+  loadingIndicator(String text) {
+    return Center(
+      child: new Container(
+        decoration: BoxDecoration(color: Colors.purple, shape: BoxShape.circle),
+        width: 100.0,
+        height: 100.0,
+        child: Stack(children: [
+          new Padding(
+              padding: const EdgeInsets.all(5.0),
+              child: new Center(
+                  child: new Text(
+                text,
+                style: TextStyle(
+                    color: Colors.white, letterSpacing: 1.5, fontSize: 16),
+              ))),
+          Center(
+              child: CircularProgressIndicator(
+            color: Colors.black,
+          ))
+        ]),
+      ),
+    );
   }
 }
 

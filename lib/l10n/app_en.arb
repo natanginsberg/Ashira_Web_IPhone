@@ -16,6 +16,7 @@
     "enter": "Enter",
     "personalUse": "For personal Use only",
     "publicUse": "For an amazing karaoke experience with all of your favorite hits at your next event, contact us:",
+    "questionsAndInquiries":"For questions and inquiries\n0587978079 / 0533381427",
     "emailUsAt": "ashira.jewishkaraoke@gmail.com",
     "emailEmptyError": "No email entered",
     "couponError": "Invalid coupon code",
@@ -47,5 +48,18 @@
     "classic":"Classic",
     "advanced":"Advanced",
     "cameraOn":"Interactive",
-    "submit": "Add"
+    "submit": "Add",
+    "songFinished":"Song Finished",
+    "stoppedInMiddle":"Song Stopped",
+    "exit":"Exit",
+    "playAgain":"Play Again",
+    "watch":"Watch",
+    "download":"Download",
+    "downloadFinished":"Download Finished\nVideo is in your gallery",
+    "monthlySub":"Monthly Subscription",
+    "dailySub":"Daily Subscription",
+    "loading":"Loading",
+    "syncing":"Syncing",
+    "sync":"Sync Control",
+    "attachEarphones":"Attach earphones in order to record"
 }

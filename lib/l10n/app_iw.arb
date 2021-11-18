@@ -16,6 +16,7 @@
     "enter": "כניסה",
     "personalUse": "המערכת מיועדת לשימוש פרטי",
     "publicUse": "לחווית קריוקי באיכות HD עם כל הלהיטים אצלכם באירוע צרו קשר:",
+    "questionsAndInquiries":"לשאלות ובירורים\n0587978079 / 0533381427",
     "emailUsAt": "ashira.jewishkaraoke@gmail.com",
     "emailEmptyError": "אימייל לא הוכנס",
     "couponError": "קוד קופון שגוי",
@@ -47,5 +48,18 @@
     "classic":"קלאסי",
     "advanced":"מתקדם",
     "cameraOn":"חוויתי",
-    "submit": "הוסף"
+    "submit": "הוסף",
+    "songFinished":"השיר נגמר",
+    "stoppedInMiddle":"עצרת באמצע ביצוע",
+    "exit":"יציאה",
+    "playAgain":"נגן מחדש",
+    "watch":"צפה בביצוע",
+    "download":"הורדה לגלריה",
+    "downloadFinished":"ההורדה הסתיימה\nהביצוע נשמר בגלריה",
+    "monthlySub":"מנוי חדשי",
+    "dailySub":"מנוי יומי",
+    "loading":"טוען",
+    "syncing":"מסתנכרן",
+    "sync":"שליטה על הסנכרון",
+    "attachEarphones":"יש לחבר אזניות בשביל להקליט"
 }

@@ -48,10 +48,12 @@ dependencies:
   font_awesome_flutter: ^9.1.0
   pdf_render: ^1.0.13
   video_player: ^2.2.7
-
-
-
-
+  dio: ^4.0.3
+  flutter_ffmpeg: ^0.4.2
+  gallery_saver: ^2.3.2
+#  audio_manager: ^0.8.2
+#  headset_connection_event: ^2.1.0
+#
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.

@@ -151,6 +151,7 @@ class _PromoState extends State<Promo> {
 
   moveToNextScreen(bool approved) {
     // if (approved == true)
+    timer.cancel();
     Navigator.pushReplacementNamed(context, '/allSongs');
     // else
     //   Navigator.pushReplacementNamed(context, '/contracts');

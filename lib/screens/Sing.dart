@@ -639,7 +639,7 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
   void play() async {
     if (timesUp()) {
       setState(() {
-        _accessDenied = true;
+        // _accessDenied = true;
       });
     } else {
       audioPlayer.play();
