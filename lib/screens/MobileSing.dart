@@ -10,6 +10,7 @@ import 'package:ashira_flutter/utils/WpHelper.dart' as wph;
 import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
 import 'package:camera/camera.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
@@ -49,6 +50,9 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
   int WOMAN = 1;
   int KID = 2;
   final Object? STAY_ON_PAGE = "stay on page";
+
+  static final DeviceInfoPlugin deviceInfoPlugin = DeviceInfoPlugin();
+
   var songPicked = false;
   List<Song> songs = [];
   List<int> splits = [];
@@ -205,7 +209,7 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
       splits.add(totalLength);
       totalLength += songs[i].length;
     }
-    getCameras();
+    cameraAccessible();
     print(splits);
     songLength = new Duration(milliseconds: totalLength - 150);
     // checkFirestorePermissions(false);
@@ -1995,6 +1999,32 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
         ]),
       ),
     );
+  }
+
+  void cameraAccessible() async {
+    if (Platform.isIOS) {
+      var deviceData = <String, dynamic>{};
+      deviceData = _readIosDeviceInfo(await deviceInfoPlugin.iosInfo);
+      if (deviceData['systemVersion'] >= 10) getCameras();
+    } else
+      getCameras();
+  }
+
+  Map<String, dynamic> _readIosDeviceInfo(IosDeviceInfo data) {
+    return <String, dynamic>{
+      'name': data.name,
+      'systemName': data.systemName,
+      'systemVersion': data.systemVersion,
+      'model': data.model,
+      'localizedModel': data.localizedModel,
+      'identifierForVendor': data.identifierForVendor,
+      'isPhysicalDevice': data.isPhysicalDevice,
+      'utsname.sysname:': data.utsname.sysname,
+      'utsname.nodename:': data.utsname.nodename,
+      'utsname.release:': data.utsname.release,
+      'utsname.version:': data.utsname.version,
+      'utsname.machine:': data.utsname.machine,
+    };
   }
 }
 

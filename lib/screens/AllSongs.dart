@@ -11,6 +11,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dart_ipify/dart_ipify.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -129,6 +130,7 @@ class _AllSongsState extends State<AllSongs> {
     // TODO: implement initState
     super.initState();
 
+    if (!kIsWeb) initializeFirebase();
     // setState(() {
     _mainController = ScrollController();
     _orderEditingController = TextEditingController(text: "");
@@ -2011,6 +2013,12 @@ class _AllSongsState extends State<AllSongs> {
     }
 
     addUser();
+  }
+
+  Future<void> initializeFirebase() async {
+    await Firebase.initializeApp();
+    // FirebaseCrashlytics.instance.crash();
+// Elsewhere in your code
   }
 
 // void changeLanguage() {

@@ -53,68 +53,74 @@ class _AppState extends State<App> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder(
-      // Initialize FlutterFire:
-      future: _initialization,
-      builder: (context, snapshot) {
-        // Check for errors
-        // if (snapshot.hasError) {
-        //   return SomethingWentWrong();
-        // }
+    return MediaQuery(
+      data: new MediaQueryData(),
+      child: FutureBuilder(
+        // Initialize FlutterFire:
+        future: _initialization,
+        builder: (context, snapshot) {
+          // Check for errors
+          // if (snapshot.hasError) {
+          //   return SomethingWentWrong();
+          // }
 
-        // Once complete, show your application
-        if (snapshot.connectionState == ConnectionState.done) {
-          return MaterialApp(
-            // locale: _locale,
-            localizationsDelegates: [
-              AppLocalizations.delegate,
-              GlobalMaterialLocalizations.delegate,
-              GlobalWidgetsLocalizations.delegate,
-              GlobalCupertinoLocalizations.delegate,
-            ],
-            supportedLocales: [
-              const Locale('en', 'US'), // English, no country code
-              const Locale('he', 'IL'), // Hebrew, no country code
-            ],
-            localeResolutionCallback: (locale, supportedLocales) {
-              print(locale!.languageCode);
-              for (var supportedLocaleLanguage in supportedLocales) {
-                if (supportedLocaleLanguage.languageCode ==
-                    locale.languageCode) {
-                  // if (originalCode == "") {
-                  originalLanguageCode = locale.languageCode;
-                  // }
-                  _locale = Locale(locale.languageCode);
-                  return supportedLocaleLanguage;
+          // Once complete, show your application
+          if (snapshot.connectionState == ConnectionState.done) {
+            return MaterialApp(
+              // locale: _locale,
+              localizationsDelegates: [
+                AppLocalizations.delegate,
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              supportedLocales: [
+                const Locale('en', 'US'), // English, no country code
+                const Locale('he', 'IL'), // Hebrew, no country code
+              ],
+              localeResolutionCallback: (locale, supportedLocales) {
+                print(locale!.languageCode);
+                for (var supportedLocaleLanguage in supportedLocales) {
+                  if (supportedLocaleLanguage.languageCode ==
+                      locale.languageCode) {
+                    // if (originalCode == "") {
+                    originalLanguageCode = locale.languageCode;
+                    // }
+                    _locale = Locale(locale.languageCode);
+                    return supportedLocaleLanguage;
+                  }
                 }
-              }
-              return _locale == Locale('ps') ?  supportedLocales.last : _locale;
+                return _locale == Locale('ps') ?  supportedLocales.last : _locale;
 
-              // If device not support with locale to get language code then default get first on from the list
-              return supportedLocales.first;
-            },
-            locale: _locale,
-            // locale: Locale(""),
-            theme: ThemeData(
-              primarySwatch: Colors.blue,
+                // If device not support with locale to get language code then default get first on from the list
+                return supportedLocales.first;
+              },
+              locale: _locale,
+              // locale: Locale(""),
+              theme: ThemeData(
+                primarySwatch: Colors.blue,
+              ),
+              initialRoute: '/',
+              routes: {
+                '/': (context) => Promo(),
+                '/contracts': (context) => Contracts(),
+                // '/signIn': (context) => SignIn(),
+                '/allSongs': (context) => AllSongs(),
+                '/sing': (context) => Sing(songs, ""),
+                '/mobileSing': (context) => MobileSing(songs, ""),
+              },
+            );
+          }
+
+          // Otherwise, show something whilst waiting for initialization to complete
+          return Directionality(
+            textDirection: TextDirection.ltr,
+            child: Scaffold(
+              body: Icon(Icons.cloud),
             ),
-            initialRoute: '/',
-            routes: {
-              '/': (context) => Promo(),
-              '/contracts': (context) => Contracts(),
-              // '/signIn': (context) => SignIn(),
-              '/allSongs': (context) => AllSongs(),
-              '/sing': (context) => Sing(songs, ""),
-              '/mobileSing': (context) => MobileSing(songs, ""),
-            },
           );
-        }
-
-        // Otherwise, show something whilst waiting for initialization to complete
-        return Scaffold(
-          body: Icon(Icons.cloud),
-        );
-      },
+        },
+      ),
     );
   }
 }
