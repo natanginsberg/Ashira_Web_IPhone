@@ -113,31 +113,6 @@ class _SongLayoutState extends State<SongLayout> {
                     ),
                   ),
                 ),
-                // if (!widget.open)
-                //   Padding(
-                //     padding: EdgeInsets.all(10),
-                //     child: Align(
-                //       alignment: Alignment.bottomCenter,
-                //       child: MouseRegion(
-                //         cursor: SystemMouseCursors.click,
-                //         onEnter: (PointerEvent details) => amIHovering = true,
-                //         onExit: (PointerEvent details) => amIHovering = false,
-                //         child: RichText(
-                //             text: TextSpan(
-                //                 text: widget.memberText,
-                //                 style: TextStyle(
-                //                   color: amIHovering
-                //                       ? Colors.red[300]
-                //                       : Colors.red,
-                //                   decoration: TextDecoration.underline,
-                //                 ),
-                //                 recognizer: TapGestureRecognizer()
-                //                   ..onTap = () {
-                //                     widget.onTapAction();
-                //                   })),
-                //       ),
-                //     ),
-                //   )
               ],
             ),
             if (!widget.open)

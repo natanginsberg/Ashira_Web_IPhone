@@ -5,7 +5,6 @@ import 'dart:ui';
 import 'package:ashira_flutter/customWidgets/GenreButton.dart';
 import 'package:ashira_flutter/customWidgets/SongLayout.dart';
 import 'package:ashira_flutter/model/Song.dart';
-import 'package:ashira_flutter/screens/MobileSing.dart';
 import 'package:ashira_flutter/utils/WpHelper.dart' as wph;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dart_ipify/dart_ipify.dart';
@@ -22,18 +21,17 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:universal_html/html.dart' as html;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:wordpress_api/wordpress_api.dart' as wp;
 
 import '../main.dart';
 import 'Sing.dart';
 
-class AllSongs extends StatefulWidget {
-  AllSongs();
+class AllSongsTablet extends StatefulWidget {
+  AllSongsTablet();
 
   @override
-  _AllSongsState createState() => _AllSongsState();
+  _AllSongsTabletState createState() => _AllSongsTabletState();
 }
 
 final GlobalKey<ScaffoldState> _scaffoldKey2 = GlobalKey<ScaffoldState>();
@@ -52,7 +50,7 @@ bool personalMoishie = false;
 bool cameraMode = false;
 int changeTime = 7;
 
-class _AllSongsState extends State<AllSongs> {
+class _AllSongsTabletState extends State<AllSongsTablet> {
   // Locale _locale = Locale.fromSubtags(languageCode: "he");
   static final DeviceInfoPlugin deviceInfoPlugin = DeviceInfoPlugin();
   final TextEditingController controller = new TextEditingController();
@@ -96,7 +94,7 @@ class _AllSongsState extends State<AllSongs> {
   late ScrollController _mainController;
   final FocusNode _focusNode = FocusNode();
 
-  bool signedIn = false;
+  bool signedIn = true; // todo tablet change to true, false;
 
   var openSignIn = false;
 
@@ -119,7 +117,7 @@ class _AllSongsState extends State<AllSongs> {
 
   String ipAddress = "";
 
-  _AllSongsState();
+  _AllSongsTabletState();
 
   void signInAnon() async {
     await firebaseAuth.signInAnonymously().then((value) => getSongs());
@@ -129,7 +127,7 @@ class _AllSongsState extends State<AllSongs> {
   void initState() {
     // TODO: implement initState
     super.initState();
-    if (!kIsWeb) initializeFirebase();
+    //   /todo if (!kIsWeb) initializeFirebase();
     // setState(() {
     _mainController = ScrollController();
     _orderEditingController = TextEditingController(text: "");
@@ -137,8 +135,8 @@ class _AllSongsState extends State<AllSongs> {
     _userNameEditingController = TextEditingController(text: "");
     signInAnon();
     _smartPhone = isSmartphone();
-    timer =
-        Timer.periodic(Duration(seconds: 1), (Timer t) => _getTimeRemaining());
+    //todo tablet  timer =
+    //     Timer.periodic(Duration(seconds: 1), (Timer t) => _getTimeRemaining());
     // });
   }
 
@@ -271,50 +269,51 @@ class _AllSongsState extends State<AllSongs> {
                       _scaffoldKey2.currentState!.openEndDrawer();
                     },
                   ),
-                  if (!kIsWeb && !privacyShown)
-                    ListTile(
-                      title: Text(
-                        AppLocalizations.of(context)!.settings,
-                      ),
-                      onTap: () {
-                        // Update the state of the app
-                        // ...
-                        // Then close the drawer
-                        //todo need to deal with the policies
-                        setState(() {
-                          privacyShown = true;
-                        });
-                      },
-                    ),
-                  if (!kIsWeb && privacyShown)
-                    ListTile(
-                      title: Text(
-                        AppLocalizations.of(context)!.privacyPolicy,
-                      ),
-                      onTap: () {
-                        // Update the state of the app
-                        // ...
-                        // Then close the drawer
-                        //todo need to deal with the policies
-                        launch(
-                            "https://ashira-music.com/%D7%AA%D7%A7%D7%A0%D7%95%D7%9F/");
-                        _scaffoldKey2.currentState!.openEndDrawer();
-                      },
-                    ),
-                  if (!kIsWeb && privacyShown)
-                    ListTile(
-                      title: Text(
-                        AppLocalizations.of(context)!.about,
-                      ),
-                      onTap: () {
-                        launch("https://ashira-music.com");
-                        _scaffoldKey2.currentState!.openEndDrawer();
-                        // Update the state of the app
-                        // ...
-                        // Then close the drawer
-                        //todo need to deal with the policies
-                      },
-                    ),
+                  //todo tablet
+                  // if (!kIsWeb && !privacyShown)
+                  //   ListTile(
+                  //     title: Text(
+                  //       AppLocalizations.of(context)!.settings,
+                  //     ),
+                  //     onTap: () {
+                  //       // Update the state of the app
+                  //       // ...
+                  //       // Then close the drawer
+                  //       //todo need to deal with the policies
+                  //       setState(() {
+                  //         privacyShown = true;
+                  //       });
+                  //     },
+                  //   ),
+                  // if (!kIsWeb && privacyShown)
+                  //   ListTile(
+                  //     title: Text(
+                  //       AppLocalizations.of(context)!.privacyPolicy,
+                  //     ),
+                  //     onTap: () {
+                  //       // Update the state of the app
+                  //       // ...
+                  //       // Then close the drawer
+                  //       //todo need to deal with the policies
+                  //       launch(
+                  //           "https://ashira-music.com/%D7%AA%D7%A7%D7%A0%D7%95%D7%9F/");
+                  //       _scaffoldKey2.currentState!.openEndDrawer();
+                  //     },
+                  //   ),
+                  // if (!kIsWeb && privacyShown)
+                  //   ListTile(
+                  //     title: Text(
+                  //       AppLocalizations.of(context)!.about,
+                  //     ),
+                  //     onTap: () {
+                  //       launch("https://ashira-music.com");
+                  //       _scaffoldKey2.currentState!.openEndDrawer();
+                  //       // Update the state of the app
+                  //       // ...
+                  //       // Then close the drawer
+                  //       //todo need to deal with the policies
+                  //     },
+                  //   ),
                 ],
               ),
             ),
@@ -362,11 +361,13 @@ class _AllSongsState extends State<AllSongs> {
                                     child: Directionality(
                                       textDirection: TextDirection.ltr,
                                       child: Text(
-                                        signedIn
-                                            ? AppLocalizations.of(context)!
-                                                    .timeRemaining +
-                                                duration
-                                            : "",
+                                        //todo tablet
+                                        // signedIn
+                                        //     ? AppLocalizations.of(context)!
+                                        //             .timeRemaining +
+                                        //         duration
+                                        //     :
+                                        "",
                                         style: TextStyle(color: Colors.white),
                                       ),
                                     ),
@@ -395,9 +396,11 @@ class _AllSongsState extends State<AllSongs> {
                                     )),
                                     margin: const EdgeInsets.fromLTRB(
                                         20.0, 0.0, 20.0, 0.0),
-                                    child: _accessDenied
-                                        ? expireWording()
-                                        : buildGridView(gridSongs)),
+                                    child:
+                                        // todo tablet _accessDenied
+                                        //     ? expireWording()
+                                        //     :
+                                        buildGridView(gridSongs)),
                               ),
                               if (kIsWeb &&
                                   !_smartPhone &&
@@ -406,7 +409,10 @@ class _AllSongsState extends State<AllSongs> {
                             ],
                           ),
                         ),
-                        if (kIsWeb && isTablet() && songsClicked.length > 0)
+                        if (
+                        // todo tablet comment kIsWeb &&
+                        //     isTablet() &&
+                        songsClicked.length > 0)
                           Container(
                             child: Column(
                               children: [
@@ -603,7 +609,8 @@ class _AllSongsState extends State<AllSongs> {
                       ],
                     ),
                     genreOptions(),
-                    if (kIsWeb && _smartPhone) playButton()
+                    // todo tablet comment if (kIsWeb && _smartPhone)
+                    playButton()
                   ]),
                 ),
               ),
@@ -639,26 +646,28 @@ class _AllSongsState extends State<AllSongs> {
     myLocale = Localizations.localeOf(context).languageCode;
     getDemoSongs();
     getGenres();
-
-    if (kIsWeb) {
-      _readWebBrowserInfo();
-    }
+    //todo tablet comment
+    // if (kIsWeb) {
+    //   _readWebBrowserInfo();
+    // }
     incrementFirebaseByOne();
     FirebaseFirestore.instance
         .collection('songsNew')
         .get()
         .then((QuerySnapshot querySnapshot) {
       querySnapshot.docs.forEach((doc) {
-        songs.add(new Song(
-            artist: doc.get('artist'),
-            title: doc.get("title"),
-            imageResourceFile: doc.get("imageResourceFile"),
-            genre: doc.get("genre"),
-            songResourceFile: doc.get("songResourceFile"),
-            textResourceFile: doc.get("textResourceFile"),
-            womanToneResourceFile: doc.get("womanToneResourceFile"),
-            kidToneResourceFile: doc.get("kidToneResourceFile"),
-            length: doc.get("length")));
+        //todo added for tablet
+        if (doc.get("genre") != "ישראלי")
+          songs.add(new Song(
+              artist: doc.get('artist'),
+              title: doc.get("title"),
+              imageResourceFile: doc.get("imageResourceFile"),
+              genre: doc.get("genre"),
+              songResourceFile: doc.get("songResourceFile"),
+              textResourceFile: doc.get("textResourceFile"),
+              womanToneResourceFile: doc.get("womanToneResourceFile"),
+              kidToneResourceFile: doc.get("kidToneResourceFile"),
+              length: doc.get("length")));
       });
 
       setState(() {
@@ -802,22 +811,23 @@ class _AllSongsState extends State<AllSongs> {
         songsPassed.add(song);
       }
       counter += 1;
-      if (kIsWeb) {
-        if (email == "הקלטותשלאשר") {
-          Navigator.push(context,
-              MaterialPageRoute(builder: (_) => Sing(songsPassed, "אשר")));
-        } else {
-          Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (_) => Sing(songsPassed, counter.toString())));
-        }
+      // todo tablet comment  if (kIsWeb) {
+      if (email == "הקלטותשלאשר") {
+        Navigator.push(context,
+            MaterialPageRoute(builder: (_) => Sing(songsPassed, "אשר")));
       } else {
         Navigator.push(
             context,
             MaterialPageRoute(
-                builder: (_) => MobileSing(songsPassed, counter.toString())));
+                builder: (_) => Sing(songsPassed, counter.toString())));
       }
+      // todo tablet comment
+      // } else {
+      //   Navigator.push(
+      //       context,
+      //       MaterialPageRoute(
+      //           builder: (_) => MobileSing(songsPassed, counter.toString())));
+      //  }
       setState(() {
         songsClicked.clear();
       });
@@ -838,16 +848,18 @@ class _AllSongsState extends State<AllSongs> {
   }
 
   bool isSmartphone() {
-    if (kIsWeb) {
-      final userAgent =
-          html.window.navigator.userAgent.toString().toLowerCase();
-      return (userAgent.contains("iphone") ||
-          userAgent.contains("android") ||
-          userAgent.contains("ipad") ||
-          (html.window.navigator.platform!.toLowerCase().contains("macintel") &&
-              html.window.navigator.maxTouchPoints! > 0));
-    } else
-      return false;
+    //todo tablet comment
+    // if (kIsWeb) {
+    //   final userAgent =
+    //       html.window.navigator.userAgent.toString().toLowerCase();
+    //   return (userAgent.contains("iphone") ||
+    //       userAgent.contains("android") ||
+    //       userAgent.contains("ipad") ||
+    //       (html.window.navigator.platform!.toLowerCase().contains("macintel") &&
+    //           html.window.navigator.maxTouchPoints! > 0));
+    // } else
+    //   return false;
+    return true;
   }
 
   songInSongsClicked(Song song) {
@@ -951,16 +963,17 @@ class _AllSongsState extends State<AllSongs> {
   }
 
   checkTime() async {
-    if (signedIn && timesUp())
-      setState(() {
-        _accessDenied = true;
-      });
-    else if (overTime()) {
-      setState(() {
-        _overtime = true;
-      });
-    } else
-      playSongs();
+    //todo tablet
+    // if (signedIn && timesUp())
+    //   setState(() {
+    //     _accessDenied = true;
+    //   });
+    // else if (overTime()) {
+    //   setState(() {
+    //     _overtime = true;
+    //   });
+    // } else
+    playSongs();
   }
 
   bool overTime() {
@@ -1649,12 +1662,6 @@ class _AllSongsState extends State<AllSongs> {
                                   ),
                                 ),
                                 Center(
-                                    child: Text(
-                                  AppLocalizations.of(context)!.comingSoon,
-                                  style: TextStyle(
-                                      color: Colors.white, fontSize: 20),
-                                )),
-                                Center(
                                   child: Container(
                                       width:
                                           MediaQuery.of(context).size.width / 2,
@@ -1665,31 +1672,24 @@ class _AllSongsState extends State<AllSongs> {
                                           borderRadius: BorderRadius.all(
                                               new Radius.circular(10.0))),
                                       child: ElevatedButton(
-                                        style: ButtonStyle(
-                                            backgroundColor:
-                                                MaterialStateProperty.all<
-                                                    Color>(Colors.grey)),
                                         onPressed: () {},
-                                        child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceEvenly,
-                                            children: [
-                                              Flexible(
-                                                  child: Container(
-                                                child: Text(
-                                                  AppLocalizations.of(context)!
-                                                      .monthlySub,
-                                                  style: TextStyle(
-                                                      color: Colors.white),
-                                                ),
-                                              )),
-                                              Container(
-                                                color: Colors.pink,
-                                                child: Text("50₪",
-                                                    style: TextStyle(
-                                                        color: Colors.white)),
-                                              )
-                                            ]),
+                                        child: Row(children: [
+                                          Flexible(
+                                              child: Container(
+                                            child: Text(
+                                              AppLocalizations.of(context)!
+                                                  .monthlySub,
+                                              style: TextStyle(
+                                                  color: Colors.white),
+                                            ),
+                                          )),
+                                          Container(
+                                            color: Colors.pink,
+                                            child: Text("50₪",
+                                                style: TextStyle(
+                                                    color: Colors.white)),
+                                          )
+                                        ]),
                                       )),
                                 ),
                                 Center(
@@ -1703,31 +1703,24 @@ class _AllSongsState extends State<AllSongs> {
                                           borderRadius: BorderRadius.all(
                                               new Radius.circular(10.0))),
                                       child: ElevatedButton(
-                                        style: ButtonStyle(
-                                            backgroundColor:
-                                                MaterialStateProperty.all<
-                                                    Color>(Colors.grey)),
                                         onPressed: () {},
-                                        child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceEvenly,
-                                            children: [
-                                              Flexible(
-                                                  child: Container(
-                                                child: Text(
-                                                  AppLocalizations.of(context)!
-                                                      .dailySub,
-                                                  style: TextStyle(
-                                                      color: Colors.white),
-                                                ),
-                                              )),
-                                              Container(
-                                                color: Colors.pink,
-                                                child: Text("10₪",
-                                                    style: TextStyle(
-                                                        color: Colors.white)),
-                                              )
-                                            ]),
+                                        child: Row(children: [
+                                          Flexible(
+                                              child: Container(
+                                            child: Text(
+                                              AppLocalizations.of(context)!
+                                                  .dailySub,
+                                              style: TextStyle(
+                                                  color: Colors.white),
+                                            ),
+                                          )),
+                                          Container(
+                                            color: Colors.pink,
+                                            child: Text("10₪",
+                                                style: TextStyle(
+                                                    color: Colors.white)),
+                                          )
+                                        ]),
                                       )),
                                 ),
                               ],
@@ -1762,7 +1755,7 @@ class _AllSongsState extends State<AllSongs> {
                 (element) => element.songResourceFile == song.songResourceFile)
             : songsClicked.add(song);
       });
-      if (!kIsWeb) playSongs();
+      // if (!kIsWeb) playSongs();  // todo tablet opening
     } else {
       if (kIsWeb)
         setState(() {

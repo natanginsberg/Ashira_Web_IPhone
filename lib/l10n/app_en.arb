@@ -7,6 +7,7 @@
     "slogan": "Jewish Karaoke App",
     "enterPrompt": "Do you want to enjoy an amazing Jewish karaoke experience",
     "secondPrompt": "Special Launch Sale!!! 10 Shekel an hour:",
+    "comingSoon":"Coming Soon!!",
     "placeOrder": "Click here to purchase",
     "watsappNumber":"Via Watsapp click here",
     "hours": "hours",
@@ -61,5 +62,7 @@
     "loading":"Loading",
     "syncing":"Syncing",
     "sync":"Sync Control",
-    "attachEarphones":"Attach earphones in order to record"
+    "attachEarphones":"Attach earphones in order to record",
+    "signInPrompt":"You must sign in to continue",
+    "notEnoughNoise":"You must sing to download"
 }

@@ -6,7 +6,6 @@ import 'dart:math';
 import 'package:ashira_flutter/model/Line.dart';
 import 'package:ashira_flutter/model/Song.dart';
 import 'package:ashira_flutter/utils/Parser.dart';
-import 'package:ashira_flutter/utils/WpHelper.dart' as wph;
 import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
 import 'package:camera/camera.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -16,19 +15,20 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/services.dart' show rootBundle;
+import 'package:flutter/services.dart' show SystemChrome, rootBundle;
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_ffmpeg/flutter_ffmpeg.dart';
+import 'package:flutter_ffmpeg/log.dart';
 import 'package:flutter_ffmpeg/statistics.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery_saver/gallery_saver.dart';
 import 'package:http/http.dart' as http;
 import 'package:just_audio/just_audio.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:video_player/video_player.dart';
 import 'package:wakelock/wakelock.dart';
-import 'package:wordpress_api/wordpress_api.dart' as wp;
 
 import 'AllSongs.dart';
 // List<CameraDescription> cameras;
@@ -80,26 +80,14 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
 
   bool disposed = false;
 
-  bool _accessDenied = false;
-
-  // bool personalMoishie = false;
-
   List<dynamic> backgroundPictures = [];
 
   String error = '';
 
-  late TextEditingController _orderEditingController;
-
   bool _loading = false;
-
-  String _errorMessage = "";
 
   Random random = new Random();
   num randomNumber = 0;
-
-  // Timestamp endTime;
-
-  // String email;
 
   bool amIHovering = false;
 
@@ -143,6 +131,11 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
 
   bool backButtonPressed = false;
 
+  int wordsSung = 0;
+  int silentWords = 0;
+
+  bool noiseRecorded = false;
+
   _MobileSingState(this.songs, this.counter);
 
   Duration _progressValue = new Duration(seconds: 0);
@@ -174,11 +167,16 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
   double _currentScale = 1.0;
   double _baseScale = 1.0;
 
+  double popupHeight = 450;
+  double popupWidth = 330;
+
   // Counting pointers (number of user fingers on screen)
   int _pointers = 0;
 
   final FlutterFFmpeg _flutterFFmpeg = new FlutterFFmpeg();
   final FlutterFFmpegConfig _flutterFFmpegConfig = new FlutterFFmpegConfig();
+
+  final FlutterFFprobe _flutterFFprobe = new FlutterFFprobe();
 
   // Wakelock.toggle(enable: isPlaying);
 
@@ -191,6 +189,10 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
       pause();
       await audioPlayer.stop();
     }
+    if (controller != null) {
+      controller!.dispose();
+      controller = null;
+    }
     cancelToken.cancel();
     audioPlayer.dispose();
     WidgetsBinding.instance!.removeObserver(this);
@@ -200,6 +202,9 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+    ]);
     randomNumber = random.nextInt(7) + 1;
     WidgetsBinding.instance!.addObserver(this);
     parseFuture = _parseLines();
@@ -210,7 +215,6 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
       totalLength += songs[i].length;
     }
     cameraAccessible();
-    print(splits);
     songLength = new Duration(milliseconds: totalLength - 150);
     // checkFirestorePermissions(false);
     if (email == 'מוישי') {
@@ -273,6 +277,8 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    popupHeight = MediaQuery.of(context).size.height * 0.7;
+    popupWidth = MediaQuery.of(context).size.width * 0.7;
     return phonePage();
   }
 
@@ -286,203 +292,178 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
           },
           child: Scaffold(
             body: Container(
-              height: MediaQuery.of(context).size.height,
-              width: MediaQuery.of(context).size.width,
-              decoration: BoxDecoration(
-                  gradient: RadialGradient(
-                center: Alignment.center,
-                radius: 0.8,
-                colors: [
-                  const Color(0xFF221A4D), // blue sky
-                  const Color(0xFF000000), // yellow sun
-                ],
-              )),
-              child: !_accessDenied
-                  ? Stack(children: [
-                      Column(
-                        children: [
-                          SafeArea(
-                            child: Align(
-                              alignment: Alignment.topCenter,
-                              child: Container(
-                                height: MediaQuery.of(context).size.height / 8,
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
+                height: MediaQuery.of(context).size.height,
+                width: MediaQuery.of(context).size.width,
+                decoration: BoxDecoration(
+                    gradient: RadialGradient(
+                  center: Alignment.center,
+                  radius: 0.8,
+                  colors: [
+                    const Color(0xFF221A4D), // blue sky
+                    const Color(0xFF000000), // yellow sun
+                  ],
+                )),
+                child: Stack(children: [
+                  Column(
+                    children: [
+                      SafeArea(
+                        child: Align(
+                          alignment: Alignment.topCenter,
+                          child: Container(
+                            height: MediaQuery.of(context).size.height / 8,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          songs[trackNumber].artist,
-                                          style: TextStyle(
-                                              fontSize: 13,
-                                              color: Colors.white),
-                                        ),
-                                        Text(
-                                          songs[trackNumber].title,
-                                          style: TextStyle(
-                                              fontSize: 18,
-                                              color: Colors.white),
-                                        ),
-                                      ],
+                                    Text(
+                                      songs[trackNumber].artist,
+                                      style: TextStyle(
+                                          fontSize: 13, color: Colors.white),
                                     ),
-                                    Image(
-                                      fit: BoxFit.fitWidth,
-                                      image: NetworkImage(
-                                          songs[trackNumber].imageResourceFile),
+                                    Text(
+                                      songs[trackNumber].title,
+                                      style: TextStyle(
+                                          fontSize: 18, color: Colors.white),
                                     ),
                                   ],
                                 ),
-                              ),
-                            ),
-                          ),
-                          Stack(
-                            children: [
-                              Container(
-                                height: MediaQuery.of(context).size.height / 5,
-                                width: MediaQuery.of(context).size.height - 30,
-                                child: FutureBuilder(
-                                  future: parseFuture,
-                                  builder: (context, snapShot) {
-                                    if (snapShot.hasData) {
-                                      return buildListView(
-                                          (allLines[trackNumber]));
-                                    } else if (snapShot.hasError) {
-                                      return Icon(
-                                        Icons.error_outline,
-                                        color: Colors.red,
-                                      );
-                                    } else {
-                                      return Image(
-                                        fit: BoxFit.fill,
-                                        image: NetworkImage(songs[trackNumber]
-                                            .imageResourceFile),
-                                      );
-                                    }
-                                  },
+                                Image(
+                                  fit: BoxFit.fitWidth,
+                                  image: NetworkImage(
+                                      songs[trackNumber].imageResourceFile),
                                 ),
-                              ),
-                              if (!(playPressed || songStarted))
-                                Container(
-                                  color: Colors.black,
-                                  height:
-                                      MediaQuery.of(context).size.height / 5,
-                                  width:
-                                      MediaQuery.of(context).size.height - 30,
-                                  child: Center(
-                                    child: Text(
-                                        AppLocalizations.of(context)!
-                                            .attachEarphones,
-                                        style: TextStyle(
-                                            color: Colors.white, fontSize: 17)),
-                                  ),
-                                ),
-                            ],
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(8.0, 0, 8, 0),
-                            child: Center(
-                              child: ProgressBar(
-                                total: songLength,
-                                progressBarColor: Colors.blue,
-                                progress: _progressValue,
-                                thumbRadius: 1,
-                                timeLabelTextStyle:
-                                    TextStyle(color: Colors.white),
-                                barHeight: 8,
-                                timeLabelLocation: TimeLabelLocation.sides,
-                              ),
-                            ),
-                          ),
-                          if (cameraReady)
-                            Expanded(
-                                child: Container(
-                                    child: Align(
-                                        alignment: Alignment.topCenter,
-                                        child: _cameraPreviewWidget()))),
-                        ],
-                      ),
-                      SafeArea(
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Align(
-                            alignment: Alignment.topLeft,
-                            child: IconButton(
-                              icon: Icon(
-                                Icons.arrow_back_sharp,
-                                color: Colors.white,
-                              ),
-                              onPressed: () {
-                                backButton();
-                              },
+                              ],
                             ),
                           ),
                         ),
                       ),
-                      if (!playPressed)
-                        Padding(
-                          padding: const EdgeInsets.all(30.0),
-                          child: Align(
-                            alignment: Alignment.bottomCenter,
-                            child: _loading
-                                ? new Container(
-                                    color: Colors.transparent,
-                                    width: 60.0,
-                                    height: 60.0,
-                                    child: new Padding(
-                                        padding: const EdgeInsets.all(5.0),
-                                        child: new Center(
-                                            child:
-                                                new CircularProgressIndicator())),
-                                  )
-                                : isPlaying && !paused
-                                    ? IconButton(
-                                        iconSize: 60,
-                                        icon: Icon(
-                                          Icons.pause,
-                                          color: Colors.white,
-                                        ),
-                                        onPressed: () {
-                                          pause();
-                                        })
-                                    : songStarted
-                                        ? Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              IconButton(
-                                                iconSize: 80,
-                                                icon: Icon(
-                                                  Icons.stop,
-                                                  color: Colors.white,
-                                                ),
-                                                onPressed: () {
-                                                  // setState(() {
-                                                  //   songStopped = true;
-                                                  // });
-                                                  endOfSongMenu();
-                                                },
-                                              ),
-                                              IconButton(
-                                                iconSize: 80,
-                                                icon: Icon(
-                                                  Icons.play_arrow,
-                                                  color: Colors.white,
-                                                ),
-                                                onPressed: () {
-                                                  if (songPicked) {
-                                                    play();
-                                                    setState(() {
-                                                      playPressed = true;
-                                                    });
-                                                  }
-                                                },
-                                              )
-                                            ],
-                                          )
-                                        : IconButton(
+                      Stack(
+                        children: [
+                          Container(
+                            height: MediaQuery.of(context).size.height / 5,
+                            width: MediaQuery.of(context).size.width - 30,
+                            child: FutureBuilder(
+                              future: parseFuture,
+                              builder: (context, snapShot) {
+                                if (snapShot.hasData) {
+                                  return buildListView((allLines[trackNumber]));
+                                } else if (snapShot.hasError) {
+                                  return Icon(
+                                    Icons.error_outline,
+                                    color: Colors.red,
+                                  );
+                                } else {
+                                  return Image(
+                                    fit: BoxFit.fill,
+                                    image: NetworkImage(
+                                        songs[trackNumber].imageResourceFile),
+                                  );
+                                }
+                              },
+                            ),
+                          ),
+                          if (!(playPressed || songStarted))
+                            Container(
+                              color: Colors.black,
+                              height: MediaQuery.of(context).size.height / 5,
+                              width: MediaQuery.of(context).size.height - 30,
+                              child: Center(
+                                child: Text(
+                                    AppLocalizations.of(context)!
+                                        .attachEarphones,
+                                    style: TextStyle(
+                                        color: Colors.white, fontSize: 17)),
+                              ),
+                            ),
+                        ],
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(8.0, 0, 8, 0),
+                        child: Center(
+                          child: ProgressBar(
+                            total: songLength,
+                            progressBarColor: Colors.blue,
+                            progress: _progressValue,
+                            thumbRadius: 1,
+                            timeLabelTextStyle: TextStyle(color: Colors.white),
+                            barHeight: 8,
+                            timeLabelLocation: TimeLabelLocation.sides,
+                          ),
+                        ),
+                      ),
+                      if (cameraReady)
+                        Expanded(
+                            child: Container(
+                                child: Align(
+                                    alignment: Alignment.topCenter,
+                                    child: _cameraPreviewWidget()))),
+                    ],
+                  ),
+                  SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Align(
+                        alignment: Alignment.topLeft,
+                        child: IconButton(
+                          icon: Icon(
+                            Icons.arrow_back_sharp,
+                            color: Colors.white,
+                          ),
+                          onPressed: () {
+                            backButton();
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (!playPressed)
+                    Padding(
+                      padding: const EdgeInsets.all(30.0),
+                      child: Align(
+                        alignment: Alignment.bottomCenter,
+                        child: _loading
+                            ? new Container(
+                                color: Colors.transparent,
+                                width: 60.0,
+                                height: 60.0,
+                                child: new Padding(
+                                    padding: const EdgeInsets.all(5.0),
+                                    child: new Center(
+                                        child:
+                                            new CircularProgressIndicator())),
+                              )
+                            : isPlaying && !paused
+                                ? IconButton(
+                                    iconSize: 60,
+                                    icon: Icon(
+                                      Icons.pause,
+                                      color: Colors.white,
+                                    ),
+                                    onPressed: () {
+                                      pause();
+                                    })
+                                : songStarted
+                                    ? Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          IconButton(
+                                            iconSize: 80,
+                                            icon: Icon(
+                                              Icons.stop,
+                                              color: Colors.white,
+                                            ),
+                                            onPressed: () {
+                                              // setState(() {
+                                              //   songStopped = true;
+                                              // });
+                                              endOfSongMenu();
+                                            },
+                                          ),
+                                          IconButton(
                                             iconSize: 80,
                                             icon: Icon(
                                               Icons.play_arrow,
@@ -496,168 +477,37 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
                                                 });
                                               }
                                             },
-                                          ),
-                          ),
-                        ),
-                      if (!songPicked) tonePicker(),
-                      if (countdown > 0)
-                        Center(
-                          child: Text(
-                            countdown.toString(),
-                            style: TextStyle(color: Colors.white, fontSize: 20),
-                          ),
-                        )
-                      // if (songStopped) endOfSongMenu()
-                    ])
-                  : expireWording(),
-            ),
+                                          )
+                                        ],
+                                      )
+                                    : IconButton(
+                                        iconSize: 80,
+                                        icon: Icon(
+                                          Icons.play_arrow,
+                                          color: Colors.white,
+                                        ),
+                                        onPressed: () {
+                                          if (songPicked) {
+                                            play();
+                                            setState(() {
+                                              playPressed = true;
+                                            });
+                                          }
+                                        },
+                                      ),
+                      ),
+                    ),
+                  if (!songPicked) tonePicker(),
+                  if (countdown > 0)
+                    Center(
+                      child: Text(
+                        countdown.toString(),
+                        style: TextStyle(color: Colors.white, fontSize: 20),
+                      ),
+                    )
+                ])),
           )),
     );
-  }
-
-  expireWording() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Center(
-            child: Text(
-          AppLocalizations.of(context)!.outOfTimeError,
-          style: TextStyle(
-              fontFamily: 'SignInFont',
-              color: Colors.yellow,
-              wordSpacing: 5,
-              fontSize: 40,
-              height: 1.4,
-              letterSpacing: 1.6),
-        )),
-        Directionality(
-          textDirection: Directionality.of(context),
-          child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Text(
-              AppLocalizations.of(context)!.addTime + " ",
-              style: TextStyle(
-                  fontFamily: 'SignInFont',
-                  color: Colors.white,
-                  wordSpacing: 5,
-                  fontSize: 30,
-                  height: 1.4,
-                  letterSpacing: 1.6),
-            ),
-            _loading
-                ? new Container(
-                    color: Colors.transparent,
-                    width: 70.0,
-                    height: 70.0,
-                    child: new Padding(
-                        padding: const EdgeInsets.all(5.0),
-                        child:
-                            new Center(child: new CircularProgressIndicator())),
-                  )
-                : Container(
-                    decoration: BoxDecoration(
-                        color: Colors.blue,
-                        borderRadius:
-                            BorderRadius.all(new Radius.circular(10))),
-                    child: Padding(
-                        padding: const EdgeInsets.fromLTRB(8.0, 4, 8.0, 4),
-                        child: TextButton(
-                            onPressed: addTime,
-                            child: Directionality(
-                              textDirection: TextDirection.ltr,
-                              child: Text(
-                                AppLocalizations.of(context)!.enter,
-                                style: TextStyle(
-                                    fontSize: 15, color: Colors.white),
-                              ),
-                            ))))
-          ]),
-        ),
-        SizedBox(
-          height: 15,
-        ),
-        Directionality(
-          textDirection: Directionality.of(context),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Row(
-                children: [
-                  IconButton(
-                    icon: Icon(
-                      Icons.remove,
-                      color: Colors.white,
-                    ),
-                    onPressed: () {
-                      if (quantity > 0)
-                        setState(() {
-                          quantity -= 1;
-                        });
-                    },
-                  ),
-                  Text(
-                      quantity.toString() +
-                          " " +
-                          AppLocalizations.of(context)!.hours,
-                      style: TextStyle(color: Colors.white)),
-                  IconButton(
-                    icon: Icon(
-                      Icons.add,
-                      color: Colors.white,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        quantity += 1;
-                      });
-                    },
-                  ),
-                ],
-              ),
-              SizedBox(
-                width: 20,
-              ),
-              Center(
-                child: MouseRegion(
-                  cursor: SystemMouseCursors.click,
-                  onEnter: (PointerEvent details) =>
-                      setState(() => amIHovering = true),
-                  onExit: (PointerEvent details) => setState(() {
-                    amIHovering = false;
-                  }),
-                  child: RichText(
-                      text: TextSpan(
-                          text: AppLocalizations.of(context)!.placeOrder,
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: amIHovering ? Colors.blue[300] : Colors.blue,
-                            decoration: TextDecoration.underline,
-                          ),
-                          recognizer: TapGestureRecognizer()
-                            ..onTap = () {
-                              launch(
-                                  "https://ashira-music.com/checkout/?add-to-cart=1102&quantity=$quantity");
-                            })),
-                ),
-              ),
-            ],
-          ),
-        ),
-        SizedBox(
-          height: 15,
-        ),
-        Text(
-          _errorMessage,
-          style: TextStyle(color: Colors.red, fontSize: 20),
-        )
-      ],
-    );
-  }
-
-  bool timesUp() {
-    if (email == "") return false;
-    DateTime currentTime = DateTime.now().toUtc();
-    DateTime myDateTime = endTime.toDate();
-    return currentTime.compareTo(myDateTime) > 0;
   }
 
   void play() async {
@@ -680,43 +530,37 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
   }
 
   void startKaraokeSession() {
-    if (timesUp()) {
-      setState(() {
-        _accessDenied = true;
-      });
-    } else {
-      audioPlayer.play();
-      setState(() {
-        songStarted = true;
-        Wakelock.enable();
-        songFinished = false;
-        isPlaying = true;
-        paused = false;
-        playPressed = false;
-      });
+    audioPlayer.play();
+    setState(() {
+      songStarted = true;
+      Wakelock.enable();
+      songFinished = false;
+      isPlaying = true;
+      paused = false;
+      playPressed = false;
+    });
 
-      audioPlayer.processingStateStream.listen((state) {
-        if (state == ProcessingState.completed) if (currentLineIndex ==
-                lines.length - 1 &&
-            trackNumber == songs.length - 1) {
-          setState(() {
-            Wakelock.disable();
-            isPlaying = false;
-            songFinished = true;
-            timer.cancel();
-            endOfSongMenu();
-          });
-        } else if (state == ProcessingState.buffering ||
-            state == ProcessingState.loading) {
-          pause();
-        }
-      });
+    audioPlayer.processingStateStream.listen((state) {
+      if (state == ProcessingState.completed) if (currentLineIndex ==
+              lines.length - 1 &&
+          trackNumber == songs.length - 1) {
+        setState(() {
+          Wakelock.disable();
+          isPlaying = false;
+          songFinished = true;
+          timer.cancel();
+          endOfSongMenu();
+        });
+      } else if (state == ProcessingState.buffering ||
+          state == ProcessingState.loading) {
+        pause();
+      }
+    });
 
-      timer = Timer.periodic(
-          Duration(milliseconds: 100),
-          (Timer t) => updateUI(
-              audioPlayer.position, true, false, audioPlayer.currentIndex!));
-    }
+    timer = Timer.periodic(
+        Duration(milliseconds: 100),
+        (Timer t) => updateUI(
+            audioPlayer.position, true, false, audioPlayer.currentIndex!));
   }
 
   buildListView(List<Line> lines) {
@@ -1223,183 +1067,6 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
     }
   }
 
-  addTime() async {
-    setState(() {
-      _loading = true;
-    });
-    try {
-      getPurchaseFromStore(true);
-    } catch (error) {
-      printConnectionError();
-    }
-  }
-
-  Future<Map<String, int>> getWooCommerceId(
-      wph.WordPressAPI api, String email) async {
-    try {
-      Map<String, dynamic> pageArgs = new Map();
-      pageArgs["per_page"] = 50;
-      pageArgs["status"] = "processing";
-      final wp.WPResponse res =
-          await api.fetch('orders', namespace: "wc/v2", args: pageArgs);
-      try {
-        Map<String, int> ret = checkForIdInData(email, res.data);
-        // print("ret");
-        // print(ret.runtimeType);
-
-        return ret;
-      } catch (error) {
-        if (error.toString() == "No document") {
-          int pages = res.meta!.totalPages!;
-          for (int i = 2; i <= pages; i++) {
-            pageArgs["page"] = i;
-            final wp.WPResponse res =
-                await api.fetch('orders', namespace: "wc/v2", args: pageArgs);
-            try {
-              return checkForIdInData(email, res.data);
-            } catch (error) {
-              if (error.toString() == "No document") {
-                continue;
-              } else {
-                rethrow;
-              }
-            }
-          }
-
-          throw "No document";
-        } else {
-          rethrow;
-        }
-      }
-    } catch (error) {
-      rethrow;
-    }
-  }
-
-  void assignOrderAsCompleted(wph.WordPressAPI api, int id) {
-    Map<String, dynamic> params = new Map();
-    params["status"] = "completed";
-    api.put('orders/$id', namespace: "wc/v2", args: params);
-    setState(() {
-      _loading = true;
-    });
-  }
-
-  checkForIdInData(email, data) {
-    for (var d in data) {
-      if (d["billing"]["email"].toString().toLowerCase() == email) {
-        Map<String, int> returnArgs = new Map();
-        returnArgs["id"] = d["id"];
-        returnArgs["quantity"] = getQuantity(d);
-        return returnArgs;
-      }
-    }
-    throw "No document";
-  }
-
-  int getQuantity(json) {
-    int quantity = 0;
-    var itemObjsJson = json['line_items'] as List;
-    List<Item> items =
-        itemObjsJson.map((itemJson) => Item.fromJson(itemJson)).toList();
-    for (Item item in items) {
-      if (item.sku == '110011') {
-        quantity = item.quantity;
-      }
-    }
-    return quantity;
-  }
-
-  void getPurchaseFromStore(bool newUser) async {
-    wph.WordPressAPI api = wph.WordPressAPI('https://ashira-music.com');
-    try {
-      try {
-        var res = await getWooCommerceId(api, email);
-
-        await addTimeToFirebase((res)["quantity"]!, email);
-        assignOrderAsCompleted(api, (res)["id"]!);
-      } catch (error) {
-        if (error.toString() == "No document") {
-          setState(() {
-            _errorMessage = AppLocalizations.of(context)!.noOrderNumberError;
-            _loading = false;
-          });
-          if (newUser) email = "";
-        } else {
-          printConnectionError();
-        }
-      }
-    } catch (e) {
-      printConnectionError();
-    }
-  }
-
-  Future<DocumentSnapshot<Map<String, dynamic>>> checkFirebaseId(
-      String id) async {
-    try {
-      var collection = FirebaseFirestore.instance.collection('internetUsers');
-
-      var doc = await collection.doc(id).get();
-
-      return doc;
-    } catch (e) {
-      printConnectionError();
-      throw e;
-    }
-  }
-
-  bool timeIsStillAllocated(DocumentSnapshot<Map<String, dynamic>> doc) {
-    DateTime currentTime = DateTime.now().toUtc();
-    endTime = doc.get("endTime");
-    DateTime myDateTime = endTime.toDate();
-    return currentTime.compareTo(myDateTime) < 0;
-  }
-
-  addTimeToFirebase(int quantity, String newId) {
-    Map<String, dynamic> firestoreDoc = new Map<String, dynamic>();
-    if (timesUp())
-      setState(() {
-        endTime =
-            Timestamp.fromDate(DateTime.now().add(Duration(hours: quantity)));
-      });
-    else
-      setState(() {
-        endTime = Timestamp.fromDate(DateTime.now()
-            .add(Duration(hours: quantity))
-            .add(endTime.toDate().difference(DateTime.now().toUtc())));
-      });
-    firestoreDoc['endTime'] = endTime;
-    firestoreDoc['email'] = email;
-
-    CollectionReference users =
-        FirebaseFirestore.instance.collection('internetUsers');
-
-    Future<void> addUser() {
-      return users
-          .doc(newId)
-          .set(firestoreDoc)
-          .then((value) => setState(() {
-                _accessDenied = false;
-                _errorMessage = "";
-                _loading = false;
-                gridSongs = new List.from(songs);
-              }))
-          .catchError((error) => setState(() {
-                _errorMessage = error.toString();
-                _loading = false;
-              }));
-    }
-
-    addUser();
-  }
-
-  printConnectionError() {
-    setState(() {
-      _errorMessage = AppLocalizations.of(context)!.communicationError;
-      _loading = false;
-    });
-  }
-
   getPreviousImage() {
     if (personalMoishie && backgroundPictures.length > 0) {
       if (timeChanged == 0)
@@ -1465,219 +1132,294 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
     await controller!.setZoomLevel(_currentScale);
   }
 
-  endOfSongMenu([String loadingWords = "", int totalProgress = 0]) {
+  endOfSongMenu(
+      [String loadingWords = "",
+      int totalProgress = 0,
+      bool notEnoughNoise = false]) {
     showDialog(
         context: context,
         builder: (BuildContext context) {
           return Dialog(
-            backgroundColor: Colors.transparent,
-            child: Center(
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20.0)),
+            child: Container(
+              height: popupHeight,
+              width: popupWidth,
+              decoration: BoxDecoration(
+                  border: Border.all(color: Colors.purple),
+                  borderRadius: BorderRadius.all(new Radius.circular(20.0)),
+                  gradient: RadialGradient(
+                    center: Alignment.center,
+                    radius: 0.8,
+                    colors: [
+                      const Color(0xFF221A4D), // blue sky
+                      const Color(0xFF000000), // yellow sun
+                    ],
+                  )),
               child: Directionality(
                 textDirection: Directionality.of(context),
-                child: Container(
-                  // height: MediaQuery.of(context).size.height * 0.7,
-                  // width: MediaQuery.of(context).size.width * 0.7,
-                  decoration: BoxDecoration(
-                      border: Border.all(color: Colors.purple),
-                      borderRadius: BorderRadius.all(new Radius.circular(20.0)),
-                      gradient: RadialGradient(
-                        center: Alignment.center,
-                        radius: 0.8,
-                        colors: [
-                          const Color(0xFF221A4D), // blue sky
-                          const Color(0xFF000000), // yellow sun
-                        ],
-                      )),
-                  child: Stack(children: [
-                    Column(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Container(
-                            height: MediaQuery.of(context).size.height * 0.25,
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
+                child: Stack(children: [
+                  Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Container(
+                          height: popupHeight * 0.25,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Text(
+                                songFinished
+                                    ? AppLocalizations.of(context)!.songFinished
+                                    : AppLocalizations.of(context)!
+                                        .stoppedInMiddle,
+                                style: TextStyle(
+                                    color: Colors.white, fontSize: 30),
+                              ),
+                              if (totalProgress == 100)
                                 Text(
-                                  songFinished
-                                      ? AppLocalizations.of(context)!
-                                          .songFinished
-                                      : AppLocalizations.of(context)!
-                                          .stoppedInMiddle,
+                                  AppLocalizations.of(context)!
+                                      .downloadFinished,
+                                  textAlign: TextAlign.center,
                                   style: TextStyle(
-                                      color: Colors.white, fontSize: 30),
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                  ),
                                 ),
-                                if (totalProgress == 100)
-                                  Text(
-                                    AppLocalizations.of(context)!
-                                        .downloadFinished,
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 20,
+                              if (notEnoughNoise)
+                                Text(
+                                  AppLocalizations.of(context)!.notEnoughNoise,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: Stack(children: <Widget>[
+                              Positioned.fill(
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.purple,
+                                    // border: Border.all(color: Colors.tealAccent),
+                                    borderRadius: BorderRadius.all(
+                                        new Radius.circular(60.0)),
+                                    gradient: RadialGradient(
+                                      colors: <Color>[
+                                        Colors.purple.shade200,
+                                        Colors.purple.shade800,
+                                        Colors.purple.shade500,
+                                      ],
+                                      stops: [0.2, 0.7, 1],
+                                      center: Alignment(0.1, 0.3),
+                                      focal: Alignment(-0.1, 0.6),
+                                      focalRadius: 2,
                                     ),
                                   ),
-                              ],
-                            ),
-                          ),
-                          ClipRRect(
-                              borderRadius: BorderRadius.circular(4),
-                              child: Stack(children: <Widget>[
-                                Positioned.fill(
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.purple,
-                                      // border: Border.all(color: Colors.tealAccent),
-                                      borderRadius: BorderRadius.all(
-                                          new Radius.circular(60.0)),
-                                      gradient: RadialGradient(
-                                        colors: <Color>[
-                                          Colors.purple.shade200,
-                                          Colors.purple.shade800,
-                                          Colors.purple.shade500,
-                                        ],
-                                        stops: [0.2, 0.7, 1],
-                                        center: Alignment(0.1, 0.3),
-                                        focal: Alignment(-0.1, 0.6),
-                                        focalRadius: 2,
-                                      ),
-                                    ),
-                                  ),
                                 ),
-                                Container(
-                                  width:
-                                      MediaQuery.of(context).size.width * 0.6,
-                                  child: TextButton(
-                                      onPressed: () async {
-                                        if (!(totalProgress > 0 &&
-                                                totalProgress < 100) &&
-                                            loadingWords == "") {
-                                          endOfSongMenu(
-                                              AppLocalizations.of(context)!
-                                                  .loading);
-                                          await finishVideoRecording();
-                                          shrinkFileAndDownload();
-                                        }
-                                      },
-                                      child: Text(
-                                        AppLocalizations.of(context)!.download +
-                                            (totalProgress > 0
-                                                ? (" $totalProgress%")
-                                                : ""),
-                                        style: TextStyle(
-                                            fontSize: 22,
-                                            color: Colors.white,
-                                            letterSpacing: 1.5),
-                                      )),
+                              ),
+                              Container(
+                                width: MediaQuery.of(context).size.width * 0.6,
+                                child: TextButton(
+                                    onPressed: () async {
+                                      if (!(totalProgress > 0 &&
+                                              totalProgress < 100) &&
+                                          loadingWords == "") {
+                                        endOfSongMenu(
+                                            AppLocalizations.of(context)!
+                                                .loading);
+                                        await finishVideoRecording();
+                                        shrinkFileAndDownload();
+                                      }
+                                    },
+                                    child: Text(
+                                      AppLocalizations.of(context)!.download +
+                                          (totalProgress > 0
+                                              ? (" $totalProgress%")
+                                              : ""),
+                                      style: TextStyle(
+                                          fontSize: 22,
+                                          color: Colors.white,
+                                          letterSpacing: 1.5),
+                                    )),
+                              ),
+                            ])),
+                        Container(
+                          child: TextButton(
+                              onPressed: () async {
+                                setState(() {
+                                  cameraReady = false;
+                                });
+                                endOfSongMenu(
+                                    AppLocalizations.of(context)!.loading);
+                                if (videoFile == null)
+                                  await finishVideoRecording();
+                                if (concatedFile == "")
+                                  await concatFiles(
+                                      delay, new Duration(seconds: 0));
+                                else
+                                  watchRecording(
+                                      delay, new Duration(seconds: 0));
+                              },
+                              child: Text(
+                                AppLocalizations.of(context)!.watch,
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  color: Colors.white,
+                                  //letterSpacing: 1.5
                                 ),
-                              ])),
-                          Container(
-                            child: TextButton(
-                                onPressed: () async {
-                                  setState(() {
-                                    cameraReady = false;
-                                  });
-                                  endOfSongMenu(
-                                      AppLocalizations.of(context)!.loading);
-                                  if (videoFile == null)
-                                    await finishVideoRecording();
-                                  if (concatedFile == "")
-                                    await concatFiles(
-                                        delay, new Duration(seconds: 0));
-                                  else
-                                    watchRecording(
-                                        delay, new Duration(seconds: 0));
-                                },
-                                child: Text(
-                                  AppLocalizations.of(context)!.watch,
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    color: Colors.white,
-                                    //letterSpacing: 1.5
-                                  ),
-                                )),
-                          ),
-                          const Divider(
-                            thickness: 1,
-                            // thickness of the line
-                            indent: 30,
-                            // empty space to the leading edge of divider.
-                            endIndent: 30,
-                            // empty space to the trailing edge of the divider.
-                            color: Colors
-                                .white, // The color to use when painting the line.
-                            // height: 20, // The divider's height extent.
-                          ),
-                          Container(
-                            child: TextButton(
-                                onPressed: () {
-                                  restart();
-                                  setState(() {
-                                    songFinished = false;
-                                    songStarted = false;
-                                  });
-                                  Navigator.of(context).pop(STAY_ON_PAGE);
-                                },
-                                child: Text(
-                                  AppLocalizations.of(context)!.playAgain,
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    color: Colors.white,
-                                    //    letterSpacing: 1.5
-                                  ),
-                                )),
-                          ),
-                          const Divider(
-                            thickness: 1,
-                            // thickness of the line
-                            indent: 30,
-                            // empty space to the leading edge of divider.
-                            endIndent: 30,
-                            // empty space to the trailing edge of the divider.
-                            color: Colors
-                                .white, // The color to use when painting the line.
-                            // height: 20, // The divider's height extent.
-                          ),
-                          Container(
-                            child: TextButton(
-                                onPressed: () {
-                                  songFinished = true;
-                                  Navigator.of(context).pop();
-                                  // backButton();
-                                },
-                                child: Text(
-                                  AppLocalizations.of(context)!.exit,
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    color: Colors.white,
-                                    //    letterSpacing: 1.5
-                                  ),
-                                )),
-                          ),
-                        ]),
-                    SafeArea(
-                      child: Align(
-                        alignment: Alignment.topRight,
-                        child: IconButton(
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                            },
-                            icon: Icon(
-                              Icons.cancel_outlined,
-                              color: Colors.white,
-                            )),
-                      ),
+                              )),
+                        ),
+                        const Divider(
+                          thickness: 1,
+                          // thickness of the line
+                          indent: 30,
+                          // empty space to the leading edge of divider.
+                          endIndent: 30,
+                          // empty space to the trailing edge of the divider.
+                          color: Colors
+                              .white, // The color to use when painting the line.
+                          // height: 20, // The divider's height extent.
+                        ),
+                        Container(
+                          child: TextButton(
+                              onPressed: () {
+                                restart();
+                                setState(() {
+                                  songFinished = false;
+                                  songStarted = false;
+                                });
+                                Navigator.of(context).pop(STAY_ON_PAGE);
+                              },
+                              child: Text(
+                                AppLocalizations.of(context)!.playAgain,
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  color: Colors.white,
+                                  //    letterSpacing: 1.5
+                                ),
+                              )),
+                        ),
+                        const Divider(
+                          thickness: 1,
+                          // thickness of the line
+                          indent: 30,
+                          // empty space to the leading edge of divider.
+                          endIndent: 30,
+                          // empty space to the trailing edge of the divider.
+                          color: Colors
+                              .white, // The color to use when painting the line.
+                          // height: 20, // The divider's height extent.
+                        ),
+                        Container(
+                          child: TextButton(
+                              onPressed: () {
+                                songFinished = true;
+                                Navigator.of(context).pop();
+                                // backButton();
+                              },
+                              child: Text(
+                                AppLocalizations.of(context)!.exit,
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  color: Colors.white,
+                                  //    letterSpacing: 1.5
+                                ),
+                              )),
+                        ),
+                      ]),
+                  SafeArea(
+                    child: Align(
+                      alignment: Alignment.topRight,
+                      child: IconButton(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                          },
+                          icon: Icon(
+                            Icons.cancel_outlined,
+                            color: Colors.white,
+                          )),
                     ),
-                    if (loadingWords != "") loadingIndicator(loadingWords)
-                  ]),
-                ),
+                  ),
+                  if (loadingWords != "") loadingIndicator(loadingWords)
+                ]),
               ),
             ),
           );
         }).then((value) {
       if (songFinished && value != STAY_ON_PAGE) backButton();
     });
+  }
+
+  signInOptions(bool signInLoading) {
+    // Navigator.of(context).pop(STAY_ON_PAGE);
+    showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return Dialog(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20.0)),
+              child: Container(
+                height: popupHeight * 0.7,
+                width: popupWidth * 0.7,
+                decoration: BoxDecoration(
+                    border: Border.all(color: Colors.purple),
+                    borderRadius: BorderRadius.all(new Radius.circular(20.0)),
+                    gradient: RadialGradient(
+                      center: Alignment.center,
+                      radius: 0.8,
+                      colors: [
+                        const Color(0xFF221A4D), // blue sky
+                        const Color(0xFF000000), // yellow sun
+                      ],
+                    )),
+                child: Directionality(
+                  textDirection: Directionality.of(context),
+                  child: Stack(
+                    children: [
+                      SafeArea(
+                        child: Align(
+                          alignment: Alignment.topRight,
+                          child: IconButton(
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                              },
+                              icon: Icon(
+                                Icons.cancel_outlined,
+                                color: Colors.white,
+                              )),
+                        ),
+                      ),
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            AppLocalizations.of(context)!.signInPrompt,
+                            style: TextStyle(color: Colors.white, fontSize: 15),
+                          ),
+                          if (Platform.isIOS)
+                            SignInWithAppleButton(
+                              onPressed: () {
+                                print("apple sign in clicked");
+
+                                // Now send the credential (especially `credential.authorizationCode`) to your server to create a session
+                                // after they have been validated with Apple (see `Integration` section for more information on how to do this)
+                              },
+                            ),
+                        ],
+                      ),
+                      if (signInLoading)
+                        loadingIndicator(AppLocalizations.of(context)!.loading)
+                    ],
+                  ),
+                ),
+              ));
+        });
   }
 
   Future<XFile> stopVideoRecording() async {
@@ -1705,128 +1447,121 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
         context: context,
         builder: (BuildContext context) {
           return Dialog(
-              backgroundColor: Colors.transparent,
-              child: Center(
-                  child: Directionality(
-                      textDirection: Directionality.of(context),
-                      child: Container(
-                        height: MediaQuery.of(context).size.height * 0.8,
-                        width: MediaQuery.of(context).size.width * 0.8,
-                        decoration: BoxDecoration(
-                            border: Border.all(color: Colors.purple),
-                            borderRadius:
-                                BorderRadius.all(new Radius.circular(20.0)),
-                            gradient: RadialGradient(
-                              center: Alignment.center,
-                              radius: 0.8,
-                              colors: [
-                                const Color(0xFF221A4D), // blue sky
-                                const Color(0xFF000000), // yellow sun
-                              ],
-                            )),
-                        child: Stack(
-                          children: [
-                            SafeArea(
-                              child: Align(
-                                alignment: Alignment.topRight,
-                                child: IconButton(
-                                    onPressed: () {
-                                      Navigator.of(context).pop();
-                                    },
-                                    icon: Icon(
-                                      Icons.cancel_outlined,
-                                      color: Colors.white,
-                                    )),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20.0)),
+              child: Container(
+                height: popupHeight * 1.1,
+                width: popupWidth * 1.1,
+                decoration: BoxDecoration(
+                    border: Border.all(color: Colors.purple),
+                    borderRadius: BorderRadius.all(new Radius.circular(20.0)),
+                    gradient: RadialGradient(
+                      center: Alignment.center,
+                      radius: 0.8,
+                      colors: [
+                        const Color(0xFF221A4D), // blue sky
+                        const Color(0xFF000000), // yellow sun
+                      ],
+                    )),
+                child: Directionality(
+                  textDirection: Directionality.of(context),
+                  child: Stack(
+                    children: [
+                      SafeArea(
+                        child: Align(
+                          alignment: Alignment.topRight,
+                          child: IconButton(
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                              },
+                              icon: Icon(
+                                Icons.cancel_outlined,
+                                color: Colors.white,
+                              )),
+                        ),
+                      ),
+                      if (!syncing)
+                        ClipRRect(
+                            borderRadius: BorderRadius.circular(20.0),
+                            child:
+                                StatefulBuilder(builder: (context, setState) {
+                              return VideoPlayer(_controller);
+                            })),
+                      if (!syncing)
+                        StatefulBuilder(builder: (context, setState) {
+                          return Center(
+                            child: IconButton(
+                              onPressed: () {
+                                setState(() {
+                                  _controller.value.isPlaying
+                                      ? _controller.pause()
+                                      : _controller.play();
+                                });
+                              },
+                              iconSize: 50,
+                              icon: Icon(
+                                _controller.value.isPlaying
+                                    ? Icons.pause
+                                    : Icons.play_arrow,
+                                color: Colors.white,
                               ),
                             ),
-                            if (!syncing)
-                              ClipRRect(
-                                  borderRadius: BorderRadius.circular(20.0),
-                                  child: StatefulBuilder(
-                                      builder: (context, setState) {
-                                    return VideoPlayer(_controller);
-                                  })),
-                            if (!syncing)
-                              StatefulBuilder(builder: (context, setState) {
-                                return Center(
-                                  child: IconButton(
-                                    onPressed: () {
-                                      setState(() {
-                                        _controller.value.isPlaying
-                                            ? _controller.pause()
-                                            : _controller.play();
-                                      });
-                                    },
-                                    iconSize: 50,
-                                    icon: Icon(
-                                      _controller.value.isPlaying
-                                          ? Icons.pause
-                                          : Icons.play_arrow,
-                                      color: Colors.white,
+                          );
+                        }),
+                      VideoProgressIndicator(_controller, allowScrubbing: true),
+                      if (!syncing)
+                        StatefulBuilder(
+                          builder: (context, setState) {
+                            return Align(
+                              alignment: Alignment.bottomCenter,
+                              child: Container(
+                                height: 70,
+                                child: Column(
+                                  children: [
+                                    Text(
+                                      AppLocalizations.of(context)!.sync,
+                                      style: TextStyle(color: Colors.white),
                                     ),
-                                  ),
-                                );
-                              }),
-                            VideoProgressIndicator(_controller,
-                                allowScrubbing: true),
-                            if (!syncing)
-                              StatefulBuilder(
-                                builder: (context, setState) {
-                                  return Align(
-                                    alignment: Alignment.bottomCenter,
-                                    child: Container(
-                                      height: 70,
-                                      child: Column(
-                                        children: [
-                                          Text(
-                                            AppLocalizations.of(context)!.sync,
-                                            style:
-                                                TextStyle(color: Colors.white),
-                                          ),
-                                          Slider.adaptive(
-                                            value: _sliderValue,
-                                            min: -4,
-                                            max: 4,
-                                            label: "$_sliderValue",
-                                            divisions: 8,
-                                            onChangeEnd: (double value) async {
-                                              if (value * 0.1 + initialDelay !=
-                                                  delay) {
-                                                setState(() {
-                                                  _sliderValue = value;
-                                                });
-                                                watchRecording(
-                                                    0,
-                                                    new Duration(seconds: 0),
-                                                    true);
-                                                delay =
-                                                    value * 0.1 + initialDelay;
-                                                currentPosition =
-                                                    (await _controller
-                                                        .position)!;
-                                                _controller.dispose();
-                                                await concatFiles(initialDelay,
-                                                    currentPosition);
-                                              }
-                                            },
-                                            onChanged: (double value) {
-                                              setState(() {
-                                                _sliderValue = value;
-                                              });
-                                            },
-                                          ),
-                                        ],
-                                      ),
+                                    Slider.adaptive(
+                                      value: _sliderValue,
+                                      min: -4,
+                                      max: 4,
+                                      label: "$_sliderValue",
+                                      divisions: 8,
+                                      onChangeEnd: (double value) async {
+                                        if (value * 0.1 + initialDelay !=
+                                            delay) {
+                                          setState(() {
+                                            _sliderValue = value;
+                                          });
+                                          watchRecording(0,
+                                              new Duration(seconds: 0), true);
+                                          delay = value * 0.1 + initialDelay;
+                                          currentPosition =
+                                              (await _controller.position)!;
+                                          _controller.dispose();
+                                          await concatFiles(
+                                              initialDelay, currentPosition);
+                                        }
+                                      },
+                                      onChanged: (double value) {
+                                        setState(() {
+                                          _sliderValue = value;
+                                        });
+                                      },
                                     ),
-                                  );
-                                },
+                                  ],
+                                ),
                               ),
-                            if (syncing)
-                              loadingIndicator(
-                                  AppLocalizations.of(context)!.syncing)
-                          ],
+                            );
+                          },
                         ),
-                      ))));
+                      if (syncing)
+                        loadingIndicator(AppLocalizations.of(context)!.syncing)
+                    ],
+                  ),
+                ),
+              ));
         }).then((val) {
       _controller.dispose();
     });
@@ -1875,21 +1610,43 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
     bool fileExists = await File(concatedFile).exists();
     if (fileExists) File(concatedFile).delete();
     waitingForDownloadToWatch = true;
-    if (fileDownloaded)
-      _flutterFFmpeg
-          .execute("-ss " +
-              delay.toString() +
-              " -i " +
-              videoFile!.path +
-              " -i " +
-              audioDownloadPath +
-              " -filter_complex \"[1:a]volume=" +
-              "0.8" +
-              "[a1]; [0:a][a1]amerge=inputs=2[a]\" -map 0:v -map \"[a]\" -c:v copy -ac 2 -shortest " +
-              concatedFile)
-          .then((value) {
-        watchRecording(initialDelay, currentPosition);
-      });
+    await checkIfVideoIsSung();
+    if (noiseRecorded) {
+      if (fileDownloaded)
+        _flutterFFmpeg
+            .execute("-ss " +
+                delay.toString() +
+                " -i " +
+                videoFile!.path +
+                " -i " +
+                audioDownloadPath +
+                " -filter_complex \"[1:a]volume=" +
+                "0.8" +
+                "[a1]; [0:a][a1]amerge=inputs=2[a]\" -map 0:v -map \"[a]\" -c:v copy -ac 2 -shortest " +
+                concatedFile)
+            .then((value) {
+          watchRecording(initialDelay, currentPosition);
+        });
+    } else {
+      Navigator.of(context).pop(STAY_ON_PAGE);
+      endOfSongMenu("", 0, true);
+    }
+  }
+
+  void logCallback(Log log) {
+    try {
+      if (log.message.contains(new RegExp(r'[0-9]'))) {
+        if (log.message.contains('-')) {
+          String subString = log.message.substring(1);
+          double rms = -1 * double.parse(subString);
+          if (rms > -35)
+            wordsSung += 1;
+          else
+            silentWords += 1;
+        }
+      }
+    } catch (Exception) {}
+    noiseRecorded = wordsSung * 5 > silentWords + wordsSung;
   }
 
   void downloadConcatenatedFile(String shrinkedFileToDownload) {
@@ -1898,23 +1655,7 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
       if (mounted)
         setState(() {
           if (success!) {
-            print('Video is saved');
-            // final snackBar = SnackBar(
-            //   content: Text('Download Complete'),
-            //   duration: Duration(seconds: 2),
-            // );
-            //
-            // // Find the ScaffoldMessenger in the widget tree
-            // // and use it to show a SnackBar.
-            // ScaffoldMessenger.of(context).showSnackBar(snackBar);
           } else {
-            // print("Video not saved");
-            // final snackBar = SnackBar(
-            //   content: Text('Download Failed'),
-            //   duration: Duration(seconds: 2),
-            // );
-            // // Find the ScaffoldMessenger in the widget tree
-            // // and use it to show a SnackBar.
             // ScaffoldMessenger.of(context).showSnackBar(snackBar);
           }
         });
@@ -1934,25 +1675,31 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
 
   void shrinkFileAndDownload() async {
     readyToDownload = true;
-    if (fileDownloaded) {
-      var dir = await getApplicationDocumentsDirectory();
-      var shrinkedFileToDownload = '${dir.path}/ashira_' +
-          DateTime.now().millisecondsSinceEpoch.toString() +
-          '.mp4';
-      _flutterFFmpeg
-          .execute("-ss " +
-              delay.toString() +
-              " -i " +
-              videoFile!.path +
-              " -i " +
-              watermarkPath +
-              " -i " +
-              audioDownloadPath +
-              " -filter_complex \"[1]scale=iw/2:-1[wm];[0:v][wm]overlay=main_w-overlay_w-5:main_h-overlay_h-5[v0];[2:a]volume=" +
-              "0.5" +
-              "[a2];[0:a][a2]amerge=inputs=2[a]\" -map \"[v0]\" -map \"[a]\" -ac 2 -shortest -b:v 1M " +
-              shrinkedFileToDownload)
-          .then((value) => downloadConcatenatedFile(shrinkedFileToDownload));
+    await checkIfVideoIsSung();
+    if (noiseRecorded) {
+      if (fileDownloaded) {
+        var dir = await getApplicationDocumentsDirectory();
+        var shrinkedFileToDownload = '${dir.path}/ashira_' +
+            DateTime.now().millisecondsSinceEpoch.toString() +
+            '.mp4';
+        _flutterFFmpeg
+            .execute("-ss " +
+                delay.toString() +
+                " -i " +
+                videoFile!.path +
+                " -i " +
+                watermarkPath +
+                " -i " +
+                audioDownloadPath +
+                " -filter_complex \"[1]scale=iw/2:-1[wm];[0:v][wm]overlay=main_w-overlay_w-5:main_h-overlay_h-5[v0];[2:a]volume=" +
+                "0.5" +
+                "[a2];[0:a][a2]amerge=inputs=2[a]\" -map \"[v0]\" -map \"[a]\" -ac 2 -shortest -b:v 1M " +
+                shrinkedFileToDownload)
+            .then((value) => downloadConcatenatedFile(shrinkedFileToDownload));
+      }
+    } else {
+      Navigator.of(context).pop(STAY_ON_PAGE);
+      endOfSongMenu("", 0, true);
     }
   }
 
@@ -2025,6 +1772,14 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
       'utsname.version:': data.utsname.version,
       'utsname.machine:': data.utsname.machine,
     };
+  }
+
+  checkIfVideoIsSung() async {
+    _flutterFFmpegConfig.enableLogCallback(this.logCallback);
+    await _flutterFFprobe.execute("-f lavfi -i amovie=" +
+        videoFile!.path +
+        ",astats=metadata=1:reset=1 -show_entries frame=pkt_pts_time:frame_tags=lavfi.astats.Overall.RMS_level -of csv=p=0");
+    _flutterFFmpegConfig.disableLogs();
   }
 }
 

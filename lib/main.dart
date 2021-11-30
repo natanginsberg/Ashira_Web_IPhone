@@ -90,10 +90,9 @@ class _AppState extends State<App> {
                     return supportedLocaleLanguage;
                   }
                 }
-                return _locale == Locale('ps') ?  supportedLocales.last : _locale;
-
-                // If device not support with locale to get language code then default get first on from the list
-                return supportedLocales.first;
+                return _locale == Locale('ps')
+                    ? supportedLocales.last
+                    : _locale;
               },
               locale: _locale,
               // locale: Locale(""),
