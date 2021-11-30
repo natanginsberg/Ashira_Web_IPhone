@@ -787,7 +787,6 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
   }
 
   setSong(int person) {
-    print(songs[0].songResourceFile);
     audioPlayer.setAudioSource(
       ConcatenatingAudioSource(
         // Start loading next item just before reaching it.

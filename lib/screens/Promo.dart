@@ -41,19 +41,19 @@ class _PromoState extends State<Promo> {
       home: Scaffold(
         key: _scaffoldKey,
         body: Container(
-            decoration: BoxDecoration(
-              gradient: RadialGradient(
-                center: Alignment.center,
-                radius: 0.8,
-                colors: kIsWeb
-                    ? [const Color(0xFF221A4D), const Color(0xFF000000)]
-                    : [
-                        Colors.black,
-                        Colors.black87,
-                      ],
-              ),
-            ),
-            // color: Colors.black,
+            // decoration: BoxDecoration(
+              // gradient: RadialGradient(
+              //   center: Alignment.center,
+              //   radius: 0.8,
+              //   colors: kIsWeb
+              //       ? [const Color(0xFF000000)]
+              //       : [
+              //           Colors.black,
+              //           Colors.black87,
+              //         ],
+              // ),
+            // ),
+            color: Colors.black,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -119,6 +119,7 @@ class _PromoState extends State<Promo> {
                         height: MediaQuery.of(context).size.height / 10,
                         width: MediaQuery.of(context).size.height / 5,
                         decoration: BoxDecoration(
+                          color: Colors.transparent,
                           image: DecorationImage(
                             image: AssetImage('assets/toker.jpg'),
                             fit: BoxFit.fill,
@@ -130,6 +131,7 @@ class _PromoState extends State<Promo> {
                         height: MediaQuery.of(context).size.height / 10,
                         width: MediaQuery.of(context).size.height / 5,
                         decoration: BoxDecoration(
+                          color: Colors.transparent,
                           image: DecorationImage(
                             image: AssetImage('assets/adi.jpg'),
                             fit: BoxFit.fill,

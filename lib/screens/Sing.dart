@@ -123,9 +123,9 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
 
   List<CameraDescription> cameras = [];
 
-  // CameraController? controller;
-  // XFile? imageFile;
-  // XFile? videoFile;
+  CameraController? controller;
+  XFile? imageFile;
+  XFile? videoFile;
 
   // VideoPlayerController? videoController;
   VoidCallback? videoPlayerListener;
@@ -362,9 +362,8 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
                                 child: Container(
                                     child: Align(
                                         alignment: Alignment.topCenter,
-                                        child:
-                                           WebcamPage(counter +
-                                                secondCounter.toString())))),
+                                        child: WebcamPage(counter +
+                                            secondCounter.toString())))),
                         ],
                       ),
                       SafeArea(
@@ -587,10 +586,9 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
                                                                 .size
                                                                 .width /
                                                             2.7,
-                                                    child:
-                                                WebcamPage(counter +
-                                                    secondCounter
-                                                        .toString()))
+                                                    child: WebcamPage(counter +
+                                                        secondCounter
+                                                            .toString()))
                                                 : ClipRRect(
                                                     borderRadius:
                                                         BorderRadius.circular(
@@ -853,9 +851,8 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
 
   createTextWidget(int index, {required Line line}) {
     double size = personalMoishie
-        ?
-     MediaQuery.of(context).size.height / 6
-    // MediaQuery.of(context).size.height / 7
+        ? MediaQuery.of(context).size.height / 6
+        // MediaQuery.of(context).size.height / 7
         : _isSmartphone
             ? 28
             : 34;
@@ -1044,7 +1041,6 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
   }
 
   setSong(int person) {
-    print(songs[0].songResourceFile);
     audioPlayer.setAudioSource(
       ConcatenatingAudioSource(
         // Start loading next item just before reaching it.
@@ -1664,9 +1660,8 @@ class _WebcamPageState extends State<WebcamPage> {
     _webcamWidget = HtmlElementView(key: UniqueKey(), viewType: number);
     // Register an webcam
     if (!ui.platformViewRegistry.registerViewFactory(number,
-        (int viewId) => _webcamVideoElement)) // return _webcamVideoElement;
+        (int viewId) => _webcamVideoElement)) //return _webcamVideoElement;
       print("this is still causeing an issue" + number);
-
     html.window.navigator.mediaDevices!
         .getUserMedia({"video": true}).then((html.MediaStream stream) {
       _webcamVideoElement
@@ -1705,7 +1700,7 @@ class _WebcamPageState extends State<WebcamPage> {
 
         tracks.forEach((track) {
           // todo took off for mobile
-          // track.stop();
+          track.stop();
         });
       }
     } catch (error) {}
