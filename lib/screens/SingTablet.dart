@@ -26,7 +26,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:wakelock/wakelock.dart';
 import 'package:wordpress_api/wordpress_api.dart' as wp;
 
-import 'AllSongs.dart';
+import 'AllSongsTablet.dart';
 // List<CameraDescription> cameras;
 
 class SingTablet extends StatefulWidget {
@@ -288,6 +288,7 @@ class _SingTabletState extends State<SingTablet> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+
     if (personalMoishie)
       SystemChrome.setPreferredOrientations([
         DeviceOrientation.landscapeRight,
@@ -910,7 +911,7 @@ class _SingTabletState extends State<SingTablet> with WidgetsBindingObserver {
           width: _isSmartphone &&
               (!tabletOrientationLandscape() ||
                   orientation == Orientation.portrait)
-              ? MediaQuery.of(context).size.width - 30
+              ? MediaQuery.of(context).size.width - 40
               : personalMoishie
               ? MediaQuery.of(context).size.width - 45
               : MediaQuery.of(context).size.width / 3,
@@ -1122,7 +1123,6 @@ class _SingTabletState extends State<SingTablet> with WidgetsBindingObserver {
   }
 
   setSong(int person) {
-    print(songs[0].songResourceFile);
     audioPlayer.setAudioSource(
       ConcatenatingAudioSource(
         // Start loading next item just before reaching it.

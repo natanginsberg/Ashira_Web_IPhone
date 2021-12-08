@@ -5,6 +5,7 @@ import 'dart:ui';
 import 'package:ashira_flutter/customWidgets/GenreButton.dart';
 import 'package:ashira_flutter/customWidgets/SongLayout.dart';
 import 'package:ashira_flutter/model/Song.dart';
+import 'package:ashira_flutter/screens/SingTablet.dart';
 import 'package:ashira_flutter/utils/WpHelper.dart' as wph;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dart_ipify/dart_ipify.dart';
@@ -25,7 +26,6 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:wordpress_api/wordpress_api.dart' as wp;
 
 import '../main.dart';
-import 'Sing.dart';
 
 class AllSongsTablet extends StatefulWidget {
   AllSongsTablet();
@@ -656,18 +656,16 @@ class _AllSongsTabletState extends State<AllSongsTablet> {
         .get()
         .then((QuerySnapshot querySnapshot) {
       querySnapshot.docs.forEach((doc) {
-        //todo added for tablet
-        if (doc.get("genre") != "ישראלי")
-          songs.add(new Song(
-              artist: doc.get('artist'),
-              title: doc.get("title"),
-              imageResourceFile: doc.get("imageResourceFile"),
-              genre: doc.get("genre"),
-              songResourceFile: doc.get("songResourceFile"),
-              textResourceFile: doc.get("textResourceFile"),
-              womanToneResourceFile: doc.get("womanToneResourceFile"),
-              kidToneResourceFile: doc.get("kidToneResourceFile"),
-              length: doc.get("length")));
+        songs.add(new Song(
+            artist: doc.get('artist'),
+            title: doc.get("title"),
+            imageResourceFile: doc.get("imageResourceFile"),
+            genre: doc.get("genre"),
+            songResourceFile: doc.get("songResourceFile"),
+            textResourceFile: doc.get("textResourceFile"),
+            womanToneResourceFile: doc.get("womanToneResourceFile"),
+            kidToneResourceFile: doc.get("kidToneResourceFile"),
+            length: doc.get("length")));
       });
 
       setState(() {
@@ -814,12 +812,12 @@ class _AllSongsTabletState extends State<AllSongsTablet> {
       // todo tablet comment  if (kIsWeb) {
       if (email == "הקלטותשלאשר") {
         Navigator.push(context,
-            MaterialPageRoute(builder: (_) => Sing(songsPassed, "אשר")));
+            MaterialPageRoute(builder: (_) => SingTablet(songsPassed, "אשר")));
       } else {
         Navigator.push(
             context,
             MaterialPageRoute(
-                builder: (_) => Sing(songsPassed, counter.toString())));
+                builder: (_) => SingTablet(songsPassed, counter.toString())));
       }
       // todo tablet comment
       // } else {

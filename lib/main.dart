@@ -1,10 +1,12 @@
-import 'package:ashira_flutter/screens/AllSongs.dart';
+// import 'package:ashira_flutter/screens/AllSongs.dart';
+import 'package:ashira_flutter/screens/AllSongsTablet.dart';
 import 'package:ashira_flutter/screens/Contracts.dart';
 import 'package:ashira_flutter/screens/MobileSing.dart';
 import 'package:ashira_flutter/screens/Promo.dart';
 
 // import 'package:ashira_flutter/screens/SignIn.dart';
 import 'package:ashira_flutter/screens/Sing.dart';
+import 'package:ashira_flutter/screens/SingTablet.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -104,8 +106,8 @@ class _AppState extends State<App> {
                 '/': (context) => Promo(),
                 '/contracts': (context) => Contracts(),
                 // '/signIn': (context) => SignIn(),
-                '/allSongs': (context) => AllSongs(),
-                '/sing': (context) => Sing(songs, ""),
+                '/allSongs': (context) => AllSongsTablet(),
+                '/sing': (context) => SingTablet(songs, ""),
                 '/mobileSing': (context) => MobileSing(songs, ""),
               },
             );
