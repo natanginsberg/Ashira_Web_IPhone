@@ -26,6 +26,9 @@ import 'package:universal_html/html.dart' as html;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:wordpress_api/wordpress_api.dart' as wp;
 
+import 'dart:io';
+
+
 import '../main.dart';
 import 'Sing.dart';
 
@@ -207,6 +210,29 @@ class _AllSongsState extends State<AllSongs> {
     }
   }
 
+  openwhatsapp() async{
+    var whatsapp ="+972535097848";
+    var whatsappURl_android = "whatsapp://send?phone="+whatsapp+"&text=Hi";
+    var whatappURL_ios ="https://wa.me/$whatsapp?text=${Uri.parse("Hi")}";
+    if(Platform.isIOS){
+      // for iOS phone only
+      if( await canLaunch(whatappURL_ios)){
+        await launch(whatappURL_ios, forceSafariVC: false);
+      }else{
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: new Text("Whatsapp not installed")));
+      }
+    }else{
+      // android , web
+      if( await canLaunch(whatsappURl_android)){
+        await launch(whatsappURl_android);
+      }else{
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: new Text("Whatsapp not installed")));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -244,7 +270,8 @@ class _AllSongsState extends State<AllSongs> {
                       AppLocalizations.of(context)!.watsappUs,
                     ),
                     onTap: () {
-                      launch("https://wa.me/message/6CROFFTK7A5BE1");
+                      //launch("https://wa.me/message/6CROFFTK7A5BE1");
+                      openwhatsapp();
                       // Update the state of the app
                       // ...
                       // Then close the drawer

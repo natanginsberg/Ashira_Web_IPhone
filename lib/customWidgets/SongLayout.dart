@@ -67,7 +67,7 @@ class _SongLayoutState extends State<SongLayout> {
                       child: ClipRRect(
                           borderRadius: BorderRadius.circular(15.0),
                           child: Image(
-                              fit: BoxFit.fill,
+                              fit: BoxFit.fitWidth,
                               image: NetworkImage(
                                   widget.song.imageResourceFile)))),
                 ),
