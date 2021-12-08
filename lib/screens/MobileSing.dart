@@ -225,6 +225,7 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
   }
 
   void getCameras() async {
+    print(" get here");
     try {
       WidgetsFlutterBinding.ensureInitialized();
       cameras = await availableCameras();
@@ -240,7 +241,7 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
         });
       });
     } on CameraException catch (e) {
-      // logError(e.code, e.description);
+      print("Error occured " + e.toString());
     }
   }
 
@@ -330,6 +331,7 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
                                     ),
                                   ],
                                 ),
+                                SizedBox(width: 10,),
                                 Image(
                                   fit: BoxFit.fitWidth,
                                   image: NetworkImage(
@@ -585,7 +587,7 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
   }
 
   createTextWidget(int index, {required Line line}) {
-    double size = 28;
+    double size = 32;
     Color pastFontColor = personalMoishie ? Colors.green : Colors.white;
     Color futureFontColor = personalMoishie ? Colors.white : Colors.white30;
     FontWeight weight = personalMoishie ? FontWeight.bold : FontWeight.normal;
@@ -1751,7 +1753,9 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
     if (Platform.isIOS) {
       var deviceData = <String, dynamic>{};
       deviceData = _readIosDeviceInfo(await deviceInfoPlugin.iosInfo);
-      if (deviceData['systemVersion'] >= 10) getCameras();
+      print(deviceData['systemVersion']);
+      if (double.parse(deviceData['systemVersion']) >= 10)
+        getCameras();
     } else
       getCameras();
   }

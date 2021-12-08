@@ -62,7 +62,7 @@
     "loading":"Loading",
     "syncing":"Syncing",
     "sync":"Sync Control",
-    "attachEarphones":"Attach earphones in order to record",
+    "attachEarphones":"Connect earphones for a quality recording",
     "signInPrompt":"You must sign in to continue",
     "notEnoughNoise":"You must sing to download"
 }

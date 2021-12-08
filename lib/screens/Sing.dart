@@ -1700,7 +1700,7 @@ class _WebcamPageState extends State<WebcamPage> {
 
         tracks.forEach((track) {
           // todo took off for mobile
-          track.stop();
+          //track.stop();
         });
       }
     } catch (error) {}
