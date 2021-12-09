@@ -49,6 +49,7 @@
     "classic":"Classic",
     "advanced":"Advanced",
     "cameraOn":"Interactive",
+    "withClip":"Video Clip",
     "submit": "Add",
     "songFinished":"Song Finished",
     "stoppedInMiddle":"Song Stopped",

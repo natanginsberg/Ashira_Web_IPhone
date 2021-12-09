@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math';
 import 'dart:ui';
 
@@ -26,9 +27,6 @@ import 'package:universal_html/html.dart' as html;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:wordpress_api/wordpress_api.dart' as wp;
 
-import 'dart:io';
-
-
 import '../main.dart';
 import 'Sing.dart';
 
@@ -53,6 +51,7 @@ String id = "";
 Timestamp endTime = Timestamp(10, 10);
 bool personalMoishie = false;
 bool cameraMode = false;
+bool withClip = false;
 int changeTime = 7;
 
 class _AllSongsState extends State<AllSongs> {
@@ -210,23 +209,23 @@ class _AllSongsState extends State<AllSongs> {
     }
   }
 
-  openwhatsapp() async{
-    var whatsapp ="+972535097848";
-    var whatsappURl_android = "whatsapp://send?phone="+whatsapp+"&text=Hi";
-    var whatappURL_ios ="https://wa.me/$whatsapp?text=${Uri.parse("Hi")}";
-    if(Platform.isIOS){
+  openwhatsapp() async {
+    var whatsapp = "+972535097848";
+    var whatsappURl_android = "whatsapp://send?phone=" + whatsapp + "&text=Hi";
+    var whatappURL_ios = "https://wa.me/$whatsapp?text=${Uri.parse("Hi")}";
+    if (Platform.isIOS) {
       // for iOS phone only
-      if( await canLaunch(whatappURL_ios)){
+      if (await canLaunch(whatappURL_ios)) {
         await launch(whatappURL_ios, forceSafariVC: false);
-      }else{
+      } else {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: new Text("Whatsapp not installed")));
       }
-    }else{
+    } else {
       // android , web
-      if( await canLaunch(whatsappURl_android)){
+      if (await canLaunch(whatsappURl_android)) {
         await launch(whatsappURl_android);
-      }else{
+      } else {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: new Text("Whatsapp not installed")));
       }
@@ -475,12 +474,14 @@ class _AllSongsState extends State<AllSongs> {
                                                   Colors.red),
                                           child: Checkbox(
                                             //    <-- label
-                                            value:
-                                                !personalMoishie && !cameraMode,
+                                            value: !personalMoishie &&
+                                                !cameraMode &&
+                                                !withClip,
                                             onChanged: (newValue) {
                                               setState(() {
                                                 personalMoishie = false;
                                                 cameraMode = false;
+                                                withClip = false;
                                               });
                                             },
                                           ),
@@ -504,6 +505,7 @@ class _AllSongsState extends State<AllSongs> {
                                                           setState(() {
                                                             personalMoishie =
                                                                 true;
+                                                            withClip = false;
                                                             cameraMode = false;
                                                           });
                                                         }),
@@ -521,6 +523,7 @@ class _AllSongsState extends State<AllSongs> {
                                               setState(() {
                                                 personalMoishie = true;
                                                 cameraMode = false;
+                                                withClip = false;
                                               });
                                             },
                                           ),
@@ -548,6 +551,7 @@ class _AllSongsState extends State<AllSongs> {
                                                             cameraMode = true;
                                                             personalMoishie =
                                                                 false;
+                                                            withClip = false;
                                                           });
                                                         }),
                                             ]),
@@ -564,10 +568,53 @@ class _AllSongsState extends State<AllSongs> {
                                               setState(() {
                                                 cameraMode = true;
                                                 personalMoishie = false;
+                                                withClip = false;
                                               });
                                             },
                                           ),
                                         ),
+                                        SizedBox(
+                                          width: 25,
+                                        ),
+                                        Flexible(
+                                          child: RichText(
+                                            text: TextSpan(children: [
+                                              TextSpan(
+                                                  text: AppLocalizations.of(
+                                                          context)!
+                                                      .withClip,
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                  ),
+                                                  recognizer:
+                                                      TapGestureRecognizer()
+                                                        ..onTap = () {
+                                                          setState(() {
+                                                            withClip = true;
+                                                            personalMoishie =
+                                                                false;
+                                                            cameraMode = false;
+                                                          });
+                                                        }),
+                                            ]),
+                                          ),
+                                        ),
+                                        Theme(
+                                          data: ThemeData(
+                                              unselectedWidgetColor:
+                                                  Colors.red),
+                                          child: Checkbox(
+                                            //    <-- label
+                                            value: withClip,
+                                            onChanged: (newValue) {
+                                              setState(() {
+                                                withClip = true;
+                                                cameraMode = false;
+                                                personalMoishie = false;
+                                              });
+                                            },
+                                          ),
+                                        )
                                       ],
                                     ),
                                   ],
@@ -780,11 +827,14 @@ class _AllSongsState extends State<AllSongs> {
               controller.clear();
               previousValue = "";
               if (!signedIn)
-                for (String name in demoSongNames)
+                for (String name in demoSongNames) {
+                  int index = songs
+                      .indexWhere((element) => element.title == name);
+                  gridSongs.remove(songs[index]);
                   gridSongs.insert(
                       0,
-                      songs[songs
-                          .indexWhere((element) => element.title == name)]);
+                      songs[index]);
+                }
             });
           } else if (currentGenre != genre) {
             setState(() {
@@ -839,7 +889,8 @@ class _AllSongsState extends State<AllSongs> {
               MaterialPageRoute(
                   builder: (_) => Sing(songsPassed, counter.toString())));
         }
-      } else {
+      }
+      else {
         Navigator.push(
             context,
             MaterialPageRoute(
@@ -1828,6 +1879,8 @@ class _AllSongsState extends State<AllSongs> {
                                 ..onTap = () {
                                   setState(() {
                                     personalMoishie = false;
+                                    withClip = false;
+                                    cameraMode = false;
                                   });
                                 }),
                         ]),
@@ -1837,11 +1890,12 @@ class _AllSongsState extends State<AllSongs> {
                       data: ThemeData(unselectedWidgetColor: Colors.red),
                       child: Checkbox(
                         //    <-- label
-                        value: !personalMoishie && !cameraMode,
+                        value: !personalMoishie && !cameraMode && !withClip,
                         onChanged: (newValue) {
                           setState(() {
                             personalMoishie = false;
                             cameraMode = false;
+                            withClip = false;
                           });
                         },
                       ),
@@ -1859,6 +1913,7 @@ class _AllSongsState extends State<AllSongs> {
                                   setState(() {
                                     personalMoishie = true;
                                     cameraMode = false;
+                                    withClip = false;
                                   });
                                 }),
                         ]),
@@ -1873,6 +1928,7 @@ class _AllSongsState extends State<AllSongs> {
                           setState(() {
                             personalMoishie = true;
                             cameraMode = false;
+                            withClip = false;
                           });
                         },
                       ),
@@ -1895,6 +1951,7 @@ class _AllSongsState extends State<AllSongs> {
                                   setState(() {
                                     cameraMode = true;
                                     personalMoishie = false;
+                                    withClip = false;
                                   });
                                 }),
                         ]),
@@ -1908,6 +1965,40 @@ class _AllSongsState extends State<AllSongs> {
                         onChanged: (newValue) {
                           setState(() {
                             cameraMode = true;
+                            personalMoishie = false;
+                            withClip = false;
+                          });
+                        },
+                      ),
+                    ),
+                    Flexible(
+                      child: RichText(
+                        text: TextSpan(children: [
+                          TextSpan(
+                              text: AppLocalizations.of(context)!.withClip,
+                              style: TextStyle(
+                                color: Colors.white,
+                              ),
+                              recognizer: TapGestureRecognizer()
+                                ..onTap = () {
+                                  setState(() {
+                                    withClip = true;
+                                    cameraMode = false;
+                                    personalMoishie = false;
+                                  });
+                                }),
+                        ]),
+                      ),
+                    ),
+                    Theme(
+                      data: ThemeData(unselectedWidgetColor: Colors.red),
+                      child: Checkbox(
+                        //    <-- label
+                        value: withClip,
+                        onChanged: (newValue) {
+                          setState(() {
+                            withClip = true;
+                            cameraMode = false;
                             personalMoishie = false;
                           });
                         },
