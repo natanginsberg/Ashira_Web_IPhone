@@ -109,6 +109,10 @@ flutter:
           weight: 600
         - asset: fonts/OpenSansHebrew-Bold.ttf
           weight: 700
-  #
+    - family: SongFont
+      fonts:
+        - asset: fonts/HeeboVariableFontwght.ttf
+          weight: 400
+
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages

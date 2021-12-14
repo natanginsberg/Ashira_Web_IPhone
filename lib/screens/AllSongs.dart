@@ -53,6 +53,11 @@ bool personalMoishie = false;
 bool cameraMode = false;
 bool withClip = false;
 int changeTime = 7;
+List<String> slowSongs = [];
+List<String> fastSongs = [];
+List<String> slowSongsVideos = [];
+List<String> fastSongsVideos = [];
+List<dynamic> specialVideos = [];
 
 class _AllSongsState extends State<AllSongs> {
   // Locale _locale = Locale.fromSubtags(languageCode: "he");
@@ -121,10 +126,12 @@ class _AllSongsState extends State<AllSongs> {
 
   String ipAddress = "";
 
+  bool noVideos = false;
+
   _AllSongsState();
 
   void signInAnon() async {
-    await firebaseAuth.signInAnonymously().then((value) => getSongs());
+    await firebaseAuth.signInAnonymously().then((value) => getFirebaseData());
   }
 
   @override
@@ -289,9 +296,15 @@ class _AllSongsState extends State<AllSongs> {
                           "he") {
                         Locale newLocale = Locale('en', 'IL');
                         App.setLocale(context, newLocale);
+                        setState(() {
+                          genres = List.from(englishGenres);
+                        });
                       } else {
                         Locale newLocale = Locale('he', 'US');
                         App.setLocale(context, newLocale);
+                        setState(() {
+                          genres = List.from(hebrewGenres);
+                        });
                       }
 
                       _scaffoldKey2.currentState!.openEndDrawer();
@@ -576,45 +589,48 @@ class _AllSongsState extends State<AllSongs> {
                                         SizedBox(
                                           width: 25,
                                         ),
-                                        Flexible(
-                                          child: RichText(
-                                            text: TextSpan(children: [
-                                              TextSpan(
-                                                  text: AppLocalizations.of(
-                                                          context)!
-                                                      .withClip,
-                                                  style: TextStyle(
-                                                    color: Colors.white,
-                                                  ),
-                                                  recognizer:
-                                                      TapGestureRecognizer()
-                                                        ..onTap = () {
-                                                          setState(() {
-                                                            withClip = true;
-                                                            personalMoishie =
-                                                                false;
-                                                            cameraMode = false;
-                                                          });
-                                                        }),
-                                            ]),
+                                        if (!noVideos)
+                                          Flexible(
+                                            child: RichText(
+                                              text: TextSpan(children: [
+                                                TextSpan(
+                                                    text: AppLocalizations.of(
+                                                            context)!
+                                                        .withClip,
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                    ),
+                                                    recognizer:
+                                                        TapGestureRecognizer()
+                                                          ..onTap = () {
+                                                            setState(() {
+                                                              withClip = true;
+                                                              personalMoishie =
+                                                                  false;
+                                                              cameraMode =
+                                                                  false;
+                                                            });
+                                                          }),
+                                              ]),
+                                            ),
                                           ),
-                                        ),
-                                        Theme(
-                                          data: ThemeData(
-                                              unselectedWidgetColor:
-                                                  Colors.red),
-                                          child: Checkbox(
-                                            //    <-- label
-                                            value: withClip,
-                                            onChanged: (newValue) {
-                                              setState(() {
-                                                withClip = true;
-                                                cameraMode = false;
-                                                personalMoishie = false;
-                                              });
-                                            },
-                                          ),
-                                        )
+                                        if (!noVideos)
+                                          Theme(
+                                            data: ThemeData(
+                                                unselectedWidgetColor:
+                                                    Colors.red),
+                                            child: Checkbox(
+                                              //    <-- label
+                                              value: withClip,
+                                              onChanged: (newValue) {
+                                                setState(() {
+                                                  withClip = true;
+                                                  cameraMode = false;
+                                                  personalMoishie = false;
+                                                });
+                                              },
+                                            ),
+                                          )
                                       ],
                                     ),
                                   ],
@@ -709,11 +725,15 @@ class _AllSongsState extends State<AllSongs> {
     );
   }
 
-  getSongs() {
+  getFirebaseData() {
     myLocale = Localizations.localeOf(context).languageCode;
     getDemoSongs();
     getGenres();
+    getBackgroundVideos();
+    getSongs();
+  }
 
+  getSongs() {
     if (kIsWeb) {
       _readWebBrowserInfo();
     }
@@ -790,19 +810,16 @@ class _AllSongsState extends State<AllSongs> {
 
   buildListView() {
     return Expanded(
-      child: Column(children: [
-        Expanded(
-          child: ListView.builder(
-              itemCount: genres.length,
-              itemBuilder: (BuildContext ctx, index) {
-                return Container(
-                  color: Colors.transparent,
-                  alignment: Alignment.center,
-                  child: createElevateButton(genre: genres[index]),
-                );
-              }),
-        )
-      ]),
+      child: ListView.builder(
+          shrinkWrap: true,
+          itemCount: genres.length,
+          itemBuilder: (BuildContext ctx, index) {
+            return Container(
+              color: Colors.transparent,
+              alignment: Alignment.center,
+              child: createElevateButton(genre: genres[index]),
+            );
+          }),
     );
   }
 
@@ -828,12 +845,10 @@ class _AllSongsState extends State<AllSongs> {
               previousValue = "";
               if (!signedIn)
                 for (String name in demoSongNames) {
-                  int index = songs
-                      .indexWhere((element) => element.title == name);
+                  int index =
+                      songs.indexWhere((element) => element.title == name);
                   gridSongs.remove(songs[index]);
-                  gridSongs.insert(
-                      0,
-                      songs[index]);
+                  gridSongs.insert(0, songs[index]);
                 }
             });
           } else if (currentGenre != genre) {
@@ -1971,39 +1986,41 @@ class _AllSongsState extends State<AllSongs> {
                         },
                       ),
                     ),
-                    Flexible(
-                      child: RichText(
-                        text: TextSpan(children: [
-                          TextSpan(
-                              text: AppLocalizations.of(context)!.withClip,
-                              style: TextStyle(
-                                color: Colors.white,
-                              ),
-                              recognizer: TapGestureRecognizer()
-                                ..onTap = () {
-                                  setState(() {
-                                    withClip = true;
-                                    cameraMode = false;
-                                    personalMoishie = false;
-                                  });
-                                }),
-                        ]),
+                    if (!noVideos)
+                      Flexible(
+                        child: RichText(
+                          text: TextSpan(children: [
+                            TextSpan(
+                                text: AppLocalizations.of(context)!.withClip,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                ),
+                                recognizer: TapGestureRecognizer()
+                                  ..onTap = () {
+                                    setState(() {
+                                      withClip = true;
+                                      cameraMode = false;
+                                      personalMoishie = false;
+                                    });
+                                  }),
+                          ]),
+                        ),
                       ),
-                    ),
-                    Theme(
-                      data: ThemeData(unselectedWidgetColor: Colors.red),
-                      child: Checkbox(
-                        //    <-- label
-                        value: withClip,
-                        onChanged: (newValue) {
-                          setState(() {
-                            withClip = true;
-                            cameraMode = false;
-                            personalMoishie = false;
-                          });
-                        },
+                    if (!noVideos)
+                      Theme(
+                        data: ThemeData(unselectedWidgetColor: Colors.red),
+                        child: Checkbox(
+                          //    <-- label
+                          value: withClip,
+                          onChanged: (newValue) {
+                            setState(() {
+                              withClip = true;
+                              cameraMode = false;
+                              personalMoishie = false;
+                            });
+                          },
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ],
@@ -2071,11 +2088,11 @@ class _AllSongsState extends State<AllSongs> {
 
   void getGenres() async {
     try {
-      var demoCollection = FirebaseFirestore.instance.collection('genres');
+      var genresCollection = FirebaseFirestore.instance.collection('genres');
 
-      var demoName = await demoCollection.doc("genres").get();
-      hebrewGenres = List.from(demoName.get("hebrew"));
-      englishGenres = List.from(demoName.get("english"));
+      var genreLists = await genresCollection.doc("genres").get();
+      hebrewGenres = List.from(genreLists.get("hebrew"));
+      englishGenres = List.from(genreLists.get("english"));
       myLocale == "he"
           ? genres = List.from(hebrewGenres)
           : genres = List.from(englishGenres);
@@ -2318,6 +2335,28 @@ class _AllSongsState extends State<AllSongs> {
         ),
       ),
     );
+  }
+
+  void getBackgroundVideos() async {
+    final databaseReference = FirebaseFirestore.instance;
+    try {
+      var doc =
+          databaseReference.collection('pictures').doc('backgroundVideos');
+      var vidDoc = await doc.get();
+      if (vidDoc.exists) {
+        setState(() {
+          fastSongs = List.from(vidDoc.get("שירים קצביים"));
+          slowSongs = List.from(vidDoc.get("שירים שקטים"));
+          fastSongsVideos = List.from(vidDoc.get("קצבי"));
+          slowSongsVideos = List.from(vidDoc.get("שקט"));
+          specialVideos = List.from(vidDoc.get('special'));
+        });
+      }
+    } catch (e) {
+      setState(() {
+        noVideos = true;
+      });
+    }
   }
 
 // void changeLanguage() {

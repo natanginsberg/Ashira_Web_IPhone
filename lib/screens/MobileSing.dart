@@ -331,7 +331,9 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
                                     ),
                                   ],
                                 ),
-                                SizedBox(width: 10,),
+                                SizedBox(
+                                  width: 10,
+                                ),
                                 Image(
                                   fit: BoxFit.fitWidth,
                                   image: NetworkImage(
@@ -1320,6 +1322,31 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
                         Container(
                           child: TextButton(
                               onPressed: () {
+                                signInOptions(false);
+                              },
+                              child: Text(
+                                "Sign in",
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  color: Colors.white,
+                                  //    letterSpacing: 1.5
+                                ),
+                              )),
+                        ),
+                        const Divider(
+                          thickness: 1,
+                          // thickness of the line
+                          indent: 30,
+                          // empty space to the leading edge of divider.
+                          endIndent: 30,
+                          // empty space to the trailing edge of the divider.
+                          color: Colors
+                              .white, // The color to use when painting the line.
+                          // height: 20, // The divider's height extent.
+                        ),
+                        Container(
+                          child: TextButton(
+                              onPressed: () {
                                 songFinished = true;
                                 Navigator.of(context).pop();
                                 // backButton();
@@ -1405,8 +1432,14 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
                           ),
                           if (Platform.isIOS)
                             SignInWithAppleButton(
-                              onPressed: () {
-                                print("apple sign in clicked");
+                              onPressed: () async {
+                                final credential =
+                                    await SignInWithApple.getAppleIDCredential(
+                                  scopes: [
+                                    AppleIDAuthorizationScopes.email,
+                                    AppleIDAuthorizationScopes.fullName,
+                                  ],
+                                );
 
                                 // Now send the credential (especially `credential.authorizationCode`) to your server to create a session
                                 // after they have been validated with Apple (see `Integration` section for more information on how to do this)
@@ -1754,8 +1787,7 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
       var deviceData = <String, dynamic>{};
       deviceData = _readIosDeviceInfo(await deviceInfoPlugin.iosInfo);
       print(deviceData['systemVersion']);
-      if (double.parse(deviceData['systemVersion']) >= 10)
-        getCameras();
+      if (double.parse(deviceData['systemVersion']) >= 10) getCameras();
     } else
       getCameras();
   }

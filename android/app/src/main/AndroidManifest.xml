@@ -11,6 +11,7 @@
         android:label="ashira_flutter_2"
         android:icon="@mipmap/ic_video_camera">
         <activity
+
             android:name="com.function.karaoke.interaction.MainActivity"
             android:launchMode="singleTop"
             android:theme="@style/LaunchTheme"
@@ -44,5 +45,6 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
     </application>
 </manifest>

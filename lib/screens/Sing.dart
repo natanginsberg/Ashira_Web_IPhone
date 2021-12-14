@@ -80,6 +80,8 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
 
   List<dynamic> backgroundPictures = [];
 
+  List<String> backgroundVideos = [];
+
   String error = '';
 
   late TextEditingController _orderEditingController;
@@ -129,6 +131,7 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
   XFile? videoFile;
 
   VideoPlayerController? _controller;
+  VideoPlayerController? _nextController;
 
   // VideoPlayerController? videoController;
   VoidCallback? videoPlayerListener;
@@ -178,12 +181,13 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
     for (int i = 0; i < songs.length; i++) {
       splits.add(totalLength);
       totalLength += songs[i].length;
+      if (withClip) setFastSlowArray(songs[i]);
     }
     songLength = new Duration(milliseconds: totalLength - 150);
     // checkFirestorePermissions(false);
     if (personalMoishie)
       createAllBackgroundPictureArray();
-    else if (withClip) initiateController();
+    else if (withClip) initiateControllers();
     _isSmartphone = isSmartphone();
   }
 
@@ -428,238 +432,250 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
               )),
               child: !_accessDenied
                   ? Padding(
-                    padding:
-                        const EdgeInsets.fromLTRB(15.0, 25.0, 15.0, 25.0),
-                    child: Container(
-                      decoration: BoxDecoration(
-                          image: getPreviousImage(),
-                          border: Border.all(color: Colors.purple),
-                          borderRadius:
-                              BorderRadius.all(new Radius.circular(20.0))),
+                      padding:
+                          const EdgeInsets.fromLTRB(15.0, 25.0, 15.0, 25.0),
                       child: Container(
                         decoration: BoxDecoration(
-                            image: getImage(),
+                            image: getPreviousImage(),
                             border: Border.all(color: Colors.purple),
-                            borderRadius: BorderRadius.all(
-                                new Radius.circular(20.0))),
-                        child: Stack(children: [
-                          if (withClip && _controller != null)
-                            VideoPlayer(_controller!),
-                          MouseRegion(
-                            cursor: SystemMouseCursors.click,
-                            onEnter: (PointerEvent details) =>
-                                setState(() => amIHovering = true),
-                            onExit: (PointerEvent details) => setState(() {
-                              amIHovering = false;
-                            }),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                SafeArea(
-                                  child: Text(
-                                    songs[trackNumber].title,
-                                    style: TextStyle(
-                                        fontSize: 18, color: Colors.white),
+                            borderRadius:
+                                BorderRadius.all(new Radius.circular(20.0))),
+                        child: Container(
+                          decoration: BoxDecoration(
+                              image: getImage(),
+                              border: Border.all(color: Colors.purple),
+                              borderRadius:
+                                  BorderRadius.all(new Radius.circular(20.0))),
+                          child: Stack(children: [
+                            if (withClip && _nextController != null)
+                              VideoPlayer(_nextController!),
+                            if (withClip && _controller != null)
+                              VideoPlayer(_controller!),
+                            MouseRegion(
+                              cursor: SystemMouseCursors.click,
+                              onEnter: (PointerEvent details) =>
+                                  setState(() => amIHovering = true),
+                              onExit: (PointerEvent details) => setState(() {
+                                amIHovering = false;
+                              }),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  SafeArea(
+                                    child: Text(
+                                      songs[trackNumber].title,
+                                      style: TextStyle(
+                                          fontSize: 18, color: Colors.white),
+                                    ),
                                   ),
-                                ),
-                                Expanded(
-                                  child: Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.center,
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceEvenly,
-                                    children: [
-                                      Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceEvenly,
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.center,
-                                        children: [
-                                          Container(
-                                            height: MediaQuery.of(context)
-                                                    .size
-                                                    .height /
-                                                2,
-                                            child: FutureBuilder(
-                                              future: parseFuture,
-                                              builder: (context, snapShot) {
-                                                if (snapShot.hasData) {
-                                                  return buildListView(
-                                                      (allLines[
-                                                          trackNumber]));
-                                                } else if (snapShot
-                                                    .hasError) {
-                                                  return Icon(
-                                                    Icons.error_outline,
-                                                    color: Colors.red,
-                                                  );
-                                                } else {
-                                                  return Image(
-                                                    fit: BoxFit.fill,
-                                                    image: NetworkImage(songs[
-                                                            trackNumber]
-                                                        .imageResourceFile),
-                                                  );
-                                                }
-                                              },
+                                  Expanded(
+                                    child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceEvenly,
+                                      children: [
+                                        Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceEvenly,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.center,
+                                          children: [
+                                            Container(
+                                              height: MediaQuery.of(context)
+                                                      .size
+                                                      .height /
+                                                  2,
+                                              child: FutureBuilder(
+                                                future: parseFuture,
+                                                builder: (context, snapShot) {
+                                                  if (snapShot.hasData) {
+                                                    return buildListView(
+                                                        (allLines[
+                                                            trackNumber]));
+                                                  } else if (snapShot
+                                                      .hasError) {
+                                                    return Icon(
+                                                      Icons.error_outline,
+                                                      color: Colors.red,
+                                                    );
+                                                  } else {
+                                                    return Image(
+                                                      fit: BoxFit.fill,
+                                                      image: NetworkImage(songs[
+                                                              trackNumber]
+                                                          .imageResourceFile),
+                                                    );
+                                                  }
+                                                },
+                                              ),
                                             ),
-                                          ),
-                                          if (!isPlaying ||
-                                              (!(counter == "אשר" || (!_isSmartphone && !amIHovering))))
-                                            Padding(
-                                              padding:
-                                                  const EdgeInsets.fromLTRB(
-                                                      0, 20, 0, 0),
-                                              child: Container(
-                                                width: _isSmartphone &&
-                                                        !tabletOrientationLandscape()
-                                                    ? MediaQuery.of(context)
-                                                            .size
-                                                            .width -
-                                                        60
-                                                    : (personalMoishie ||
-                                                            withClip)
-                                                        ? MediaQuery.of(
-                                                                    context)
-                                                                .size
-                                                                .width /
-                                                            2
-                                                        : MediaQuery.of(
-                                                                    context)
-                                                                .size
-                                                                .width /
-                                                            3,
-                                                height: 50,
-                                                decoration: BoxDecoration(
-                                                    border: Border.all(
-                                                        color: Colors.purple),
-                                                    borderRadius: BorderRadius
-                                                        .all(new Radius
-                                                            .circular(30.0))),
-                                                child: Padding(
-                                                  padding: const EdgeInsets
-                                                      .fromLTRB(8.0, 4, 8, 4),
-                                                  child: Center(
-                                                    child: ProgressBar(
-                                                      total: songLength,
-                                                      progressBarColor:
-                                                          Colors.blue,
-                                                      progress:
-                                                          _progressValue,
-                                                      thumbColor:
-                                                          Colors.white,
-                                                      timeLabelTextStyle:
-                                                          TextStyle(
-                                                              color: Colors
-                                                                  .white),
-                                                      barHeight: 4,
-                                                      thumbRadius: 9,
-                                                      timeLabelLocation:
-                                                          TimeLabelLocation
-                                                              .sides,
-                                                      onSeek: (Duration
-                                                          duration) {
-                                                        _progressValue =
-                                                            duration;
-                                                        updateUI(
-                                                            duration,
-                                                            false,
-                                                            true,
-                                                            trackNumber);
-                                                        audioPlayer.seek(
-                                                            new Duration(
-                                                                milliseconds: duration
-                                                                        .inMilliseconds -
-                                                                    splits[
-                                                                        trackNumber]),
-                                                            index:
-                                                                trackNumber);
-                                                      },
+                                            if (!isPlaying ||
+                                                (!(counter == "אשר" ||
+                                                    (!_isSmartphone &&
+                                                        !amIHovering))))
+                                              Padding(
+                                                padding:
+                                                    const EdgeInsets.fromLTRB(
+                                                        0, 20, 0, 0),
+                                                child: Container(
+                                                  width: _isSmartphone &&
+                                                          !tabletOrientationLandscape()
+                                                      ? MediaQuery.of(context)
+                                                              .size
+                                                              .width -
+                                                          60
+                                                      : (personalMoishie ||
+                                                              withClip)
+                                                          ? MediaQuery.of(
+                                                                      context)
+                                                                  .size
+                                                                  .width /
+                                                              2
+                                                          : MediaQuery.of(
+                                                                      context)
+                                                                  .size
+                                                                  .width /
+                                                              3,
+                                                  height: 50,
+                                                  decoration: BoxDecoration(
+                                                      border: Border.all(
+                                                          color: Colors.purple),
+                                                      borderRadius: BorderRadius
+                                                          .all(new Radius
+                                                              .circular(30.0))),
+                                                  child: Padding(
+                                                    padding: const EdgeInsets
+                                                        .fromLTRB(8.0, 4, 8, 4),
+                                                    child: Center(
+                                                      child: ProgressBar(
+                                                        total: songLength,
+                                                        progressBarColor:
+                                                            Colors.blue,
+                                                        progress:
+                                                            _progressValue,
+                                                        thumbColor:
+                                                            Colors.white,
+                                                        timeLabelTextStyle:
+                                                            TextStyle(
+                                                                color: Colors
+                                                                    .white),
+                                                        barHeight: 4,
+                                                        thumbRadius: 9,
+                                                        timeLabelLocation:
+                                                            TimeLabelLocation
+                                                                .sides,
+                                                        onSeek: (Duration
+                                                            duration) {
+                                                          _progressValue =
+                                                              duration;
+                                                          updateUI(
+                                                              duration,
+                                                              false,
+                                                              true,
+                                                              trackNumber);
+                                                          audioPlayer.seek(
+                                                              new Duration(
+                                                                  milliseconds: duration
+                                                                          .inMilliseconds -
+                                                                      splits[
+                                                                          trackNumber]),
+                                                              index:
+                                                                  trackNumber);
+                                                          if (withClip &&
+                                                              _controller !=
+                                                                  null) {
+                                                            _controller!.seekTo(
+                                                                duration);
+                                                          }
+                                                        },
+                                                      ),
                                                     ),
                                                   ),
                                                 ),
                                               ),
-                                            ),
-                                          if (!isPlaying ||
-                                              (!(counter == "אשר" || (!_isSmartphone && !amIHovering))))
-                                            playPauseAndRestartIcons()
-                                        ],
-                                      ),
-                                      if (!(personalMoishie || withClip) &&
-                                          (!_isSmartphone ||
-                                              tabletOrientationLandscape()))
-                                        Container(
-                                          decoration: BoxDecoration(
-                                              border: Border.all(
-                                                  color: Colors.purple),
-                                              borderRadius: BorderRadius.all(
-                                                  new Radius.circular(15))),
-                                          child: Padding(
-                                            padding:
-                                                const EdgeInsets.all(8.0),
-                                            child: cameraMode
-                                                ? Container(
-                                                    color: Colors.transparent,
-                                                    height:
-                                                        MediaQuery.of(context)
+                                            if (!isPlaying ||
+                                                (!(counter == "אשר" ||
+                                                    (!_isSmartphone &&
+                                                        !amIHovering))))
+                                              playPauseAndRestartIcons()
+                                          ],
+                                        ),
+                                        if (!(personalMoishie || withClip) &&
+                                            (!_isSmartphone ||
+                                                tabletOrientationLandscape()))
+                                          Container(
+                                            decoration: BoxDecoration(
+                                                border: Border.all(
+                                                    color: Colors.purple),
+                                                borderRadius: BorderRadius.all(
+                                                    new Radius.circular(15))),
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.all(8.0),
+                                              child: cameraMode
+                                                  ? Container(
+                                                      color: Colors.transparent,
+                                                      height:
+                                                          MediaQuery.of(context)
+                                                                  .size
+                                                                  .width /
+                                                              2.7,
+                                                      width:
+                                                          MediaQuery.of(context)
+                                                                  .size
+                                                                  .width /
+                                                              2.7,
+                                                      child: WebcamPage(
+                                                          counter +
+                                                              secondCounter
+                                                                  .toString()))
+                                                  : ClipRRect(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              15.0),
+                                                      child: Image(
+                                                        width: MediaQuery.of(
+                                                                    context)
                                                                 .size
                                                                 .width /
-                                                            2.7,
-                                                    width:
-                                                        MediaQuery.of(context)
-                                                                .size
-                                                                .width /
-                                                            2.7,
-                                                    child: WebcamPage(
-                                                        counter +
-                                                            secondCounter
-                                                                .toString()))
-                                                : ClipRRect(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            15.0),
-                                                    child: Image(
-                                                      width: MediaQuery.of(
-                                                                  context)
-                                                              .size
-                                                              .width /
-                                                          3,
-                                                      fit: BoxFit.fitWidth,
-                                                      image: NetworkImage(songs[
-                                                              trackNumber]
-                                                          .imageResourceFile),
+                                                            3,
+                                                        fit: BoxFit.fitWidth,
+                                                        image: NetworkImage(songs[
+                                                                trackNumber]
+                                                            .imageResourceFile),
+                                                      ),
                                                     ),
-                                                  ),
-                                          ),
-                                        )
-                                    ],
+                                            ),
+                                          )
+                                      ],
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
-                          if (!songPicked) tonePicker(),
-                          SafeArea(
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Align(
-                                alignment: Alignment.topLeft,
-                                child: IconButton(
-                                  icon: Icon(
-                                    Icons.arrow_back_sharp,
-                                    color: Colors.white,
+                            if (!songPicked) tonePicker(),
+                            SafeArea(
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Align(
+                                  alignment: Alignment.topLeft,
+                                  child: IconButton(
+                                    icon: Icon(
+                                      Icons.arrow_back_sharp,
+                                      color: Colors.white,
+                                    ),
+                                    onPressed: () {
+                                      backButton();
+                                    },
                                   ),
-                                  onPressed: () {
-                                    backButton();
-                                  },
                                 ),
                               ),
                             ),
-                          ),
-                        ]),
+                          ]),
+                        ),
                       ),
-                    ),
-                  )
+                    )
                   : expireWording(),
             ),
           )),
@@ -898,35 +914,63 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
           RichText(
               text: TextSpan(
                   style: TextStyle(
-                      fontSize: size, color: pastFontColor, fontWeight: weight),
+                      fontFamily: 'SongFont',
+                      fontSize: size,
+                      color: pastFontColor,
+                      fontWeight: weight),
                   children: [
                 TextSpan(
                     text: line.past,
                     style: TextStyle(
+                      fontFamily: 'SongFont',
                       foreground: Paint()
                         ..style = PaintingStyle.stroke
                         ..strokeWidth = 3
-                        ..color = Colors.purple,
+                        ..color =
+                            // (personalMoishie || withClip)
+                            //     ? Colors.green
+                            //     :
+                            Colors.purple,
                     )),
                 TextSpan(
-                    text: (personalMoishie || withClip) &&
-                            line.past == "" &&
-                            line.containsDots()
-                        ? 3.toString()
-                        : line.future,
-                    style: TextStyle(
-                        color: futureFontColor,
-                        fontSize: size,
-                        fontWeight: weight))
+                  text: (personalMoishie || withClip) &&
+                          line.past == "" &&
+                          line.containsDots()
+                      ? 3.toString()
+                      : line.future,
+                  style:
+                      // (personalMoishie || withClip)
+                      //     ? TextStyle(
+                      //         fontFamily: 'SongFont',
+                      //         fontSize: size,
+                      //         fontWeight: weight,
+                      //         foreground: Paint()
+                      //           ..style = PaintingStyle.stroke
+                      //           ..strokeWidth = 1
+                      //           ..color = Colors.white,
+                      //       )
+                      //     :
+                      TextStyle(
+                          fontFamily: 'SongFont',
+                          color: futureFontColor,
+                          fontSize: size,
+                          fontWeight: weight),
+                )
               ])),
           RichText(
               text: TextSpan(
                   style: TextStyle(
-                      fontSize: size, color: pastFontColor, fontWeight: weight),
+                      fontFamily: 'SongFont',
+                      fontSize: size,
+                      color: pastFontColor,
+                      fontWeight: weight),
                   children: [
                 TextSpan(
                     text: line.past,
-                    style: TextStyle(color: pastFontColor, fontWeight: weight)),
+                    style: TextStyle(
+                        fontFamily: 'SongFont',
+                        color: pastFontColor,
+                        fontWeight: weight)),
                 TextSpan(
                     text: (personalMoishie || withClip) &&
                             line.past == "" &&
@@ -934,6 +978,7 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
                         ? 3.toString()
                         : line.future,
                     style: TextStyle(
+                        fontFamily: 'SongFont',
                         color: futureFontColor,
                         fontSize: size,
                         fontWeight: weight))
@@ -1113,6 +1158,14 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
       trackNumber = newTrack;
       lines = allLines[trackNumber];
     });
+    if (_controller != null && _nextController != null) {
+      _controller!.dispose();
+      setState(() {
+        _controller = _nextController;
+      });
+      if (newTrack < splits.length - 1) initiateNextController(newTrack + 1);
+      _controller!.play();
+    }
   }
 
   tonePicker() {
@@ -1372,33 +1425,30 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
     );
   }
 
-  initiateController() async {
-    List<dynamic> backgroundVideos;
-    final databaseReference = FirebaseFirestore.instance;
-    try {
-      var doc =
-          databaseReference.collection('pictures').doc('backgroundVideos');
-      var vidDoc = await doc.get();
-      if (vidDoc.exists) {
-        setState(() {
-          backgroundVideos = vidDoc.get("videos");
-          randomNumber = random.nextInt(backgroundVideos.length);
-          _controller = VideoPlayerController.network(
-              backgroundVideos[randomNumber.toInt()]);
-          _controller!.setLooping(true);
-          _controller!.initialize();
-        });
-      }
-    } catch (e) {
-      setState(() {
-        error = e.toString();
-      });
-    }
+  initiateControllers() {
+    initiateController(0);
+    initiateNextController(1);
+  }
+
+  initiateController(int trackId) async {
+    setState(() {
+      _controller = VideoPlayerController.network(backgroundVideos[trackId]);
+      _controller!.setLooping(true);
+      _controller!.initialize();
+    });
+  }
+
+  initiateNextController(int trackId) async {
+    setState(() {
+      _nextController =
+          VideoPlayerController.network(backgroundVideos[trackId]);
+      _nextController!.setLooping(true);
+      _nextController!.initialize();
+    });
   }
 
   createAllBackgroundPictureArray() async {
     final databaseReference = FirebaseFirestore.instance;
-
     try {
       var doc = databaseReference.collection('pictures').doc('backgroundPics');
       var picDoc = await doc.get();
@@ -1680,6 +1730,31 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
                       if (songPicked) play();
                     },
                   );
+  }
+
+  void setFastSlowArray(Song song) {
+    final _random = new Random();
+    var trackId = "";
+    if (fastSongs.contains(song.title))
+      trackId = (fastSongsVideos[_random.nextInt(fastSongsVideos.length)]);
+    else if (slowSongs.contains(song.title))
+      trackId = (slowSongsVideos[_random.nextInt(slowSongsVideos.length)]);
+    else {
+      int fastSlow = _random.nextInt(2);
+      if (fastSlow == 1)
+        trackId = (fastSongsVideos[_random.nextInt(fastSongsVideos.length)]);
+      else
+        trackId = (slowSongsVideos[_random.nextInt(slowSongsVideos.length)]);
+    }
+    int specialIndex =
+        specialVideos.indexWhere((element) => element['title'] == song.title);
+    if (specialIndex >= 0) {
+      trackId = specialVideos[specialIndex]['video'];
+    }
+    if (backgroundVideos.length > 0 && backgroundVideos.last == trackId)
+      setFastSlowArray(song);
+    else
+      backgroundVideos.add(trackId);
   }
 }
 
