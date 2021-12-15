@@ -11,6 +11,7 @@ import 'package:camera/camera.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:dio/dio.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -1404,6 +1405,7 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
   }
 
   signInOptions(bool signInLoading) {
+    final _firebaseAuth = FirebaseAuth.instance;
     // Navigator.of(context).pop(STAY_ON_PAGE);
     showDialog(
         context: context,
@@ -1450,20 +1452,36 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
                             style: TextStyle(color: Colors.white, fontSize: 15),
                           ),
                           if (Platform.isIOS)
-                            SignInWithAppleButton(
-                              onPressed: () async {
-                                final credential =
-                                    await SignInWithApple.getAppleIDCredential(
-                                  scopes: [
-                                    AppleIDAuthorizationScopes.email,
-                                    AppleIDAuthorizationScopes.fullName,
-                                  ],
-                                );
+                            SignInWithAppleButton(onPressed: () async {
+                              final appleIdCredential =
+                                  await SignInWithApple.getAppleIDCredential(
+                                scopes: [
+                                  AppleIDAuthorizationScopes.email,
+                                  AppleIDAuthorizationScopes.fullName,
+                                ],
+                              );
 
+                              final oAuthProvider = OAuthProvider('apple.com');
+                              final credential = oAuthProvider.credential(
+                                idToken: appleIdCredential.identityToken,
+                                accessToken:
+                                    appleIdCredential.authorizationCode,
+                              );
+                              final userCredential = await _firebaseAuth
+                                  .signInWithCredential(credential);
+                              final firebaseUser = userCredential.user!;
+                              final fullName = appleIdCredential.givenName! +
+                                  " " +
+                                  appleIdCredential.familyName!;
+                              if (appleIdCredential.givenName != null &&
+                                  appleIdCredential.familyName != null) {
+                                await firebaseUser.updateProfile(
+                                    displayName: fullName);
+                              }
+                            }
                                 // Now send the credential (especially `credential.authorizationCode`) to your server to create a session
                                 // after they have been validated with Apple (see `Integration` section for more information on how to do this)
-                              },
-                            ),
+                                ),
                         ],
                       ),
                       if (signInLoading)
