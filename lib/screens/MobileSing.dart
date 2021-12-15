@@ -1319,31 +1319,31 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
                               .white, // The color to use when painting the line.
                           // height: 20, // The divider's height extent.
                         ),
-                        Container(
-                          child: TextButton(
-                              onPressed: () {
-                                signInOptions(false);
-                              },
-                              child: Text(
-                                "Sign in",
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  color: Colors.white,
-                                  //    letterSpacing: 1.5
-                                ),
-                              )),
-                        ),
-                        const Divider(
-                          thickness: 1,
-                          // thickness of the line
-                          indent: 30,
-                          // empty space to the leading edge of divider.
-                          endIndent: 30,
-                          // empty space to the trailing edge of the divider.
-                          color: Colors
-                              .white, // The color to use when painting the line.
-                          // height: 20, // The divider's height extent.
-                        ),
+                        // Container(
+                        //   child: TextButton(
+                        //       onPressed: () {
+                        //         signInOptions(false);
+                        //       },
+                        //       child: Text(
+                        //         "Sign in",
+                        //         style: TextStyle(
+                        //           fontSize: 20,
+                        //           color: Colors.white,
+                        //           //    letterSpacing: 1.5
+                        //         ),
+                        //       )),
+                        // ),
+                        // const Divider(
+                        //   thickness: 1,
+                        //   // thickness of the line
+                        //   indent: 30,
+                        //   // empty space to the leading edge of divider.
+                        //   endIndent: 30,
+                        //   // empty space to the trailing edge of the divider.
+                        //   color: Colors
+                        //       .white, // The color to use when painting the line.
+                        //   // height: 20, // The divider's height extent.
+                        // ),
                         Container(
                           child: TextButton(
                               onPressed: () {
