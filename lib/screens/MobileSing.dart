@@ -23,6 +23,7 @@ import 'package:flutter_ffmpeg/log.dart';
 import 'package:flutter_ffmpeg/statistics.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery_saver/gallery_saver.dart';
+import 'package:headset_connection_event/headset_event.dart';
 import 'package:http/http.dart' as http;
 import 'package:just_audio/just_audio.dart';
 import 'package:path_provider/path_provider.dart';
@@ -170,6 +171,9 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
   double popupHeight = 450;
   double popupWidth = 330;
 
+  HeadsetEvent headsetPlugin = new HeadsetEvent();
+  HeadsetState headsetEvent = HeadsetState.DISCONNECT;
+
   // Counting pointers (number of user fingers on screen)
   int _pointers = 0;
 
@@ -222,6 +226,20 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
     }
     createAllBackgroundPictureArray();
     _flutterFFmpegConfig.enableStatisticsCallback(this.statisticsCallback);
+
+    headsetPlugin.getCurrentState.then((_val) {
+      setState(() {
+        if (_val != null) headsetEvent = _val;
+      });
+    });
+
+    /// Detect the moment headset is plugged or unplugged
+    headsetPlugin.setListener((_val) {
+      setState(() {
+        print(_val);
+        headsetEvent = _val;
+      });
+    });
   }
 
   void getCameras() async {
@@ -369,7 +387,8 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
                               },
                             ),
                           ),
-                          if (!(playPressed || songStarted))
+                          if (!(playPressed || songStarted) &&
+                              headsetEvent == HeadsetState.DISCONNECT)
                             Container(
                               color: Colors.black,
                               height: MediaQuery.of(context).size.height / 5,
