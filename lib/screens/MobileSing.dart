@@ -1788,7 +1788,7 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
       deviceData = _readIosDeviceInfo(await deviceInfoPlugin.iosInfo);
       // print(deviceData['systemVersion']);
       // if (double.parse(deviceData['systemVersion']) >= 10)
-        getCameras();
+      getCameras();
     } else
       getCameras();
   }

@@ -401,7 +401,7 @@ class _AllSongsState extends State<AllSongs> {
                                     child: Directionality(
                                       textDirection: TextDirection.ltr,
                                       child: Text(
-                                        signedIn && Platform.isIOS
+                                        signedIn && !Platform.isIOS
                                             ? AppLocalizations.of(context)!
                                                     .timeRemaining +
                                                 duration
