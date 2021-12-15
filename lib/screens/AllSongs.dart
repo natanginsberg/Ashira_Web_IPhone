@@ -103,7 +103,7 @@ class _AllSongsState extends State<AllSongs> {
   late ScrollController _mainController;
   final FocusNode _focusNode = FocusNode();
 
-  bool signedIn = false;
+  bool signedIn = Platform.isIOS ? true : false;
 
   var openSignIn = false;
 
@@ -401,7 +401,7 @@ class _AllSongsState extends State<AllSongs> {
                                     child: Directionality(
                                       textDirection: TextDirection.ltr,
                                       child: Text(
-                                        signedIn
+                                        signedIn && Platform.isIOS
                                             ? AppLocalizations.of(context)!
                                                     .timeRemaining +
                                                 duration
@@ -436,7 +436,11 @@ class _AllSongsState extends State<AllSongs> {
                                         20.0, 0.0, 20.0, 0.0),
                                     child: _accessDenied
                                         ? expireWording()
-                                        : buildGridView(gridSongs)),
+                                        : buildGridView(Platform.isIOS
+                                            ? List.from(gridSongs.where(
+                                                (element) => demoSongNames
+                                                    .contains(element.title)))
+                                            : gridSongs)),
                               ),
                               if (kIsWeb &&
                                   !_smartPhone &&
@@ -838,6 +842,7 @@ class _AllSongsState extends State<AllSongs> {
                 EdgeInsets.symmetric(vertical: 4.0, horizontal: 2.0))),
         //adds padding inside the button),
         onPressed: () {
+          print(genre);
           if (genre == hebrewGenres[0] || genre == englishGenres[0]) {
             setState(() {
               gridSongs = new List.from(songs);
@@ -847,8 +852,10 @@ class _AllSongsState extends State<AllSongs> {
                 for (String name in demoSongNames) {
                   int index =
                       songs.indexWhere((element) => element.title == name);
-                  gridSongs.remove(songs[index]);
-                  gridSongs.insert(0, songs[index]);
+                  if (index > -1) {
+                    gridSongs.remove(songs[index]);
+                    gridSongs.insert(0, songs[index]);
+                  }
                 }
             });
           } else if (currentGenre != genre) {
@@ -904,8 +911,7 @@ class _AllSongsState extends State<AllSongs> {
               MaterialPageRoute(
                   builder: (_) => Sing(songsPassed, counter.toString())));
         }
-      }
-      else {
+      } else {
         Navigator.push(
             context,
             MaterialPageRoute(
@@ -1125,7 +1131,7 @@ class _AllSongsState extends State<AllSongs> {
   }
 
   _getTimeRemaining() {
-    if (signedIn) {
+    if (!Platform.isIOS) if (signedIn) {
       if (timesUp()) {
         setState(() {
           _accessDenied = true;
@@ -2147,7 +2153,6 @@ class _AllSongsState extends State<AllSongs> {
                   onChanged: (String value) {
                     if (value != previousValue)
                       setState(() {
-                        // searchPath.add(new List.from(gridSongs));
                         if (currentGenre != "" &&
                             currentGenre != hebrewGenres[0] &&
                             currentGenre != englishGenres[0]) {
@@ -2182,8 +2187,16 @@ class _AllSongsState extends State<AllSongs> {
               controller.clear();
               previousValue = "";
               setState(() {
-                gridSongs = List.from(searchPath.first);
-                searchPath.clear();
+                gridSongs = List.from(songs);
+                if (!signedIn)
+                  for (String name in demoSongNames) {
+                    int index =
+                        songs.indexWhere((element) => element.title == name);
+                    if (index > -1) {
+                      gridSongs.remove(songs[index]);
+                      gridSongs.insert(0, songs[index]);
+                    }
+                  }
               });
             },
           ),

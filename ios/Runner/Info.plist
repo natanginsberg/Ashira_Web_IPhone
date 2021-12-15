@@ -35,11 +35,11 @@
 		<true/>
 	</dict>
 	<key>NSCameraUsageDescription</key>
-	<string>Can I use the camera please?</string>
+	<string>Granting camera access, will allow you to watch yourself while recording</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Can I use the mic please?</string>
+	<string>Granting mic access, will allow you to record yourself singing</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Can I save the video to your device?</string>
+	<string>Granting photo gallery download access, will allow you to save the recording to your device</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
