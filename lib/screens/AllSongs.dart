@@ -843,7 +843,6 @@ class _AllSongsState extends State<AllSongs> {
                 EdgeInsets.symmetric(vertical: 4.0, horizontal: 2.0))),
         //adds padding inside the button),
         onPressed: () {
-          print(genre);
           if (genre == hebrewGenres[0] || genre == englishGenres[0]) {
             setState(() {
               gridSongs = new List.from(songs);
@@ -2212,7 +2211,7 @@ class _AllSongsState extends State<AllSongs> {
         child: Align(
           alignment: Alignment.topCenter,
           child: Container(
-              height: 150,
+              height: genres.length * 50,
               width: 200,
               decoration: BoxDecoration(
                   borderRadius: BorderRadius.only(
