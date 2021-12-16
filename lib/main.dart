@@ -1,12 +1,9 @@
-// import 'package:ashira_flutter/screens/AllSongs.dart';
 import 'package:ashira_flutter/screens/AllSongs.dart';
 
-// import 'package:ashira_flutter/screens/AllSongsTablet.dart';
 import 'package:ashira_flutter/screens/Contracts.dart';
-// import 'package:ashira_flutter/screens/MobileSing.dart';
+import 'package:ashira_flutter/screens/MobileSing.dart';
 import 'package:ashira_flutter/screens/Promo.dart';
 
-// import 'package:ashira_flutter/screens/SignIn.dart';
 import 'package:ashira_flutter/screens/Sing.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -70,6 +67,7 @@ class _AppState extends State<App> {
           // Once complete, show your application
           if (snapshot.connectionState == ConnectionState.done) {
             return MaterialApp(
+              debugShowCheckedModeBanner: false,
               // locale: _locale,
               localizationsDelegates: [
                 AppLocalizations.delegate,
@@ -109,7 +107,7 @@ class _AppState extends State<App> {
                 // '/signIn': (context) => SignIn(),
                 '/allSongs': (context) => AllSongs(),
                 '/sing': (context) => Sing(songs, ""),
-                // '/mobileSing': (context) => MobileSing(songs, ""),
+                '/mobileSing': (context) => MobileSing(songs, ""),
               },
             );
           }

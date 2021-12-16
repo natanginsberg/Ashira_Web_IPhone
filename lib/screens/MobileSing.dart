@@ -304,6 +304,7 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
 
   phonePage() {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       home: WillPopScope(
           onWillPop: () {
             timer.cancel();
@@ -1478,6 +1479,10 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
                                 await firebaseUser.updateProfile(
                                     displayName: fullName);
                               }
+                              var token = await firebaseUser.getIdToken();
+                               var email = appleIdCredential.email;
+
+                              sendUserInfoToFirestore(email, fullName, token);
                             }
                                 // Now send the credential (especially `credential.authorizationCode`) to your server to create a session
                                 // after they have been validated with Apple (see `Integration` section for more information on how to do this)
@@ -1853,6 +1858,10 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
         videoFile!.path +
         ",astats=metadata=1:reset=1 -show_entries frame=pkt_pts_time:frame_tags=lavfi.astats.Overall.RMS_level -of csv=p=0");
     _flutterFFmpegConfig.disableLogs();
+  }
+
+  void sendUserInfoToFirestore(String? email, String fullName, String token) async {
+
   }
 }
 

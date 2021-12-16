@@ -28,6 +28,7 @@ class _PromoState extends State<Promo> {
     // App.setLocale(context, Localizations.localeOf(context));
     timer = Timer(Duration(seconds: 1), () => moveToNextScreen(true));
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       localizationsDelegates: [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,

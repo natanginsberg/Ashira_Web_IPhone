@@ -242,6 +242,7 @@ class _AllSongsState extends State<AllSongs> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       // locale: Localizations.localeOf(context),
       home: Directionality(
         textDirection: Directionality.of(context),
