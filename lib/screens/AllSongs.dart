@@ -103,7 +103,9 @@ class _AllSongsState extends State<AllSongs> {
   late ScrollController _mainController;
   final FocusNode _focusNode = FocusNode();
 
-  bool signedIn = Platform.isIOS ? true : false;
+  bool signedIn =
+      // Platform.isIOS ? true :
+      false;
 
   var openSignIn = false;
 
@@ -157,21 +159,38 @@ class _AllSongsState extends State<AllSongs> {
       ipAddress = value;
       FirebaseFirestore.instance
           .collection('internetUsers')
-          .where("endTime", isGreaterThan: DateTime.now())
+          // .where("endTime", isGreaterThan: DateTime.now())
           .get()
           .then((QuerySnapshot querySnapshot) {
         querySnapshot.docs.forEach((doc) {
           if (doc.exists) {
             Map document = doc.data() as Map;
             if (document.containsKey("ips")) {
-              List<String> ips = List.from(document["ips"]);
-              if (ips.contains(value)) {
-                setState(() {
-                  signedIn = true;
-                  endTime = doc.get("endTime");
-                  gridSongs = new List.from(songs);
-                });
+              List<Map<String, dynamic>> ips = List.from(document["ips"]);
+
+              for (int i = 0; i < ips.length; i++) {
+                var map = ips[i];
+                if (map['ip'] == ipAddress) {
+                  Duration signInTime = new Duration(hours: 3);
+                  DateTime entrance = map['entrance'].toDate();
+                  DateTime currentTime = DateTime.now().toUtc();
+                  print(entrance);
+                  if (currentTime.compareTo(entrance.add(signInTime)) < 0) {
+                    setState(() {
+                      signedIn = true;
+                      endTime = doc.get("endTime");
+                      gridSongs = new List.from(songs);
+                    });
+                  }
+                }
               }
+              // if (ips.contains(value)) {
+              //   setState(() {
+              //     signedIn = true;
+              //     endTime = doc.get("endTime");
+              //     gridSongs = new List.from(songs);
+              //   });
+              // }
             }
           }
         });
@@ -402,7 +421,8 @@ class _AllSongsState extends State<AllSongs> {
                                     child: Directionality(
                                       textDirection: TextDirection.ltr,
                                       child: Text(
-                                        signedIn && !Platform.isIOS
+                                        signedIn
+                                            // && !Platform.isIOS
                                             ? AppLocalizations.of(context)!
                                                     .timeRemaining +
                                                 duration
@@ -437,11 +457,14 @@ class _AllSongsState extends State<AllSongs> {
                                         20.0, 0.0, 20.0, 0.0),
                                     child: _accessDenied
                                         ? expireWording()
-                                        : buildGridView(Platform.isIOS
-                                            ? List.from(gridSongs.where(
-                                                (element) => demoSongNames
-                                                    .contains(element.title)))
-                                            : gridSongs)),
+                                        : buildGridView(
+                                            //todo removed for web release
+                                            // Platform.isIOS
+                                            //     ? List.from(gridSongs.where(
+                                            //         (element) => demoSongNames
+                                            //             .contains(element.title)))
+                                            //     :
+                                            gridSongs)),
                               ),
                               if (kIsWeb &&
                                   !_smartPhone &&
@@ -911,7 +934,8 @@ class _AllSongsState extends State<AllSongs> {
               MaterialPageRoute(
                   builder: (_) => Sing(songsPassed, counter.toString())));
         }
-      } else {
+      }
+      else {
         Navigator.push(
             context,
             MaterialPageRoute(
@@ -1131,7 +1155,8 @@ class _AllSongsState extends State<AllSongs> {
   }
 
   _getTimeRemaining() {
-    if (!Platform.isIOS) if (signedIn) {
+    // if (!Platform.isIOS)
+    if (signedIn) {
       if (timesUp()) {
         setState(() {
           _accessDenied = true;
@@ -1166,21 +1191,6 @@ class _AllSongsState extends State<AllSongs> {
       var collection = FirebaseFirestore.instance.collection('internetUsers');
 
       var doc = await collection.doc(id).get();
-      // DocumentSnapshot emailDoc;
-      // FirebaseFirestore.instance
-      //     .collection('internetUsers')
-      //     .where("endTime", isGreaterThan: DateTime.now()).where("email", isEqualTo: id)
-      //     .get()
-      //     .then((QuerySnapshot querySnapshot) {
-      //   querySnapshot.docs.forEach((doc) {
-      //     if (doc.exists) {
-      //       Map document = doc.data() as Map;
-      //       if (document.containsKey("email")) {
-      //         emailDoc = doc;
-      //       }
-      //     }
-      //   });
-      // });
 
       return doc;
     } catch (e) {
@@ -2283,20 +2293,37 @@ class _AllSongsState extends State<AllSongs> {
       DocumentSnapshot<Map<String, dynamic>> doc, bool saveIp) {
     if (saveIp)
       try {
-        List<String> ips = List.from(doc.get("ips"));
-        if (!ips.contains(ipAddress)) {
-          ips.add(ipAddress);
-          addIpAddressToDocument(doc, ips);
+        List<Map<String, dynamic>> ips
+            // List<String> ips
+            = List.from(doc.get("ips"));
+        int valueToChange = -1;
+        for (int i = 0; i < ips.length; i++) {
+          var map = ips[i];
+          if (map['ip'] == ipAddress) {
+            valueToChange = i;
+          }
         }
+        Map<String, dynamic> newIpAddress = new Map<String, dynamic>();
+        newIpAddress['ip'] = ipAddress;
+        newIpAddress['entrance'] = DateTime.now();
+        if (valueToChange == -1) {
+          ips.add(newIpAddress);
+        } else {
+          ips[valueToChange] = newIpAddress;
+        }
+        addIpAddressToDocument(doc, ips);
       } catch (error) {
-        addIpAddressToDocument(doc, [ipAddress]);
+        Map<String, dynamic> newIpAddress = new Map<String, dynamic>();
+        newIpAddress['ip'] = ipAddress;
+        newIpAddress['entrance'] = DateTime.now();
+        addIpAddressToDocument(doc, [newIpAddress]);
       }
     // print(deviceData);
     // print(ipAddress);
   }
 
-  void addIpAddressToDocument(
-      DocumentSnapshot<Map<String, dynamic>> doc, List<String> ips) {
+  void addIpAddressToDocument(DocumentSnapshot<Map<String, dynamic>> doc,
+      List<Map<String, dynamic>> ips) {
     Map<String, dynamic> firestoreDoc = new Map<String, dynamic>();
     firestoreDoc['endTime'] = doc.get("endTime");
     firestoreDoc['email'] = doc.get("email");

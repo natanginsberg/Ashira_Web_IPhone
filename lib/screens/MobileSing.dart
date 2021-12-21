@@ -5,6 +5,7 @@ import 'dart:math';
 
 import 'package:ashira_flutter/model/Line.dart';
 import 'package:ashira_flutter/model/Song.dart';
+import 'package:ashira_flutter/utils/GenerateRandomString.dart';
 import 'package:ashira_flutter/utils/Parser.dart';
 import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
 import 'package:camera/camera.dart';
@@ -137,6 +138,8 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
   int silentWords = 0;
 
   bool noiseRecorded = false;
+
+  late FirebaseAuth _firebaseAuth;
 
   _MobileSingState(this.songs, this.counter);
 
@@ -1340,31 +1343,31 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
                               .white, // The color to use when painting the line.
                           // height: 20, // The divider's height extent.
                         ),
-                        // Container(
-                        //   child: TextButton(
-                        //       onPressed: () {
-                        //         signInOptions(false);
-                        //       },
-                        //       child: Text(
-                        //         "Sign in",
-                        //         style: TextStyle(
-                        //           fontSize: 20,
-                        //           color: Colors.white,
-                        //           //    letterSpacing: 1.5
-                        //         ),
-                        //       )),
-                        // ),
-                        // const Divider(
-                        //   thickness: 1,
-                        //   // thickness of the line
-                        //   indent: 30,
-                        //   // empty space to the leading edge of divider.
-                        //   endIndent: 30,
-                        //   // empty space to the trailing edge of the divider.
-                        //   color: Colors
-                        //       .white, // The color to use when painting the line.
-                        //   // height: 20, // The divider's height extent.
-                        // ),
+                        Container(
+                          child: TextButton(
+                              onPressed: () {
+                                signInOptions(false);
+                              },
+                              child: Text(
+                                "Sign in",
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  color: Colors.white,
+                                  //    letterSpacing: 1.5
+                                ),
+                              )),
+                        ),
+                        const Divider(
+                          thickness: 1,
+                          // thickness of the line
+                          indent: 30,
+                          // empty space to the leading edge of divider.
+                          endIndent: 30,
+                          // empty space to the trailing edge of the divider.
+                          color: Colors
+                              .white, // The color to use when painting the line.
+                          // height: 20, // The divider's height extent.
+                        ),
                         Container(
                           child: TextButton(
                               onPressed: () {
@@ -1406,7 +1409,7 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
   }
 
   signInOptions(bool signInLoading) {
-    final _firebaseAuth = FirebaseAuth.instance;
+    _firebaseAuth = FirebaseAuth.instance;
     // Navigator.of(context).pop(STAY_ON_PAGE);
     showDialog(
         context: context,
@@ -1480,9 +1483,9 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
                                     displayName: fullName);
                               }
                               var token = await firebaseUser.getIdToken();
-                               var email = appleIdCredential.email;
-
-                              sendUserInfoToFirestore(email, fullName, token);
+                              var email = appleIdCredential.email;
+                              if (email != null)
+                                sendUserInfoToFirestore(email, fullName, token);
                             }
                                 // Now send the credential (especially `credential.authorizationCode`) to your server to create a session
                                 // after they have been validated with Apple (see `Integration` section for more information on how to do this)
@@ -1860,8 +1863,29 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
     _flutterFFmpegConfig.disableLogs();
   }
 
-  void sendUserInfoToFirestore(String? email, String fullName, String token) async {
+  void sendUserInfoToFirestore(
+      String email, String fullName, String token) async {
+    CollectionReference users = FirebaseFirestore.instance.collection('users');
 
+    Map<String, dynamic> firestoreDoc = new Map<String, dynamic>();
+    firestoreDoc['id'] = GenerateRandomString().generateRandomString();
+    firestoreDoc['userEmail'] = email;
+    firestoreDoc['userName'] = fullName;
+    firestoreDoc['expirationDate'] = "";
+
+    Future<void> addUser() {
+      return users
+          .doc(email)
+          .set(firestoreDoc)
+          .then((value) => Navigator.of(context).pop(STAY_ON_PAGE))
+          .catchError((error) => setState(() {
+                _firebaseAuth.signOut();
+                // _errorMessage = error.toString();
+                _loading = false;
+              }));
+    }
+
+    addUser();
   }
 }
 

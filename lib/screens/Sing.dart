@@ -1427,13 +1427,14 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
 
   initiateControllers() {
     initiateController(0);
-    initiateNextController(1);
+    if (songs.length > 1) initiateNextController(1);
   }
 
   initiateController(int trackId) async {
     setState(() {
       _controller = VideoPlayerController.network(backgroundVideos[trackId]);
       _controller!.setLooping(true);
+      _controller!.setVolume(0.0);
       _controller!.initialize();
     });
   }
@@ -1443,6 +1444,7 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
       _nextController =
           VideoPlayerController.network(backgroundVideos[trackId]);
       _nextController!.setLooping(true);
+      _nextController!.setVolume(0.0);
       _nextController!.initialize();
     });
   }
