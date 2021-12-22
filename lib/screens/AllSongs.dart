@@ -4,10 +4,14 @@ import 'dart:math';
 import 'dart:ui';
 
 import 'package:ashira_flutter/customWidgets/GenreButton.dart';
+import 'package:ashira_flutter/customWidgets/LoadingIndicator.dart';
 import 'package:ashira_flutter/customWidgets/SongLayout.dart';
+import 'package:ashira_flutter/model/DisplayOptions.dart';
 import 'package:ashira_flutter/model/Song.dart';
 import 'package:ashira_flutter/screens/MobileSing.dart';
 import 'package:ashira_flutter/utils/WpHelper.dart' as wph;
+import 'package:ashira_flutter/utils/firetools/IpHandler.dart';
+import 'package:ashira_flutter/utils/firetools/UserHandler.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dart_ipify/dart_ipify.dart';
 import 'package:device_info_plus/device_info_plus.dart';
@@ -23,6 +27,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:universal_html/html.dart' as html;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:wordpress_api/wordpress_api.dart' as wp;
@@ -49,9 +54,8 @@ List<Song> gridSongs = [];
 String email = "";
 String id = "";
 Timestamp endTime = Timestamp(10, 10);
-bool personalMoishie = false;
-bool cameraMode = false;
-bool withClip = false;
+DisplayOptions display = DisplayOptions.NORMAL;
+bool mobileSignedIn = false;
 int changeTime = 7;
 List<String> slowSongs = [];
 List<String> fastSongs = [];
@@ -60,7 +64,6 @@ List<String> fastSongsVideos = [];
 List<dynamic> specialVideos = [];
 
 class _AllSongsState extends State<AllSongs> {
-  // Locale _locale = Locale.fromSubtags(languageCode: "he");
   static final DeviceInfoPlugin deviceInfoPlugin = DeviceInfoPlugin();
   final TextEditingController controller = new TextEditingController();
   final TextEditingController timeController = new TextEditingController();
@@ -502,8 +505,9 @@ class _AllSongsState extends State<AllSongs> {
                                                       TapGestureRecognizer()
                                                         ..onTap = () {
                                                           setState(() {
-                                                            personalMoishie =
-                                                                false;
+                                                            display =
+                                                                DisplayOptions
+                                                                    .NORMAL;
                                                           });
                                                         }),
                                             ]),
@@ -515,14 +519,11 @@ class _AllSongsState extends State<AllSongs> {
                                                   Colors.red),
                                           child: Checkbox(
                                             //    <-- label
-                                            value: !personalMoishie &&
-                                                !cameraMode &&
-                                                !withClip,
+                                            value: display ==
+                                                DisplayOptions.NORMAL,
                                             onChanged: (newValue) {
                                               setState(() {
-                                                personalMoishie = false;
-                                                cameraMode = false;
-                                                withClip = false;
+                                                display = DisplayOptions.NORMAL;
                                               });
                                             },
                                           ),
@@ -544,10 +545,8 @@ class _AllSongsState extends State<AllSongs> {
                                                       TapGestureRecognizer()
                                                         ..onTap = () {
                                                           setState(() {
-                                                            personalMoishie =
-                                                                true;
-                                                            withClip = false;
-                                                            cameraMode = false;
+                                                            display = DisplayOptions
+                                                                .PERSONAL_MOISHIE;
                                                           });
                                                         }),
                                             ]),
@@ -559,12 +558,12 @@ class _AllSongsState extends State<AllSongs> {
                                                   Colors.red),
                                           child: Checkbox(
                                             //    <-- label
-                                            value: personalMoishie,
+                                            value: display ==
+                                                DisplayOptions.PERSONAL_MOISHIE,
                                             onChanged: (newValue) {
                                               setState(() {
-                                                personalMoishie = true;
-                                                cameraMode = false;
-                                                withClip = false;
+                                                display = DisplayOptions
+                                                    .PERSONAL_MOISHIE;
                                               });
                                             },
                                           ),
@@ -589,10 +588,9 @@ class _AllSongsState extends State<AllSongs> {
                                                       TapGestureRecognizer()
                                                         ..onTap = () {
                                                           setState(() {
-                                                            cameraMode = true;
-                                                            personalMoishie =
-                                                                false;
-                                                            withClip = false;
+                                                            display =
+                                                                DisplayOptions
+                                                                    .CAMERA_MODE;
                                                           });
                                                         }),
                                             ]),
@@ -604,12 +602,12 @@ class _AllSongsState extends State<AllSongs> {
                                                   Colors.red),
                                           child: Checkbox(
                                             //    <-- label
-                                            value: cameraMode,
+                                            value: display ==
+                                                DisplayOptions.CAMERA_MODE,
                                             onChanged: (newValue) {
                                               setState(() {
-                                                cameraMode = true;
-                                                personalMoishie = false;
-                                                withClip = false;
+                                                display =
+                                                    DisplayOptions.CAMERA_MODE;
                                               });
                                             },
                                           ),
@@ -632,11 +630,9 @@ class _AllSongsState extends State<AllSongs> {
                                                         TapGestureRecognizer()
                                                           ..onTap = () {
                                                             setState(() {
-                                                              withClip = true;
-                                                              personalMoishie =
-                                                                  false;
-                                                              cameraMode =
-                                                                  false;
+                                                              display =
+                                                                  DisplayOptions
+                                                                      .WITH_CLIP;
                                                             });
                                                           }),
                                               ]),
@@ -649,12 +645,12 @@ class _AllSongsState extends State<AllSongs> {
                                                     Colors.red),
                                             child: Checkbox(
                                               //    <-- label
-                                              value: withClip,
+                                              value: display ==
+                                                  DisplayOptions.WITH_CLIP,
                                               onChanged: (newValue) {
                                                 setState(() {
-                                                  withClip = true;
-                                                  cameraMode = false;
-                                                  personalMoishie = false;
+                                                  display =
+                                                      DisplayOptions.WITH_CLIP;
                                                 });
                                               },
                                             ),
@@ -701,8 +697,12 @@ class _AllSongsState extends State<AllSongs> {
                                                     setState(() {
                                                       openSignIn = true;
                                                     });
-                                                  else
-                                                    buildMobileSignIn();
+                                                  else {
+                                                    if (mobileSignedIn)
+                                                      buildMobileSignIn();
+                                                    else
+                                                      signInOptions(false);
+                                                  }
                                                 },
                                                 child: Directionality(
                                                   textDirection:
@@ -934,8 +934,7 @@ class _AllSongsState extends State<AllSongs> {
               MaterialPageRoute(
                   builder: (_) => Sing(songsPassed, counter.toString())));
         }
-      }
-      else {
+      } else {
         Navigator.push(
             context,
             MaterialPageRoute(
@@ -1877,8 +1876,12 @@ class _AllSongsState extends State<AllSongs> {
         setState(() {
           openSignIn = true;
         });
-      else
-        buildMobileSignIn();
+      else {
+        if (mobileSignedIn)
+          buildMobileSignIn();
+        else
+          signInOptions(false);
+      }
     }
   }
 
@@ -1887,7 +1890,6 @@ class _AllSongsState extends State<AllSongs> {
       child: Container(
         width: min(350, MediaQuery.of(context).size.width * 0.3),
         child: Column(
-          // mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
               AppLocalizations.of(context)!.display,
@@ -1909,9 +1911,7 @@ class _AllSongsState extends State<AllSongs> {
                               recognizer: TapGestureRecognizer()
                                 ..onTap = () {
                                   setState(() {
-                                    personalMoishie = false;
-                                    withClip = false;
-                                    cameraMode = false;
+                                    display = DisplayOptions.NORMAL;
                                   });
                                 }),
                         ]),
@@ -1921,12 +1921,10 @@ class _AllSongsState extends State<AllSongs> {
                       data: ThemeData(unselectedWidgetColor: Colors.red),
                       child: Checkbox(
                         //    <-- label
-                        value: !personalMoishie && !cameraMode && !withClip,
+                        value: display == DisplayOptions.NORMAL,
                         onChanged: (newValue) {
                           setState(() {
-                            personalMoishie = false;
-                            cameraMode = false;
-                            withClip = false;
+                            display = DisplayOptions.NORMAL;
                           });
                         },
                       ),
@@ -1942,9 +1940,7 @@ class _AllSongsState extends State<AllSongs> {
                               recognizer: TapGestureRecognizer()
                                 ..onTap = () {
                                   setState(() {
-                                    personalMoishie = true;
-                                    cameraMode = false;
-                                    withClip = false;
+                                    display = DisplayOptions.PERSONAL_MOISHIE;
                                   });
                                 }),
                         ]),
@@ -1954,12 +1950,10 @@ class _AllSongsState extends State<AllSongs> {
                       data: ThemeData(unselectedWidgetColor: Colors.red),
                       child: Checkbox(
                         //    <-- label
-                        value: personalMoishie,
+                        value: display == DisplayOptions.PERSONAL_MOISHIE,
                         onChanged: (newValue) {
                           setState(() {
-                            personalMoishie = true;
-                            cameraMode = false;
-                            withClip = false;
+                            display = DisplayOptions.PERSONAL_MOISHIE;
                           });
                         },
                       ),
@@ -1980,9 +1974,7 @@ class _AllSongsState extends State<AllSongs> {
                               recognizer: TapGestureRecognizer()
                                 ..onTap = () {
                                   setState(() {
-                                    cameraMode = true;
-                                    personalMoishie = false;
-                                    withClip = false;
+                                    display = DisplayOptions.CAMERA_MODE;
                                   });
                                 }),
                         ]),
@@ -1992,12 +1984,10 @@ class _AllSongsState extends State<AllSongs> {
                       data: ThemeData(unselectedWidgetColor: Colors.red),
                       child: Checkbox(
                         //    <-- label
-                        value: cameraMode,
+                        value: display == DisplayOptions.CAMERA_MODE,
                         onChanged: (newValue) {
                           setState(() {
-                            cameraMode = true;
-                            personalMoishie = false;
-                            withClip = false;
+                            display = DisplayOptions.CAMERA_MODE;
                           });
                         },
                       ),
@@ -2014,9 +2004,7 @@ class _AllSongsState extends State<AllSongs> {
                                 recognizer: TapGestureRecognizer()
                                   ..onTap = () {
                                     setState(() {
-                                      withClip = true;
-                                      cameraMode = false;
-                                      personalMoishie = false;
+                                      display = DisplayOptions.WITH_CLIP;
                                     });
                                   }),
                           ]),
@@ -2027,12 +2015,10 @@ class _AllSongsState extends State<AllSongs> {
                         data: ThemeData(unselectedWidgetColor: Colors.red),
                         child: Checkbox(
                           //    <-- label
-                          value: withClip,
+                          value: display == DisplayOptions.WITH_CLIP,
                           onChanged: (newValue) {
                             setState(() {
-                              withClip = true;
-                              cameraMode = false;
-                              personalMoishie = false;
+                              display = DisplayOptions.WITH_CLIP;
                             });
                           },
                         ),
@@ -2291,52 +2277,51 @@ class _AllSongsState extends State<AllSongs> {
 
   void checkIfDeviceRegistered(
       DocumentSnapshot<Map<String, dynamic>> doc, bool saveIp) {
-    if (saveIp)
-      try {
-        List<Map<String, dynamic>> ips
-            // List<String> ips
-            = List.from(doc.get("ips"));
-        int valueToChange = -1;
-        for (int i = 0; i < ips.length; i++) {
-          var map = ips[i];
-          if (map['ip'] == ipAddress) {
-            valueToChange = i;
-          }
-        }
-        Map<String, dynamic> newIpAddress = new Map<String, dynamic>();
-        newIpAddress['ip'] = ipAddress;
-        newIpAddress['entrance'] = DateTime.now();
-        if (valueToChange == -1) {
-          ips.add(newIpAddress);
-        } else {
-          ips[valueToChange] = newIpAddress;
-        }
-        addIpAddressToDocument(doc, ips);
-      } catch (error) {
-        Map<String, dynamic> newIpAddress = new Map<String, dynamic>();
-        newIpAddress['ip'] = ipAddress;
-        newIpAddress['entrance'] = DateTime.now();
-        addIpAddressToDocument(doc, [newIpAddress]);
-      }
-    // print(deviceData);
-    // print(ipAddress);
-  }
-
-  void addIpAddressToDocument(DocumentSnapshot<Map<String, dynamic>> doc,
-      List<Map<String, dynamic>> ips) {
-    Map<String, dynamic> firestoreDoc = new Map<String, dynamic>();
-    firestoreDoc['endTime'] = doc.get("endTime");
-    firestoreDoc['email'] = doc.get("email");
-    firestoreDoc['ips'] = ips;
-
-    CollectionReference users =
-        FirebaseFirestore.instance.collection('internetUsers');
-
-    Future<void> addUser() {
-      return users.doc(email).set(firestoreDoc).catchError((error) => {});
-    }
-
-    addUser();
+    //   if (saveIp)
+    //     try {
+    //       List<Map<String, dynamic>> ips
+    //           // List<String> ips
+    //           = List.from(doc.get("ips"));
+    //       int valueToChange = -1;
+    //       for (int i = 0; i < ips.length; i++) {
+    //         var map = ips[i];
+    //         if (map['ip'] == ipAddress) {
+    //           valueToChange = i;
+    //         }
+    //       }
+    //       Map<String, dynamic> newIpAddress = new Map<String, dynamic>();
+    //       newIpAddress['ip'] = ipAddress;
+    //       newIpAddress['entrance'] = DateTime.now();
+    //       if (valueToChange == -1) {
+    //         ips.add(newIpAddress);
+    //       } else {
+    //         ips[valueToChange] = newIpAddress;
+    //       }
+    //       addIpAddressToDocument(doc, ips);
+    //     } catch (error) {
+    //       Map<String, dynamic> newIpAddress = new Map<String, dynamic>();
+    //       newIpAddress['ip'] = ipAddress;
+    //       newIpAddress['entrance'] = DateTime.now();
+    //       addIpAddressToDocument(doc, [newIpAddress]);
+    //     }
+    // }
+    //
+    // void addIpAddressToDocument(DocumentSnapshot<Map<String, dynamic>> doc,
+    //     List<Map<String, dynamic>> ips) {
+    //   Map<String, dynamic> firestoreDoc = new Map<String, dynamic>();
+    //   firestoreDoc['endTime'] = doc.get("endTime");
+    //   firestoreDoc['email'] = doc.get("email");
+    //   firestoreDoc['ips'] = ips;
+    //
+    //   CollectionReference users =
+    //       FirebaseFirestore.instance.collection('internetUsers');
+    //
+    //   Future<void> addUser() {
+    //     return users.doc(email).set(firestoreDoc).catchError((error) => {});
+    //   }
+    //
+    //   addUser();
+    IpHandler().checkIfDeviceRegistered(doc, saveIp, ipAddress);
   }
 
   Future<void> initializeFirebase() async {
@@ -2399,15 +2384,113 @@ class _AllSongsState extends State<AllSongs> {
     }
   }
 
-// void changeLanguage() {
-//   {
-//     if (myLocale == "en") {
-//       AllSongs.of(context).setLocale(Locale.fromSubtags(languageCode: 'de'));
-//     } else {
-//       AllSongs.of(context).setLocale(Locale.fromSubtags(languageCode: 'de'))
-//     }
-//   }
-// }
+  signInOptions(bool signInLoading) {
+    double popupHeight = 450;
+    double popupWidth = 330;
+    showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return Dialog(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20.0)),
+              child: Container(
+                height: popupHeight * 0.7,
+                width: popupWidth * 0.7,
+                decoration: BoxDecoration(
+                    border: Border.all(color: Colors.purple),
+                    borderRadius: BorderRadius.all(new Radius.circular(20.0)),
+                    gradient: RadialGradient(
+                      center: Alignment.center,
+                      radius: 0.8,
+                      colors: [
+                        const Color(0xFF221A4D), // blue sky
+                        const Color(0xFF000000), // yellow sun
+                      ],
+                    )),
+                child: Directionality(
+                  textDirection: Directionality.of(context),
+                  child: Stack(
+                    children: [
+                      SafeArea(
+                        child: Align(
+                          alignment: Alignment.topRight,
+                          child: IconButton(
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                              },
+                              icon: Icon(
+                                Icons.cancel_outlined,
+                                color: Colors.white,
+                              )),
+                        ),
+                      ),
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            AppLocalizations.of(context)!.signInPrompt,
+                            style: TextStyle(color: Colors.white, fontSize: 15),
+                          ),
+                          if (Platform.isIOS)
+                            SignInWithAppleButton(onPressed: () async {
+                              final appleIdCredential =
+                                  await SignInWithApple.getAppleIDCredential(
+                                scopes: [
+                                  AppleIDAuthorizationScopes.email,
+                                  AppleIDAuthorizationScopes.fullName,
+                                ],
+                              );
+
+                              final oAuthProvider = OAuthProvider('apple.com');
+                              final credential = oAuthProvider.credential(
+                                idToken: appleIdCredential.identityToken,
+                                accessToken:
+                                    appleIdCredential.authorizationCode,
+                              );
+                              final userCredential = await firebaseAuth
+                                  .signInWithCredential(credential);
+                              final firebaseUser = userCredential.user!;
+                              final fullName = appleIdCredential.givenName! +
+                                  " " +
+                                  appleIdCredential.familyName!;
+                              if (appleIdCredential.givenName != null &&
+                                  appleIdCredential.familyName != null) {
+                                await firebaseUser.updateProfile(
+                                    displayName: fullName);
+                              }
+                              var token = await firebaseUser.getIdToken();
+                              var email = appleIdCredential.email;
+                              if (email != null)
+                                // sendUserInfoToFirestore(email, fullName, token);
+                                UserHandler()
+                                    .sendUserInfoToFirestore(
+                                        email, fullName, token)
+                                    .then((value) {
+                                  Navigator.of(context).pop();
+                                  setState(() {
+                                    mobileSignedIn = true;
+                                  });
+                                }).catchError(catchSignInError());
+                            }
+                                // Now send the credential (especially `credential.authorizationCode`) to your server to create a session
+                                // after they have been validated with Apple (see `Integration` section for more information on how to do this)
+                                ),
+                        ],
+                      ),
+                      if (signInLoading)
+                        LoadingIndicator(
+                            text: AppLocalizations.of(context)!.loading)
+                    ],
+                  ),
+                ),
+              ));
+        });
+  }
+
+  catchSignInError() {
+    firebaseAuth.signOut();
+    setState(() {});
+  }
 }
 
 class Item {

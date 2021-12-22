@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:ashira_flutter/customWidgets/LoadingIndicator.dart';
+import 'package:ashira_flutter/model/DisplayOptions.dart';
 import 'package:ashira_flutter/model/Line.dart';
 import 'package:ashira_flutter/model/Song.dart';
 import 'package:ashira_flutter/utils/GenerateRandomString.dart';
@@ -222,12 +224,10 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
       splits.add(totalLength);
       totalLength += songs[i].length;
     }
-    cameraAccessible();
+    getCameras();
     songLength = new Duration(milliseconds: totalLength - 150);
     // checkFirestorePermissions(false);
-    if (email == 'מוישי') {
-      personalMoishie = true;
-    }
+
     createAllBackgroundPictureArray();
     _flutterFFmpegConfig.enableStatisticsCallback(this.statisticsCallback);
 
@@ -614,9 +614,15 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
 
   createTextWidget(int index, {required Line line}) {
     double size = 32;
-    Color pastFontColor = personalMoishie ? Colors.green : Colors.white;
-    Color futureFontColor = personalMoishie ? Colors.white : Colors.white30;
-    FontWeight weight = personalMoishie ? FontWeight.bold : FontWeight.normal;
+    Color pastFontColor = display == DisplayOptions.PERSONAL_MOISHIE
+        ? Colors.green
+        : Colors.white;
+    Color futureFontColor = display == DisplayOptions.PERSONAL_MOISHIE
+        ? Colors.white
+        : Colors.white30;
+    FontWeight weight = display == DisplayOptions.PERSONAL_MOISHIE
+        ? FontWeight.bold
+        : FontWeight.normal;
     return Container(
       height: 33,
       child: Center(
@@ -635,7 +641,7 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
                         ..color = Colors.purple,
                     )),
                 TextSpan(
-                    text: personalMoishie &&
+                    text: display == DisplayOptions.PERSONAL_MOISHIE &&
                             line.past == "" &&
                             line.containsDots()
                         ? 3.toString()
@@ -654,7 +660,7 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
                     text: line.past,
                     style: TextStyle(color: pastFontColor, fontWeight: weight)),
                 TextSpan(
-                    text: personalMoishie &&
+                    text: display == DisplayOptions.PERSONAL_MOISHIE &&
                             line.past == "" &&
                             line.containsDots()
                         ? 3.toString()
@@ -733,15 +739,6 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
       updateProgressBar(new Duration(milliseconds: playingTime.toInt()));
   }
 
-  void changeImage(int i) {
-    if (personalMoishie) if ((i / 1000 - lastTimeChanged).abs() > changeTime) {
-      lastTimeChanged = i / 1000;
-      setState(() {
-        timeChanged += 1;
-      });
-    }
-  }
-
   void updateProgressBar(Duration p) {
     setState(() {
       updateCounter = 0;
@@ -796,7 +793,7 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
     setState(() {
       //print("the lines were reset");
       for (Line line in lines) {
-        line.resetLine(time, personalMoishie);
+        line.resetLine(time, display == DisplayOptions.PERSONAL_MOISHIE);
       }
     });
   }
@@ -805,7 +802,7 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
     setState(() {
       for (List<Line> songsLines in allLines)
         for (Line line in songsLines) {
-          line.resetLine(0.0, personalMoishie);
+          line.resetLine(0.0, display == DisplayOptions.PERSONAL_MOISHIE);
         }
     });
   }
@@ -1036,7 +1033,7 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
         if (!disposed)
           setState(() {
             _progressValue = new Duration(milliseconds: playingTime);
-            line.updateLyrics(time, personalMoishie);
+            line.updateLyrics(time, display == DisplayOptions.PERSONAL_MOISHIE);
             isPlaying = true;
           });
         // }
@@ -1044,13 +1041,11 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
       } else {
         if (line.isAfter(time)) {
           currentLineIndex = j - 1;
-          changeImage(playingTime);
           return;
         }
         if (j == lines.length - 1) currentLineIndex = j;
       }
     }
-    changeImage(playingTime);
   }
 
   void animateLyrics(bool animation) {
@@ -1079,38 +1074,6 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
       setState(() {
         error = e.toString();
       });
-    }
-  }
-
-  getImage() {
-    if (personalMoishie && backgroundPictures.length > 0) {
-      return DecorationImage(
-        fit: BoxFit.fill,
-        image: NetworkImage(backgroundPictures[
-            (((timeChanged + randomNumber) * randomNumber) %
-                    backgroundPictures.length)
-                .toInt()]),
-      );
-    }
-  }
-
-  getPreviousImage() {
-    if (personalMoishie && backgroundPictures.length > 0) {
-      if (timeChanged == 0)
-        return DecorationImage(
-          fit: BoxFit.fill,
-          image: NetworkImage(backgroundPictures[
-              (((timeChanged + randomNumber) * randomNumber) %
-                      backgroundPictures.length)
-                  .toInt()]),
-        );
-      return DecorationImage(
-        fit: BoxFit.fill,
-        image: NetworkImage(backgroundPictures[
-            (((timeChanged - 1 + randomNumber) * randomNumber) %
-                    backgroundPictures.length)
-                .toInt()]),
-      );
     }
   }
 
@@ -1345,7 +1308,8 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
                         ),
                         Container(
                           child: TextButton(
-                              onPressed: () {
+                              onPressed: () async {
+                                await finishVideoRecording();
                                 signInOptions(false);
                               },
                               child: Text(
@@ -1794,6 +1758,10 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
     }
   }
 
+  loadingIndicator(String text) {
+    return LoadingIndicator(text: text);
+  }
+
   finishVideoRecording() async {
     videoFile = await stopVideoRecording();
     if (controller != null) {
@@ -1801,58 +1769,6 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
       controller = null;
     }
     delay = await getDelay();
-  }
-
-  loadingIndicator(String text) {
-    return Center(
-      child: new Container(
-        decoration: BoxDecoration(color: Colors.purple, shape: BoxShape.circle),
-        width: 100.0,
-        height: 100.0,
-        child: Stack(children: [
-          new Padding(
-              padding: const EdgeInsets.all(5.0),
-              child: new Center(
-                  child: new Text(
-                text,
-                style: TextStyle(
-                    color: Colors.white, letterSpacing: 1.5, fontSize: 16),
-              ))),
-          Center(
-              child: CircularProgressIndicator(
-            color: Colors.black,
-          ))
-        ]),
-      ),
-    );
-  }
-
-  void cameraAccessible() async {
-    if (Platform.isIOS) {
-      var deviceData = <String, dynamic>{};
-      deviceData = _readIosDeviceInfo(await deviceInfoPlugin.iosInfo);
-      // print(deviceData['systemVersion']);
-      // if (double.parse(deviceData['systemVersion']) >= 10)
-      getCameras();
-    } else
-      getCameras();
-  }
-
-  Map<String, dynamic> _readIosDeviceInfo(IosDeviceInfo data) {
-    return <String, dynamic>{
-      'name': data.name,
-      'systemName': data.systemName,
-      'systemVersion': data.systemVersion,
-      'model': data.model,
-      'localizedModel': data.localizedModel,
-      'identifierForVendor': data.identifierForVendor,
-      'isPhysicalDevice': data.isPhysicalDevice,
-      'utsname.sysname:': data.utsname.sysname,
-      'utsname.nodename:': data.utsname.nodename,
-      'utsname.release:': data.utsname.release,
-      'utsname.version:': data.utsname.version,
-      'utsname.machine:': data.utsname.machine,
-    };
   }
 
   checkIfVideoIsSung() async {

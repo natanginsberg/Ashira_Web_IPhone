@@ -4,6 +4,8 @@ import 'dart:convert';
 // import 'dart:html';
 import 'dart:math';
 
+import 'package:ashira_flutter/customWidgets/LineWidget.dart';
+import 'package:ashira_flutter/model/DisplayOptions.dart';
 import 'package:ashira_flutter/model/Line.dart';
 import 'package:ashira_flutter/model/Song.dart';
 import 'package:ashira_flutter/utils/FakeUi.dart'
@@ -76,7 +78,7 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
 
   bool _accessDenied = false;
 
-  // bool (personalMoishie || withClip) = false;
+  // bool (personalMoishie || display == DisplayOptions.WITH_CLIP) = false;
 
   List<dynamic> backgroundPictures = [];
 
@@ -181,13 +183,13 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
     for (int i = 0; i < songs.length; i++) {
       splits.add(totalLength);
       totalLength += songs[i].length;
-      if (withClip) setFastSlowArray(songs[i]);
+      if (display == DisplayOptions.WITH_CLIP) setFastSlowArray(songs[i]);
     }
     songLength = new Duration(milliseconds: totalLength - 150);
     // checkFirestorePermissions(false);
-    if (personalMoishie)
+    if (display == DisplayOptions.PERSONAL_MOISHIE)
       createAllBackgroundPictureArray();
-    else if (withClip) initiateControllers();
+    else if (display == DisplayOptions.WITH_CLIP) initiateControllers();
     _isSmartphone = isSmartphone();
   }
 
@@ -222,7 +224,7 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    if ((personalMoishie || withClip))
+    if ((display == DisplayOptions.PERSONAL_MOISHIE || display == DisplayOptions.WITH_CLIP))
       SystemChrome.setPreferredOrientations([
         DeviceOrientation.landscapeRight,
         DeviceOrientation.landscapeLeft,
@@ -315,7 +317,7 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
                           ),
                           Expanded(
                             child: Container(
-                              height: cameraMode
+                              height: display == DisplayOptions.CAMERA_MODE
                                   ? MediaQuery.of(context).size.height / 4
                                   : MediaQuery.of(context).size.height,
                               width: MediaQuery.of(context).size.width - 30,
@@ -367,7 +369,7 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
                               ),
                             ),
                           ),
-                          if (cameraMode)
+                          if (display == DisplayOptions.CAMERA_MODE)
                             Expanded(
                                 child: Container(
                                     child: Align(
@@ -447,9 +449,9 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
                               borderRadius:
                                   BorderRadius.all(new Radius.circular(20.0))),
                           child: Stack(children: [
-                            if (withClip && _nextController != null)
+                            if (display == DisplayOptions.WITH_CLIP && _nextController != null)
                               VideoPlayer(_nextController!),
-                            if (withClip && _controller != null)
+                            if (display == DisplayOptions.WITH_CLIP && _controller != null)
                               VideoPlayer(_controller!),
                             MouseRegion(
                               cursor: SystemMouseCursors.click,
@@ -525,8 +527,8 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
                                                               .size
                                                               .width -
                                                           60
-                                                      : (personalMoishie ||
-                                                              withClip)
+                                                      : (display == DisplayOptions.PERSONAL_MOISHIE ||
+                                                              display == DisplayOptions.WITH_CLIP)
                                                           ? MediaQuery.of(
                                                                       context)
                                                                   .size
@@ -582,7 +584,7 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
                                                                           trackNumber]),
                                                               index:
                                                                   trackNumber);
-                                                          if (withClip &&
+                                                          if (display == DisplayOptions.WITH_CLIP &&
                                                               _controller !=
                                                                   null) {
                                                             _controller!.seekTo(
@@ -601,7 +603,7 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
                                               playPauseAndRestartIcons()
                                           ],
                                         ),
-                                        if (!(personalMoishie || withClip) &&
+                                        if (!(display == DisplayOptions.PERSONAL_MOISHIE || display == DisplayOptions.WITH_CLIP) &&
                                             (!_isSmartphone ||
                                                 tabletOrientationLandscape()))
                                           Container(
@@ -613,7 +615,7 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
                                             child: Padding(
                                               padding:
                                                   const EdgeInsets.all(8.0),
-                                              child: cameraMode
+                                              child: display == DisplayOptions.CAMERA_MODE
                                                   ? Container(
                                                       color: Colors.transparent,
                                                       height:
@@ -833,7 +835,7 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
         // _accessDenied = true;
       });
     } else {
-      if (withClip && _controller != null) _controller!.play();
+      if (display == DisplayOptions.WITH_CLIP && _controller != null) _controller!.play();
       audioPlayer.play();
       setState(() {
         Wakelock.enable();
@@ -874,7 +876,7 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
                   (!tabletOrientationLandscape() ||
                       orientation == Orientation.portrait)
               ? MediaQuery.of(context).size.width - 30
-              : (personalMoishie || withClip)
+              : (display == DisplayOptions.PERSONAL_MOISHIE || display == DisplayOptions.WITH_CLIP)
                   ? MediaQuery.of(context).size.width - 45
                   : MediaQuery.of(context).size.width / 3,
           child: ListView.builder(
@@ -893,99 +895,12 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
   }
 
   createTextWidget(int index, {required Line line}) {
-    double size = (personalMoishie || withClip)
+    double size = (display == DisplayOptions.PERSONAL_MOISHIE || display == DisplayOptions.WITH_CLIP)
         ? MediaQuery.of(context).size.height / 6
-        // MediaQuery.of(context).size.height / 7
         : _isSmartphone
             ? 28
             : 34;
-    Color pastFontColor =
-        (personalMoishie || withClip) ? Colors.green : Colors.white;
-    Color futureFontColor =
-        (personalMoishie || withClip) ? Colors.white : Colors.white30;
-    FontWeight weight =
-        (personalMoishie || withClip) ? FontWeight.bold : FontWeight.normal;
-    return Container(
-      height: (personalMoishie || withClip)
-          ? (MediaQuery.of(context).size.height / 4).toDouble()
-          : 41,
-      child: Center(
-        child: Stack(children: [
-          RichText(
-              text: TextSpan(
-                  style: TextStyle(
-                      fontFamily: 'SongFont',
-                      fontSize: size,
-                      color: pastFontColor,
-                      fontWeight: weight),
-                  children: [
-                TextSpan(
-                    text: line.past,
-                    style: TextStyle(
-                      fontFamily: 'SongFont',
-                      foreground: Paint()
-                        ..style = PaintingStyle.stroke
-                        ..strokeWidth = 3
-                        ..color =
-                            // (personalMoishie || withClip)
-                            //     ? Colors.green
-                            //     :
-                            Colors.purple,
-                    )),
-                TextSpan(
-                  text: (personalMoishie || withClip) &&
-                          line.past == "" &&
-                          line.containsDots()
-                      ? 3.toString()
-                      : line.future,
-                  style:
-                      // (personalMoishie || withClip)
-                      //     ? TextStyle(
-                      //         fontFamily: 'SongFont',
-                      //         fontSize: size,
-                      //         fontWeight: weight,
-                      //         foreground: Paint()
-                      //           ..style = PaintingStyle.stroke
-                      //           ..strokeWidth = 1
-                      //           ..color = Colors.white,
-                      //       )
-                      //     :
-                      TextStyle(
-                          fontFamily: 'SongFont',
-                          color: futureFontColor,
-                          fontSize: size,
-                          fontWeight: weight),
-                )
-              ])),
-          RichText(
-              text: TextSpan(
-                  style: TextStyle(
-                      fontFamily: 'SongFont',
-                      fontSize: size,
-                      color: pastFontColor,
-                      fontWeight: weight),
-                  children: [
-                TextSpan(
-                    text: line.past,
-                    style: TextStyle(
-                        fontFamily: 'SongFont',
-                        color: pastFontColor,
-                        fontWeight: weight)),
-                TextSpan(
-                    text: (personalMoishie || withClip) &&
-                            line.past == "" &&
-                            line.containsDots()
-                        ? 3.toString()
-                        : line.future,
-                    style: TextStyle(
-                        fontFamily: 'SongFont',
-                        color: futureFontColor,
-                        fontSize: size,
-                        fontWeight: weight))
-              ]))
-        ]),
-      ),
-    );
+    return LineWidget(line: line, size: size,);
   }
 
   updateUI(Duration p, bool animation, bool seek, int track) {
@@ -1053,7 +968,7 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
   }
 
   void changeImage(int i) {
-    if ((personalMoishie || withClip)) if ((i / 1000 - lastTimeChanged).abs() >
+    if ((display == DisplayOptions.PERSONAL_MOISHIE || display == DisplayOptions.WITH_CLIP)) if ((i / 1000 - lastTimeChanged).abs() >
         changeTime) {
       lastTimeChanged = i / 1000;
       setState(() {
@@ -1071,7 +986,7 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
 
   pause() {
     audioPlayer.pause();
-    if (withClip && _controller != null) _controller!.pause();
+    if (display == DisplayOptions.WITH_CLIP && _controller != null) _controller!.pause();
     timer.cancel();
     setState(() {
       Wakelock.disable();
@@ -1099,7 +1014,7 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
     setState(() {
       //print("the lines were reset");
       for (Line line in lines) {
-        line.resetLine(time, (personalMoishie || withClip));
+        line.resetLine(time, (display == DisplayOptions.PERSONAL_MOISHIE || display == DisplayOptions.WITH_CLIP));
       }
     });
   }
@@ -1108,7 +1023,7 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
     setState(() {
       for (List<Line> songsLines in allLines)
         for (Line line in songsLines) {
-          line.resetLine(0.0, (personalMoishie || withClip));
+          line.resetLine(0.0, (display == DisplayOptions.PERSONAL_MOISHIE || display == DisplayOptions.WITH_CLIP));
         }
     });
   }
@@ -1210,7 +1125,7 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
                   child: Stack(children: <Widget>[
                     Positioned.fill(
                       child: Container(
-                        decoration: (personalMoishie || withClip) ||
+                        decoration: (display == DisplayOptions.PERSONAL_MOISHIE || display == DisplayOptions.WITH_CLIP) ||
                                 _isSmartphone
                             ? BoxDecoration(
                                 borderRadius:
@@ -1264,7 +1179,7 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
                   child: Stack(children: <Widget>[
                     Positioned.fill(
                       child: Container(
-                        decoration: (personalMoishie || withClip) ||
+                        decoration: (display == DisplayOptions.PERSONAL_MOISHIE || display == DisplayOptions.WITH_CLIP) ||
                                 _isSmartphone
                             ? BoxDecoration(
                                 borderRadius:
@@ -1316,7 +1231,7 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
                   child: Stack(children: <Widget>[
                     Positioned.fill(
                       child: Container(
-                        decoration: (personalMoishie || withClip) ||
+                        decoration: (display == DisplayOptions.PERSONAL_MOISHIE || display == DisplayOptions.WITH_CLIP) ||
                                 _isSmartphone
                             ? BoxDecoration(
                                 borderRadius:
@@ -1395,7 +1310,7 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
         if (!disposed)
           setState(() {
             _progressValue = new Duration(milliseconds: playingTime);
-            line.updateLyrics(time, (personalMoishie || withClip));
+            line.updateLyrics(time, (display == DisplayOptions.PERSONAL_MOISHIE || display == DisplayOptions.WITH_CLIP));
             isPlaying = true;
           });
         // }
@@ -1414,7 +1329,7 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
 
   void animateLyrics(bool animation) {
     listViewController.animateTo(
-      (personalMoishie || withClip)
+      (display == DisplayOptions.PERSONAL_MOISHIE || display == DisplayOptions.WITH_CLIP)
           ? currentLineIndex *
               (MediaQuery.of(context).size.height / 4).toDouble()
           : currentLineIndex * 41.toDouble(),
@@ -1477,7 +1392,7 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
   }
 
   getImage() {
-    if (personalMoishie && backgroundPictures.length > 0) {
+    if (display == DisplayOptions.PERSONAL_MOISHIE && backgroundPictures.length > 0) {
       return DecorationImage(
         fit: BoxFit.fill,
         image: NetworkImage(backgroundPictures[
@@ -1666,7 +1581,7 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
   }
 
   getPreviousImage() {
-    if (personalMoishie && backgroundPictures.length > 0) {
+    if (display == DisplayOptions.PERSONAL_MOISHIE && backgroundPictures.length > 0) {
       if (timeChanged == 0)
         return DecorationImage(
           fit: BoxFit.fill,
@@ -1686,7 +1601,7 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
   }
 
   bool tabletOrientationLandscape() {
-    return _isSmartphone && ((personalMoishie || withClip) || cameraMode);
+    return _isSmartphone && ((display == DisplayOptions.PERSONAL_MOISHIE || display == DisplayOptions.WITH_CLIP) || display == DisplayOptions.CAMERA_MODE);
   }
 
   playPauseAndRestartIcons() {

@@ -1,12 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
+
 // import 'dart:html';
 import 'dart:math';
 
 import 'package:ashira_flutter/model/Line.dart';
 import 'package:ashira_flutter/model/Song.dart';
 import 'package:ashira_flutter/utils/FakeUi.dart'
-if (dart.library.html) 'dart:ui' as ui;
+    if (dart.library.html) 'dart:ui' as ui;
 import 'package:ashira_flutter/utils/Parser.dart';
 import 'package:ashira_flutter/utils/WpHelper.dart' as wph;
 import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
@@ -229,13 +230,13 @@ class _SingTabletState extends State<SingTablet> with WidgetsBindingObserver {
           controller!,
           child: LayoutBuilder(
               builder: (BuildContext context, BoxConstraints constraints) {
-                return GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onScaleStart: _handleScaleStart,
-                  onScaleUpdate: _handleScaleUpdate,
-                  // onTapDown: (details) => onViewFinderTap(details, constraints),
-                );
-              }),
+            return GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onScaleStart: _handleScaleStart,
+              onScaleUpdate: _handleScaleUpdate,
+              // onTapDown: (details) => onViewFinderTap(details, constraints),
+            );
+          }),
         ),
       );
     }
@@ -288,7 +289,6 @@ class _SingTabletState extends State<SingTablet> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-
     if (personalMoishie)
       SystemChrome.setPreferredOrientations([
         DeviceOrientation.landscapeRight,
@@ -321,25 +321,25 @@ class _SingTabletState extends State<SingTablet> with WidgetsBindingObserver {
                 width: MediaQuery.of(context).size.width,
                 decoration: BoxDecoration(
                     gradient: RadialGradient(
-                      center: Alignment.center,
-                      radius: 0.8,
-                      colors: [
-                        const Color(0xFF221A4D), // blue sky
-                        const Color(0xFF000000), // yellow sun
-                      ],
-                    )),
+                  center: Alignment.center,
+                  radius: 0.8,
+                  colors: [
+                    const Color(0xFF221A4D), // blue sky
+                    const Color(0xFF000000), // yellow sun
+                  ],
+                )),
                 child: Container(
                   decoration: BoxDecoration(
                       image: getPreviousImage(),
                       border: Border.all(color: Colors.purple),
                       borderRadius:
-                      BorderRadius.all(new Radius.circular(20.0))),
+                          BorderRadius.all(new Radius.circular(20.0))),
                   child: Container(
                     decoration: BoxDecoration(
                         image: getImage(),
                         border: Border.all(color: Colors.purple),
                         borderRadius:
-                        BorderRadius.all(new Radius.circular(20.0))),
+                            BorderRadius.all(new Radius.circular(20.0))),
                     child: Stack(children: [
                       Column(
                         children: [
@@ -354,7 +354,7 @@ class _SingTabletState extends State<SingTablet> with WidgetsBindingObserver {
                                   children: [
                                     Column(
                                       mainAxisAlignment:
-                                      MainAxisAlignment.center,
+                                          MainAxisAlignment.center,
                                       children: [
                                         Text(
                                           songs[trackNumber].artist,
@@ -418,7 +418,7 @@ class _SingTabletState extends State<SingTablet> with WidgetsBindingObserver {
                                 thumbRadius: 9,
                                 thumbColor: Colors.white,
                                 timeLabelTextStyle:
-                                TextStyle(color: Colors.white),
+                                    TextStyle(color: Colors.white),
                                 barHeight: 8,
                                 timeLabelLocation: TimeLabelLocation.sides,
                                 onSeek: (Duration duration) {
@@ -427,8 +427,8 @@ class _SingTabletState extends State<SingTablet> with WidgetsBindingObserver {
                                   audioPlayer.seek(
                                       new Duration(
                                           milliseconds:
-                                          duration.inMilliseconds -
-                                              splits[trackNumber]),
+                                              duration.inMilliseconds -
+                                                  splits[trackNumber]),
                                       index: trackNumber);
                                 },
                               ),
@@ -440,9 +440,9 @@ class _SingTabletState extends State<SingTablet> with WidgetsBindingObserver {
                                     child: Align(
                                         alignment: Alignment.topCenter,
                                         child:
-                                        // todo tablet WebcamPage(counter +
-                                        //     secondCounter.toString())))),
-                                        _cameraPreviewWidget())))
+                                            // todo tablet WebcamPage(counter +
+                                            //     secondCounter.toString())))),
+                                            _cameraPreviewWidget())))
                         ],
                       ),
                       SafeArea(
@@ -492,229 +492,229 @@ class _SingTabletState extends State<SingTablet> with WidgetsBindingObserver {
               width: MediaQuery.of(context).size.width,
               decoration: BoxDecoration(
                   gradient: RadialGradient(
-                    center: Alignment.center,
-                    radius: 0.8,
-                    colors: [
-                      const Color(0xFF221A4D), // blue sky
-                      const Color(0xFF000000), // yellow sun
-                    ],
-                  )),
+                center: Alignment.center,
+                radius: 0.8,
+                colors: [
+                  const Color(0xFF221A4D), // blue sky
+                  const Color(0xFF000000), // yellow sun
+                ],
+              )),
               child: !_accessDenied
                   ? Padding(
-                padding:
-                const EdgeInsets.fromLTRB(15.0, 25.0, 15.0, 25.0),
-                child: Container(
-                  decoration: BoxDecoration(
-                      image: getPreviousImage(),
-                      border: Border.all(color: Colors.purple),
-                      borderRadius:
-                      BorderRadius.all(new Radius.circular(20.0))),
-                  child: Container(
-                    decoration: BoxDecoration(
-                        image: getImage(),
-                        border: Border.all(color: Colors.purple),
-                        borderRadius:
-                        BorderRadius.all(new Radius.circular(20.0))),
-                    child: Stack(children: [
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          SafeArea(
-                            child: Text(
-                              songs[trackNumber].title,
-                              style: TextStyle(
-                                  fontSize: 18, color: Colors.white),
-                            ),
-                          ),
-                          Expanded(
-                            child: Row(
-                              crossAxisAlignment:
-                              CrossAxisAlignment.center,
-                              mainAxisAlignment:
-                              MainAxisAlignment.spaceEvenly,
+                      padding:
+                          const EdgeInsets.fromLTRB(15.0, 25.0, 15.0, 25.0),
+                      child: Container(
+                        decoration: BoxDecoration(
+                            image: getPreviousImage(),
+                            border: Border.all(color: Colors.purple),
+                            borderRadius:
+                                BorderRadius.all(new Radius.circular(20.0))),
+                        child: Container(
+                          decoration: BoxDecoration(
+                              image: getImage(),
+                              border: Border.all(color: Colors.purple),
+                              borderRadius:
+                                  BorderRadius.all(new Radius.circular(20.0))),
+                          child: Stack(children: [
+                            Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Column(
-                                  mainAxisAlignment:
-                                  MainAxisAlignment.spaceEvenly,
-                                  crossAxisAlignment:
-                                  CrossAxisAlignment.center,
-                                  children: [
-                                    Container(
-                                      height: MediaQuery.of(context)
-                                          .size
-                                          .height /
-                                          2,
-                                      child: FutureBuilder(
-                                        future: parseFuture,
-                                        builder: (context, snapShot) {
-                                          if (snapShot.hasData) {
-                                            return buildListView(
-                                                (allLines[trackNumber]));
-                                          } else if (snapShot.hasError) {
-                                            return Icon(
-                                              Icons.error_outline,
-                                              color: Colors.red,
-                                            );
-                                          } else {
-                                            return Image(
-                                              fit: BoxFit.fill,
-                                              image: NetworkImage(
-                                                  songs[trackNumber]
-                                                      .imageResourceFile),
-                                            );
-                                          }
-                                        },
+                                SafeArea(
+                                  child: Text(
+                                    songs[trackNumber].title,
+                                    style: TextStyle(
+                                        fontSize: 18, color: Colors.white),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceEvenly,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
+                                        children: [
+                                          Container(
+                                            height: MediaQuery.of(context)
+                                                    .size
+                                                    .height /
+                                                2,
+                                            child: FutureBuilder(
+                                              future: parseFuture,
+                                              builder: (context, snapShot) {
+                                                if (snapShot.hasData) {
+                                                  return buildListView(
+                                                      (allLines[trackNumber]));
+                                                } else if (snapShot.hasError) {
+                                                  return Icon(
+                                                    Icons.error_outline,
+                                                    color: Colors.red,
+                                                  );
+                                                } else {
+                                                  return Image(
+                                                    fit: BoxFit.fill,
+                                                    image: NetworkImage(
+                                                        songs[trackNumber]
+                                                            .imageResourceFile),
+                                                  );
+                                                }
+                                              },
+                                            ),
+                                          ),
+                                          if (!(isPlaying && counter == "אשר"))
+                                            Padding(
+                                              padding:
+                                                  const EdgeInsets.fromLTRB(
+                                                      0, 20, 0, 0),
+                                              child: Container(
+                                                width: _isSmartphone &&
+                                                        !tabletOrientationLandscape()
+                                                    ? MediaQuery.of(context)
+                                                            .size
+                                                            .width -
+                                                        60
+                                                    : personalMoishie
+                                                        ? MediaQuery.of(context)
+                                                                .size
+                                                                .width /
+                                                            2
+                                                        : MediaQuery.of(context)
+                                                                .size
+                                                                .width /
+                                                            3,
+                                                height: 50,
+                                                decoration: BoxDecoration(
+                                                    border: Border.all(
+                                                        color: Colors.purple),
+                                                    borderRadius:
+                                                        BorderRadius.all(
+                                                            new Radius.circular(
+                                                                30.0))),
+                                                child: Padding(
+                                                  padding:
+                                                      const EdgeInsets.fromLTRB(
+                                                          8.0, 4, 8, 4),
+                                                  child: Center(
+                                                    child: ProgressBar(
+                                                      total: songLength,
+                                                      progressBarColor:
+                                                          Colors.blue,
+                                                      progress: _progressValue,
+                                                      thumbColor: Colors.white,
+                                                      timeLabelTextStyle:
+                                                          TextStyle(
+                                                              color:
+                                                                  Colors.white),
+                                                      barHeight: 4,
+                                                      thumbRadius: 9,
+                                                      timeLabelLocation:
+                                                          TimeLabelLocation
+                                                              .sides,
+                                                      onSeek:
+                                                          (Duration duration) {
+                                                        _progressValue =
+                                                            duration;
+                                                        updateUI(
+                                                            duration,
+                                                            false,
+                                                            true,
+                                                            trackNumber);
+                                                        audioPlayer.seek(
+                                                            new Duration(
+                                                                milliseconds: duration
+                                                                        .inMilliseconds -
+                                                                    splits[
+                                                                        trackNumber]),
+                                                            index: trackNumber);
+                                                      },
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          if (!(isPlaying && counter == "אשר"))
+                                            playPauseAndRestartIcons()
+                                        ],
                                       ),
-                                    ),
-                                    if (!(isPlaying && counter == "אשר"))
-                                      Padding(
-                                        padding:
-                                        const EdgeInsets.fromLTRB(
-                                            0, 20, 0, 0),
-                                        child: Container(
-                                          width: _isSmartphone &&
-                                              !tabletOrientationLandscape()
-                                              ? MediaQuery.of(context)
-                                              .size
-                                              .width -
-                                              60
-                                              : personalMoishie
-                                              ? MediaQuery.of(context)
-                                              .size
-                                              .width /
-                                              2
-                                              : MediaQuery.of(context)
-                                              .size
-                                              .width /
-                                              3,
-                                          height: 50,
+                                      if (!personalMoishie &&
+                                          (!_isSmartphone ||
+                                              tabletOrientationLandscape()))
+                                        Container(
                                           decoration: BoxDecoration(
                                               border: Border.all(
                                                   color: Colors.purple),
-                                              borderRadius:
-                                              BorderRadius.all(
-                                                  new Radius.circular(
-                                                      30.0))),
+                                              borderRadius: BorderRadius.all(
+                                                  new Radius.circular(15))),
                                           child: Padding(
-                                            padding:
-                                            const EdgeInsets.fromLTRB(
-                                                8.0, 4, 8, 4),
-                                            child: Center(
-                                              child: ProgressBar(
-                                                total: songLength,
-                                                progressBarColor:
-                                                Colors.blue,
-                                                progress: _progressValue,
-                                                thumbColor: Colors.white,
-                                                timeLabelTextStyle:
-                                                TextStyle(
-                                                    color:
-                                                    Colors.white),
-                                                barHeight: 4,
-                                                thumbRadius: 9,
-                                                timeLabelLocation:
-                                                TimeLabelLocation
-                                                    .sides,
-                                                onSeek:
-                                                    (Duration duration) {
-                                                  _progressValue =
-                                                      duration;
-                                                  updateUI(
-                                                      duration,
-                                                      false,
-                                                      true,
-                                                      trackNumber);
-                                                  audioPlayer.seek(
-                                                      new Duration(
-                                                          milliseconds: duration
-                                                              .inMilliseconds -
-                                                              splits[
-                                                              trackNumber]),
-                                                      index: trackNumber);
-                                                },
-                                              ),
-                                            ),
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: cameraMode
+                                                ? Container(
+                                                    color: Colors.transparent,
+                                                    height:
+                                                        MediaQuery.of(context)
+                                                                .size
+                                                                .width /
+                                                            2.7,
+                                                    width:
+                                                        MediaQuery.of(context)
+                                                                .size
+                                                                .width /
+                                                            2.7,
+                                                    child:
+                                                        _cameraPreviewWidget())
+                                                //todo tablet WebcamPage(counter +
+                                                //     secondCounter
+                                                //         .toString()))
+                                                : ClipRRect(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            15.0),
+                                                    child: Image(
+                                                      width:
+                                                          MediaQuery.of(context)
+                                                                  .size
+                                                                  .width /
+                                                              3,
+                                                      fit: BoxFit.fitWidth,
+                                                      image: NetworkImage(songs[
+                                                              trackNumber]
+                                                          .imageResourceFile),
+                                                    ),
+                                                  ),
                                           ),
-                                        ),
-                                      ),
-                                    if (!(isPlaying && counter == "אשר"))
-                                      playPauseAndRestartIcons()
-                                  ],
+                                        )
+                                    ],
+                                  ),
                                 ),
-                                if (!personalMoishie &&
-                                    (!_isSmartphone ||
-                                        tabletOrientationLandscape()))
-                                  Container(
-                                    decoration: BoxDecoration(
-                                        border: Border.all(
-                                            color: Colors.purple),
-                                        borderRadius: BorderRadius.all(
-                                            new Radius.circular(15))),
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: cameraMode
-                                          ? Container(
-                                          color: Colors.transparent,
-                                          height:
-                                          MediaQuery.of(context)
-                                              .size
-                                              .width /
-                                              2.7,
-                                          width:
-                                          MediaQuery.of(context)
-                                              .size
-                                              .width /
-                                              2.7,
-                                          child:
-                                          _cameraPreviewWidget())
-                                      //todo tablet WebcamPage(counter +
-                                      //     secondCounter
-                                      //         .toString()))
-                                          : ClipRRect(
-                                        borderRadius:
-                                        BorderRadius.circular(
-                                            15.0),
-                                        child: Image(
-                                          width:
-                                          MediaQuery.of(context)
-                                              .size
-                                              .width /
-                                              3,
-                                          fit: BoxFit.fitWidth,
-                                          image: NetworkImage(songs[
-                                          trackNumber]
-                                              .imageResourceFile),
-                                        ),
-                                      ),
-                                    ),
-                                  )
                               ],
                             ),
-                          ),
-                        ],
-                      ),
-                      if (!songPicked) tonePicker(),
-                      SafeArea(
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Align(
-                            alignment: Alignment.topLeft,
-                            child: IconButton(
-                              icon: Icon(
-                                Icons.arrow_back_sharp,
-                                color: Colors.white,
+                            if (!songPicked) tonePicker(),
+                            SafeArea(
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Align(
+                                  alignment: Alignment.topLeft,
+                                  child: IconButton(
+                                    icon: Icon(
+                                      Icons.arrow_back_sharp,
+                                      color: Colors.white,
+                                    ),
+                                    onPressed: () {
+                                      backButton();
+                                    },
+                                  ),
+                                ),
                               ),
-                              onPressed: () {
-                                backButton();
-                              },
                             ),
-                          ),
+                          ]),
                         ),
                       ),
-                    ]),
-                  ),
-                ),
-              )
+                    )
                   : expireWording(),
             ),
           )),
@@ -728,15 +728,15 @@ class _SingTabletState extends State<SingTablet> with WidgetsBindingObserver {
       children: [
         Center(
             child: Text(
-              AppLocalizations.of(context)!.outOfTimeError,
-              style: TextStyle(
-                  fontFamily: 'SignInFont',
-                  color: Colors.yellow,
-                  wordSpacing: 5,
-                  fontSize: 40,
-                  height: 1.4,
-                  letterSpacing: 1.6),
-            )),
+          AppLocalizations.of(context)!.outOfTimeError,
+          style: TextStyle(
+              fontFamily: 'SignInFont',
+              color: Colors.yellow,
+              wordSpacing: 5,
+              fontSize: 40,
+              height: 1.4,
+              letterSpacing: 1.6),
+        )),
         Directionality(
           textDirection: Directionality.of(context),
           child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
@@ -752,31 +752,31 @@ class _SingTabletState extends State<SingTablet> with WidgetsBindingObserver {
             ),
             _loading
                 ? new Container(
-              color: Colors.transparent,
-              width: 70.0,
-              height: 70.0,
-              child: new Padding(
-                  padding: const EdgeInsets.all(5.0),
-                  child:
-                  new Center(child: new CircularProgressIndicator())),
-            )
+                    color: Colors.transparent,
+                    width: 70.0,
+                    height: 70.0,
+                    child: new Padding(
+                        padding: const EdgeInsets.all(5.0),
+                        child:
+                            new Center(child: new CircularProgressIndicator())),
+                  )
                 : Container(
-                decoration: BoxDecoration(
-                    color: Colors.blue,
-                    borderRadius:
-                    BorderRadius.all(new Radius.circular(10))),
-                child: Padding(
-                    padding: const EdgeInsets.fromLTRB(8.0, 4, 8.0, 4),
-                    child: TextButton(
-                        onPressed: addTime,
-                        child: Directionality(
-                          textDirection: TextDirection.ltr,
-                          child: Text(
-                            AppLocalizations.of(context)!.enter,
-                            style: TextStyle(
-                                fontSize: 15, color: Colors.white),
-                          ),
-                        ))))
+                    decoration: BoxDecoration(
+                        color: Colors.blue,
+                        borderRadius:
+                            BorderRadius.all(new Radius.circular(10))),
+                    child: Padding(
+                        padding: const EdgeInsets.fromLTRB(8.0, 4, 8.0, 4),
+                        child: TextButton(
+                            onPressed: addTime,
+                            child: Directionality(
+                              textDirection: TextDirection.ltr,
+                              child: Text(
+                                AppLocalizations.of(context)!.enter,
+                                style: TextStyle(
+                                    fontSize: 15, color: Colors.white),
+                              ),
+                            ))))
           ]),
         ),
         SizedBox(
@@ -882,7 +882,7 @@ class _SingTabletState extends State<SingTablet> with WidgetsBindingObserver {
 
       audioPlayer.processingStateStream.listen((state) {
         if (state == ProcessingState.completed) if (currentLineIndex ==
-            lines.length - 1 &&
+                lines.length - 1 &&
             trackNumber == songs.length - 1) {
           setState(() {
             Wakelock.disable();
@@ -898,7 +898,7 @@ class _SingTabletState extends State<SingTablet> with WidgetsBindingObserver {
 
       timer = Timer.periodic(
           Duration(milliseconds: 100),
-              (Timer t) => updateUI(
+          (Timer t) => updateUI(
               audioPlayer.position, true, false, audioPlayer.currentIndex!));
     }
   }
@@ -909,12 +909,12 @@ class _SingTabletState extends State<SingTablet> with WidgetsBindingObserver {
         child: SizedBox(
           height: MediaQuery.of(context).size.height / 3,
           width: _isSmartphone &&
-              (!tabletOrientationLandscape() ||
-                  orientation == Orientation.portrait)
+                  (!tabletOrientationLandscape() ||
+                      orientation == Orientation.portrait)
               ? MediaQuery.of(context).size.width - 40
               : personalMoishie
-              ? MediaQuery.of(context).size.width - 45
-              : MediaQuery.of(context).size.width / 3,
+                  ? MediaQuery.of(context).size.width - 45
+                  : MediaQuery.of(context).size.width / 3,
           child: ListView.builder(
               controller: this.listViewController,
               itemCount: lines.length,
@@ -933,11 +933,11 @@ class _SingTabletState extends State<SingTablet> with WidgetsBindingObserver {
   createTextWidget(int index, {required Line line}) {
     double size = personalMoishie
         ?
-    //todo tablet comment MediaQuery.of(context).size.height / 6
-    MediaQuery.of(context).size.height / 7
+        //todo tablet comment MediaQuery.of(context).size.height / 6
+        MediaQuery.of(context).size.height / 7
         : _isSmartphone
-        ? 28
-        : 34;
+            ? 28
+            : 34;
     Color pastFontColor = personalMoishie ? Colors.green : Colors.white;
     Color futureFontColor = personalMoishie ? Colors.white : Colors.white30;
     FontWeight weight = personalMoishie ? FontWeight.bold : FontWeight.normal;
@@ -952,44 +952,44 @@ class _SingTabletState extends State<SingTablet> with WidgetsBindingObserver {
                   style: TextStyle(
                       fontSize: size, color: pastFontColor, fontWeight: weight),
                   children: [
-                    TextSpan(
-                        text: line.past,
-                        style: TextStyle(
-                          foreground: Paint()
-                            ..style = PaintingStyle.stroke
-                            ..strokeWidth = 3
-                            ..color = Colors.purple,
-                        )),
-                    TextSpan(
-                        text: personalMoishie &&
+                TextSpan(
+                    text: line.past,
+                    style: TextStyle(
+                      foreground: Paint()
+                        ..style = PaintingStyle.stroke
+                        ..strokeWidth = 3
+                        ..color = Colors.purple,
+                    )),
+                TextSpan(
+                    text: personalMoishie &&
                             line.past == "" &&
                             line.containsDots()
-                            ? 3.toString()
-                            : line.future,
-                        style: TextStyle(
-                            color: futureFontColor,
-                            fontSize: size,
-                            fontWeight: weight))
-                  ])),
+                        ? 3.toString()
+                        : line.future,
+                    style: TextStyle(
+                        color: futureFontColor,
+                        fontSize: size,
+                        fontWeight: weight))
+              ])),
           RichText(
               text: TextSpan(
                   style: TextStyle(
                       fontSize: size, color: pastFontColor, fontWeight: weight),
                   children: [
-                    TextSpan(
-                        text: line.past,
-                        style: TextStyle(color: pastFontColor, fontWeight: weight)),
-                    TextSpan(
-                        text: personalMoishie &&
+                TextSpan(
+                    text: line.past,
+                    style: TextStyle(color: pastFontColor, fontWeight: weight)),
+                TextSpan(
+                    text: personalMoishie &&
                             line.past == "" &&
                             line.containsDots()
-                            ? 3.toString()
-                            : line.future,
-                        style: TextStyle(
-                            color: futureFontColor,
-                            fontSize: size,
-                            fontWeight: weight))
-                  ]))
+                        ? 3.toString()
+                        : line.future,
+                    style: TextStyle(
+                        color: futureFontColor,
+                        fontSize: size,
+                        fontWeight: weight))
+              ]))
         ]),
       ),
     );
@@ -1209,33 +1209,33 @@ class _SingTabletState extends State<SingTablet> with WidgetsBindingObserver {
                       child: Container(
                         decoration: personalMoishie || _isSmartphone
                             ? BoxDecoration(
-                          borderRadius:
-                          BorderRadius.all(new Radius.circular(50.0)),
-                          gradient: LinearGradient(
-                            colors: <Color>[
-                              Color(0xFF0D47A1),
-                              Color(0xFF1976D2),
-                              Color(0xFF42A5F5),
-                            ],
-                          ),
-                        )
+                                borderRadius:
+                                    BorderRadius.all(new Radius.circular(50.0)),
+                                gradient: LinearGradient(
+                                  colors: <Color>[
+                                    Color(0xFF0D47A1),
+                                    Color(0xFF1976D2),
+                                    Color(0xFF42A5F5),
+                                  ],
+                                ),
+                              )
                             : BoxDecoration(
-                          color: Colors.purple,
-                          // border: Border.all(color: Colors.tealAccent),
-                          borderRadius:
-                          BorderRadius.all(new Radius.circular(60.0)),
-                          gradient: RadialGradient(
-                            colors: <Color>[
-                              Colors.purple.shade200,
-                              Colors.purple.shade800,
-                              Colors.purple.shade500,
-                            ],
-                            stops: [0.2, 0.7, 1],
-                            center: Alignment(0.1, 0.3),
-                            focal: Alignment(-0.1, 0.6),
-                            focalRadius: 2,
-                          ),
-                        ),
+                                color: Colors.purple,
+                                // border: Border.all(color: Colors.tealAccent),
+                                borderRadius:
+                                    BorderRadius.all(new Radius.circular(60.0)),
+                                gradient: RadialGradient(
+                                  colors: <Color>[
+                                    Colors.purple.shade200,
+                                    Colors.purple.shade800,
+                                    Colors.purple.shade500,
+                                  ],
+                                  stops: [0.2, 0.7, 1],
+                                  center: Alignment(0.1, 0.3),
+                                  focal: Alignment(-0.1, 0.6),
+                                  focalRadius: 2,
+                                ),
+                              ),
                       ),
                     ),
                     Container(
@@ -1262,31 +1262,31 @@ class _SingTabletState extends State<SingTablet> with WidgetsBindingObserver {
                       child: Container(
                         decoration: personalMoishie || _isSmartphone
                             ? BoxDecoration(
-                          borderRadius:
-                          BorderRadius.all(new Radius.circular(60.0)),
-                          gradient: LinearGradient(
-                            colors: <Color>[
-                              Color(0xFF630DA1),
-                              Color(0xFF7A37E5),
-                              Color(0xFFB47DF1),
-                            ],
-                          ),
-                        )
+                                borderRadius:
+                                    BorderRadius.all(new Radius.circular(60.0)),
+                                gradient: LinearGradient(
+                                  colors: <Color>[
+                                    Color(0xFF630DA1),
+                                    Color(0xFF7A37E5),
+                                    Color(0xFFB47DF1),
+                                  ],
+                                ),
+                              )
                             : BoxDecoration(
-                          gradient: RadialGradient(
-                            colors: <Color>[
-                              Colors.purple.shade200,
-                              Colors.purple.shade800,
-                              Colors.purple.shade500,
-                            ],
-                            stops: [0.2, 0.7, 1],
-                            center: Alignment(0.1, 0.3),
-                            focal: Alignment(-0.1, 0.6),
-                            focalRadius: 3,
-                          ),
-                          borderRadius:
-                          BorderRadius.all(new Radius.circular(75.0)),
-                        ),
+                                gradient: RadialGradient(
+                                  colors: <Color>[
+                                    Colors.purple.shade200,
+                                    Colors.purple.shade800,
+                                    Colors.purple.shade500,
+                                  ],
+                                  stops: [0.2, 0.7, 1],
+                                  center: Alignment(0.1, 0.3),
+                                  focal: Alignment(-0.1, 0.6),
+                                  focalRadius: 3,
+                                ),
+                                borderRadius:
+                                    BorderRadius.all(new Radius.circular(75.0)),
+                              ),
                       ),
                     ),
                     Container(
@@ -1313,31 +1313,31 @@ class _SingTabletState extends State<SingTablet> with WidgetsBindingObserver {
                       child: Container(
                         decoration: personalMoishie || _isSmartphone
                             ? BoxDecoration(
-                          borderRadius:
-                          BorderRadius.all(new Radius.circular(60.0)),
-                          gradient: LinearGradient(
-                            colors: <Color>[
-                              Color(0xFF0D47A1),
-                              Color(0xFF19D247),
-                              Color(0xFFF5AD42),
-                            ],
-                          ),
-                        )
+                                borderRadius:
+                                    BorderRadius.all(new Radius.circular(60.0)),
+                                gradient: LinearGradient(
+                                  colors: <Color>[
+                                    Color(0xFF0D47A1),
+                                    Color(0xFF19D247),
+                                    Color(0xFFF5AD42),
+                                  ],
+                                ),
+                              )
                             : BoxDecoration(
-                          gradient: RadialGradient(
-                            colors: <Color>[
-                              Colors.purple.shade200,
-                              Colors.purple.shade800,
-                              Colors.purple.shade500,
-                            ],
-                            stops: [0.2, 0.7, 1],
-                            center: Alignment(0.1, 0.3),
-                            focal: Alignment(-0.1, 0.6),
-                            focalRadius: 4,
-                          ),
-                          borderRadius:
-                          BorderRadius.all(new Radius.circular(90.0)),
-                        ),
+                                gradient: RadialGradient(
+                                  colors: <Color>[
+                                    Colors.purple.shade200,
+                                    Colors.purple.shade800,
+                                    Colors.purple.shade500,
+                                  ],
+                                  stops: [0.2, 0.7, 1],
+                                  center: Alignment(0.1, 0.3),
+                                  focal: Alignment(-0.1, 0.6),
+                                  focalRadius: 4,
+                                ),
+                                borderRadius:
+                                    BorderRadius.all(new Radius.circular(90.0)),
+                              ),
                       ),
                     ),
                     Container(
@@ -1410,7 +1410,7 @@ class _SingTabletState extends State<SingTablet> with WidgetsBindingObserver {
     listViewController.animateTo(
       personalMoishie
           ? currentLineIndex *
-          (MediaQuery.of(context).size.height / 4).toDouble()
+              (MediaQuery.of(context).size.height / 4).toDouble()
           : currentLineIndex * 41.toDouble(),
       duration: animation
           ? new Duration(milliseconds: 400)
@@ -1452,9 +1452,9 @@ class _SingTabletState extends State<SingTablet> with WidgetsBindingObserver {
       return DecorationImage(
         fit: BoxFit.fill,
         image: NetworkImage(backgroundPictures[
-        (((timeChanged + randomNumber) * randomNumber) %
-            backgroundPictures.length)
-            .toInt()]),
+            (((timeChanged + randomNumber) * randomNumber) %
+                    backgroundPictures.length)
+                .toInt()]),
       );
     }
   }
@@ -1477,7 +1477,7 @@ class _SingTabletState extends State<SingTablet> with WidgetsBindingObserver {
       pageArgs["per_page"] = 50;
       pageArgs["status"] = "processing";
       final wp.WPResponse res =
-      await api.fetch('orders', namespace: "wc/v2", args: pageArgs);
+          await api.fetch('orders', namespace: "wc/v2", args: pageArgs);
       try {
         Map<String, int> ret = checkForIdInData(email, res.data);
         // print("ret");
@@ -1490,7 +1490,7 @@ class _SingTabletState extends State<SingTablet> with WidgetsBindingObserver {
           for (int i = 2; i <= pages; i++) {
             pageArgs["page"] = i;
             final wp.WPResponse res =
-            await api.fetch('orders', namespace: "wc/v2", args: pageArgs);
+                await api.fetch('orders', namespace: "wc/v2", args: pageArgs);
             try {
               return checkForIdInData(email, res.data);
             } catch (error) {
@@ -1537,7 +1537,7 @@ class _SingTabletState extends State<SingTablet> with WidgetsBindingObserver {
     int quantity = 0;
     var itemObjsJson = json['line_items'] as List;
     List<Item> items =
-    itemObjsJson.map((itemJson) => Item.fromJson(itemJson)).toList();
+        itemObjsJson.map((itemJson) => Item.fromJson(itemJson)).toList();
     for (Item item in items) {
       if (item.sku == '110011') {
         quantity = item.quantity;
@@ -1608,22 +1608,22 @@ class _SingTabletState extends State<SingTablet> with WidgetsBindingObserver {
     firestoreDoc['email'] = email;
 
     CollectionReference users =
-    FirebaseFirestore.instance.collection('internetUsers');
+        FirebaseFirestore.instance.collection('internetUsers');
 
     Future<void> addUser() {
       return users
           .doc(newId)
           .set(firestoreDoc)
           .then((value) => setState(() {
-        _accessDenied = false;
-        _errorMessage = "";
-        _loading = false;
-        gridSongs = new List.from(songs);
-      }))
+                _accessDenied = false;
+                _errorMessage = "";
+                _loading = false;
+                gridSongs = new List.from(songs);
+              }))
           .catchError((error) => setState(() {
-        _errorMessage = error.toString();
-        _loading = false;
-      }));
+                _errorMessage = error.toString();
+                _loading = false;
+              }));
     }
 
     addUser();
@@ -1642,16 +1642,16 @@ class _SingTabletState extends State<SingTablet> with WidgetsBindingObserver {
         return DecorationImage(
           fit: BoxFit.fill,
           image: NetworkImage(backgroundPictures[
-          (((timeChanged + randomNumber) * randomNumber) %
-              backgroundPictures.length)
-              .toInt()]),
+              (((timeChanged + randomNumber) * randomNumber) %
+                      backgroundPictures.length)
+                  .toInt()]),
         );
       return DecorationImage(
         fit: BoxFit.fill,
         image: NetworkImage(backgroundPictures[
-        (((timeChanged - 1 + randomNumber) * randomNumber) %
-            backgroundPictures.length)
-            .toInt()]),
+            (((timeChanged - 1 + randomNumber) * randomNumber) %
+                    backgroundPictures.length)
+                .toInt()]),
       );
     }
   }
@@ -1663,46 +1663,46 @@ class _SingTabletState extends State<SingTablet> with WidgetsBindingObserver {
   playPauseAndRestartIcons() {
     return _loading
         ? new Container(
-      color: Colors.transparent,
-      width: 50.0,
-      height: 50.0,
-      child: new Padding(
-          padding: const EdgeInsets.all(5.0),
-          child: new Center(child: new CircularProgressIndicator())),
-    )
+            color: Colors.transparent,
+            width: 50.0,
+            height: 50.0,
+            child: new Padding(
+                padding: const EdgeInsets.all(5.0),
+                child: new Center(child: new CircularProgressIndicator())),
+          )
         : isPlaying && !paused
-        ? IconButton(
-        iconSize: 50,
-        icon: Icon(
-          Icons.pause,
-          color: Colors.white,
-        ),
-        onPressed: () {
-          pause();
-        })
-        : songFinished
-        ? IconButton(
-        iconSize: 50,
-        icon: Icon(
-          Icons.replay_rounded,
-          color: Colors.white,
-        ),
-        onPressed: () {
-          restart();
-          setState(() {
-            songFinished = false;
-          });
-        })
-        : IconButton(
-      iconSize: 50,
-      icon: Icon(
-        Icons.play_arrow,
-        color: Colors.white,
-      ),
-      onPressed: () {
-        if (songPicked) play();
-      },
-    );
+            ? IconButton(
+                iconSize: 50,
+                icon: Icon(
+                  Icons.pause,
+                  color: Colors.white,
+                ),
+                onPressed: () {
+                  pause();
+                })
+            : songFinished
+                ? IconButton(
+                    iconSize: 50,
+                    icon: Icon(
+                      Icons.replay_rounded,
+                      color: Colors.white,
+                    ),
+                    onPressed: () {
+                      restart();
+                      setState(() {
+                        songFinished = false;
+                      });
+                    })
+                : IconButton(
+                    iconSize: 50,
+                    icon: Icon(
+                      Icons.play_arrow,
+                      color: Colors.white,
+                    ),
+                    onPressed: () {
+                      if (songPicked) play();
+                    },
+                  );
   }
 }
 
@@ -1742,7 +1742,7 @@ class _WebcamPageState extends State<WebcamPage> {
     _webcamWidget = HtmlElementView(key: UniqueKey(), viewType: number);
     // Register an webcam
     if (!ui.platformViewRegistry.registerViewFactory(number,
-            (int viewId) => _webcamVideoElement)) // return _webcamVideoElement;
+        (int viewId) => _webcamVideoElement)) // return _webcamVideoElement;
       print("this is still causeing an issue" + number);
 
     html.window.navigator.mediaDevices!
