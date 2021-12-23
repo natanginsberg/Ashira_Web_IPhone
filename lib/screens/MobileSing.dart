@@ -1421,6 +1421,7 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
                           ),
                           if (Platform.isIOS)
                             SignInWithAppleButton(onPressed: () async {
+                              await _firebaseAuth.signOut();
                               final appleIdCredential =
                                   await SignInWithApple.getAppleIDCredential(
                                 scopes: [
