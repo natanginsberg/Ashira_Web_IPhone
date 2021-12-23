@@ -1437,12 +1437,14 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
                               );
                               final userCredential = await _firebaseAuth
                                   .signInWithCredential(credential);
+
                               final firebaseUser = userCredential.user!;
-                              final fullName = appleIdCredential.givenName! +
-                                  " " +
-                                  appleIdCredential.familyName!;
-                              if (appleIdCredential.givenName != null &&
-                                  appleIdCredential.familyName != null) {
+                              var fullName = "";
+                              if (appleIdCredential.givenName != null)
+                                fullName += appleIdCredential.givenName! + " ";
+                              if (appleIdCredential.familyName != null)
+                                fullName += appleIdCredential.familyName!;
+                              if (fullName != "") {
                                 await firebaseUser.updateProfile(
                                     displayName: fullName);
                               }
@@ -1450,6 +1452,8 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
                               var email = appleIdCredential.email;
                               if (email != null)
                                 sendUserInfoToFirestore(email, fullName, token);
+                              else
+                                print("there is no email address");
                             }
                                 // Now send the credential (especially `credential.authorizationCode`) to your server to create a session
                                 // after they have been validated with Apple (see `Integration` section for more information on how to do this)
