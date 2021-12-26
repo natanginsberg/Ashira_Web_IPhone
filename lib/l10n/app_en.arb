@@ -65,5 +65,8 @@
     "sync":"Sync Control",
     "attachEarphones":"Connect earphones for a quality recording",
     "signInPrompt":"You must sign in to continue",
-    "notEnoughNoise":"You must sing to download"
+    "notEnoughNoise":"You must sing to download",
+    "signOut":"Sign Out",
+    "googleSignIn":"Sign in with Google",
+    "signInError":"We have a problem with our systems.\nPlease try again soon."
 }

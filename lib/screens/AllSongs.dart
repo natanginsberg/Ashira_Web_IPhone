@@ -4,12 +4,13 @@ import 'dart:math';
 import 'dart:ui';
 
 import 'package:ashira_flutter/customWidgets/GenreButton.dart';
-import 'package:ashira_flutter/customWidgets/LoadingIndicator.dart';
 import 'package:ashira_flutter/customWidgets/SongLayout.dart';
 import 'package:ashira_flutter/model/DisplayOptions.dart';
 import 'package:ashira_flutter/model/Song.dart';
 import 'package:ashira_flutter/screens/MobileSing.dart';
+import 'package:ashira_flutter/utils/AppleSignIn.dart';
 import 'package:ashira_flutter/utils/WpHelper.dart' as wph;
+import 'package:ashira_flutter/utils/firetools/FirebaseService.dart';
 import 'package:ashira_flutter/utils/firetools/IpHandler.dart';
 import 'package:ashira_flutter/utils/firetools/UserHandler.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -27,6 +28,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:universal_html/html.dart' as html;
 import 'package:url_launcher/url_launcher.dart';
@@ -133,10 +135,16 @@ class _AllSongsState extends State<AllSongs> {
 
   bool noVideos = false;
 
+  FirebaseService service = new FirebaseService();
+
   _AllSongsState();
 
   void signInAnon() async {
-    await firebaseAuth.signInAnonymously().then((value) => getFirebaseData());
+    if (!service.isUserSignedIn())
+      await firebaseAuth.signInAnonymously().then((value) => getFirebaseData());
+    else {
+      mobileSignedIn = true;
+    }
   }
 
   @override
@@ -153,6 +161,8 @@ class _AllSongsState extends State<AllSongs> {
     _smartPhone = isSmartphone();
     timer =
         Timer.periodic(Duration(seconds: 1), (Timer t) => _getTimeRemaining());
+    if (mobileSignedIn)
+      WidgetsBinding.instance!.addPostFrameCallback((_) => getFirebaseData());
     // });
   }
 
@@ -377,6 +387,19 @@ class _AllSongsState extends State<AllSongs> {
                         //todo need to deal with the policies
                       },
                     ),
+                  if (!kIsWeb && service.isUserSignedIn())
+                    ListTile(
+                      title: Text(
+                        AppLocalizations.of(context)!.signOut,
+                      ),
+                      onTap: () async {
+                        await service.signOutFromGoogle();
+                        setState(() {
+                          mobileSignedIn = false;
+                        });
+                        _scaffoldKey2.currentState!.openEndDrawer();
+                      },
+                    )
                 ],
               ),
             ),
@@ -1647,6 +1670,7 @@ class _AllSongsState extends State<AllSongs> {
         demoSongNames = List.from(demoName.get("songs"));
       }
     } catch (e) {
+      print("this didn't work " + e.toString());
       demoSongNames = [];
     }
   }
@@ -2384,7 +2408,7 @@ class _AllSongsState extends State<AllSongs> {
     }
   }
 
-  signInOptions(bool signInLoading) {
+  signInOptions(bool signInLoading, [signInError = ""]) {
     double popupHeight = 450;
     double popupWidth = 330;
     showDialog(
@@ -2428,7 +2452,7 @@ class _AllSongsState extends State<AllSongs> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Padding(
-                            padding: const EdgeInsets.all(30.0),
+                            padding: const EdgeInsets.all(20.0),
                             child: Text(
                               AppLocalizations.of(context)!.signInPrompt,
                               textAlign: TextAlign.center,
@@ -2438,62 +2462,69 @@ class _AllSongsState extends State<AllSongs> {
                               ),
                             ),
                           ),
+                          if (signInError != "")
+                            Text(
+                              AppLocalizations.of(context)!.signInError,
+                              style: TextStyle(color: Colors.red),
+                              textAlign: TextAlign.center,
+                            ),
 
                           // if (Platform.isIOS)
-                          Padding(
-                            padding: const EdgeInsets.all(30.0),
-                            child: Center(
-                              child: SignInWithAppleButton(onPressed: () async {
-                                await firebaseAuth.signOut();
-                                final appleIdCredential =
-                                    await SignInWithApple.getAppleIDCredential(
-                                  scopes: [
-                                    AppleIDAuthorizationScopes.email,
-                                    AppleIDAuthorizationScopes.fullName,
-                                  ],
-                                );
-
-                                final oAuthProvider =
-                                    OAuthProvider('apple.com');
-                                final credential = oAuthProvider.credential(
-                                  idToken: appleIdCredential.identityToken,
-                                  accessToken:
-                                      appleIdCredential.authorizationCode,
-                                );
-                                final userCredential = await firebaseAuth
-                                    .signInWithCredential(credential);
-                                final firebaseUser = userCredential.user!;
-                                var fullName = "";
-                                if (appleIdCredential.givenName != null)
-                                  fullName +=
-                                      appleIdCredential.givenName! + " ";
-                                if (appleIdCredential.familyName != null)
-                                  fullName += appleIdCredential.familyName!;
-                                if (fullName != "") {
-                                  await firebaseUser.updateProfile(
-                                      displayName: fullName);
-                                }
-                                var email = appleIdCredential.email;
-                                if (email != null)
-                                  // sendUserInfoToFirestore(email, fullName, token);
-                                  UserHandler()
-                                      .sendUserInfoToFirestore(email, fullName)
-                                      .then((value) {
-                                    Navigator.of(context).pop();
-                                    mobileSignedIn = true;
-                                    buildMobilePayment();
-                                  }).catchError(catchSignInError());
-                              }
-                                  // Now send the credential (especially `credential.authorizationCode`) to your server to create a session
-                                  // after they have been validated with Apple (see `Integration` section for more information on how to do this)
-                                  ),
+                          if (!signInLoading)
+                            Padding(
+                              padding: const EdgeInsets.all(20.0),
+                              child: Center(
+                                child:
+                                    SignInWithAppleButton(onPressed: () async {
+                                  AppleSignIn appleSignIn = AppleSignIn();
+                                  await appleSignIn.signIn();
+                                  addUserToFirebase();
+                                }),
+                              ),
                             ),
-                          ),
+                          !signInLoading
+                              ? SizedBox(
+                                  width: popupWidth * 0.65,
+                                  child: OutlinedButton.icon(
+                                    icon: FaIcon(FontAwesomeIcons.google),
+                                    onPressed: () async {
+                                      Navigator.of(context).pop();
+                                      signInOptions(true);
+                                      try {
+                                        await service.signInWithGoogle();
+                                        if (firebaseAuth.currentUser != null &&
+                                            firebaseAuth.currentUser!.email !=
+                                                null) {
+                                          addUserToFirebase();
+                                        } else
+                                          catchSignInError();
+                                      } catch (e) {
+                                        if (e is FirebaseAuthException) {
+                                          catchSignInError();
+                                        }
+                                      }
+                                    },
+                                    label: Text(
+                                      AppLocalizations.of(context)!
+                                          .googleSignIn,
+                                      style: TextStyle(
+                                          color: Colors.black54,
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                    style: ButtonStyle(
+                                        backgroundColor:
+                                            MaterialStateProperty.all<Color>(
+                                                Colors.grey),
+                                        side: MaterialStateProperty.all<
+                                            BorderSide>(BorderSide.none)),
+                                  ),
+                                )
+                              : CircularProgressIndicator()
                         ],
                       ),
-                      if (signInLoading)
-                        LoadingIndicator(
-                            text: AppLocalizations.of(context)!.loading)
+                      // if (signInLoading)
+                      //   LoadingIndicator(
+                      //       text: AppLocalizations.of(context)!.loading)
                     ],
                   ),
                 ),
@@ -2501,9 +2532,35 @@ class _AllSongsState extends State<AllSongs> {
         });
   }
 
-  catchSignInError() {
-    firebaseAuth.signOut();
-    setState(() {});
+  catchSignInError() async {
+    await service.signOutFromGoogle();
+    Navigator.of(context).pop();
+    signInOptions(
+      false,
+      AppLocalizations.of(context)!.signInError,
+    );
+  }
+
+  void openBilling() {
+    Navigator.of(context).pop();
+    buildMobilePayment();
+  }
+
+  void addUserToFirebase() async {
+    String? userEmail = firebaseAuth.currentUser!.email;
+    if (userEmail != null) {
+      // Navigator.pushNamedAndRemoveUntil(context, Constants.homeNavigate, (route) => false);
+      bool userAdded = await UserHandler().sendUserInfoToFirestore(
+          userEmail,
+          firebaseAuth.currentUser!.displayName,
+          firebaseAuth.currentUser!.photoURL);
+      if (userAdded) {
+        mobileSignedIn = true;
+        openBilling();
+      } else
+        catchSignInError();
+    } else
+      catchSignInError();
   }
 }
 
