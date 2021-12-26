@@ -699,7 +699,7 @@ class _AllSongsState extends State<AllSongs> {
                                                     });
                                                   else {
                                                     if (mobileSignedIn)
-                                                      buildMobileSignIn();
+                                                      buildMobilePayment();
                                                     else
                                                       signInOptions(false);
                                                   }
@@ -1717,7 +1717,7 @@ class _AllSongsState extends State<AllSongs> {
     return;
   }
 
-  buildMobileSignIn() {
+  buildMobilePayment() {
     showDialog(
         context: context,
         builder: (BuildContext context) {
@@ -1878,7 +1878,7 @@ class _AllSongsState extends State<AllSongs> {
         });
       else {
         if (mobileSignedIn)
-          buildMobileSignIn();
+          buildMobilePayment();
         else
           signInOptions(false);
       }
@@ -2425,56 +2425,70 @@ class _AllSongsState extends State<AllSongs> {
                         ),
                       ),
                       Column(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(
-                            AppLocalizations.of(context)!.signInPrompt,
-                            style: TextStyle(color: Colors.white, fontSize: 15),
+                          Padding(
+                            padding: const EdgeInsets.all(30.0),
+                            child: Text(
+                              AppLocalizations.of(context)!.signInPrompt,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                              ),
+                            ),
                           ),
-                          if (Platform.isIOS)
-                            SignInWithAppleButton(onPressed: () async {
-                              final appleIdCredential =
-                                  await SignInWithApple.getAppleIDCredential(
-                                scopes: [
-                                  AppleIDAuthorizationScopes.email,
-                                  AppleIDAuthorizationScopes.fullName,
-                                ],
-                              );
 
-                              final oAuthProvider = OAuthProvider('apple.com');
-                              final credential = oAuthProvider.credential(
-                                idToken: appleIdCredential.identityToken,
-                                accessToken:
-                                    appleIdCredential.authorizationCode,
-                              );
-                              final userCredential = await firebaseAuth
-                                  .signInWithCredential(credential);
-                              final firebaseUser = userCredential.user!;
-                              final fullName = appleIdCredential.givenName! +
-                                  " " +
-                                  appleIdCredential.familyName!;
-                              if (appleIdCredential.givenName != null &&
-                                  appleIdCredential.familyName != null) {
-                                await firebaseUser.updateProfile(
-                                    displayName: fullName);
-                              }
-                              var token = await firebaseUser.getIdToken();
-                              var email = appleIdCredential.email;
-                              if (email != null)
-                                // sendUserInfoToFirestore(email, fullName, token);
-                                UserHandler()
-                                    .sendUserInfoToFirestore(
-                                        email, fullName, token)
-                                    .then((value) {
-                                  Navigator.of(context).pop();
-                                  setState(() {
+                          // if (Platform.isIOS)
+                          Padding(
+                            padding: const EdgeInsets.all(30.0),
+                            child: Center(
+                              child: SignInWithAppleButton(onPressed: () async {
+                                await firebaseAuth.signOut();
+                                final appleIdCredential =
+                                    await SignInWithApple.getAppleIDCredential(
+                                  scopes: [
+                                    AppleIDAuthorizationScopes.email,
+                                    AppleIDAuthorizationScopes.fullName,
+                                  ],
+                                );
+
+                                final oAuthProvider =
+                                    OAuthProvider('apple.com');
+                                final credential = oAuthProvider.credential(
+                                  idToken: appleIdCredential.identityToken,
+                                  accessToken:
+                                      appleIdCredential.authorizationCode,
+                                );
+                                final userCredential = await firebaseAuth
+                                    .signInWithCredential(credential);
+                                final firebaseUser = userCredential.user!;
+                                var fullName = "";
+                                if (appleIdCredential.givenName != null)
+                                  fullName +=
+                                      appleIdCredential.givenName! + " ";
+                                if (appleIdCredential.familyName != null)
+                                  fullName += appleIdCredential.familyName!;
+                                if (fullName != "") {
+                                  await firebaseUser.updateProfile(
+                                      displayName: fullName);
+                                }
+                                var email = appleIdCredential.email;
+                                if (email != null)
+                                  // sendUserInfoToFirestore(email, fullName, token);
+                                  UserHandler()
+                                      .sendUserInfoToFirestore(email, fullName)
+                                      .then((value) {
+                                    Navigator.of(context).pop();
                                     mobileSignedIn = true;
-                                  });
-                                }).catchError(catchSignInError());
-                            }
-                                // Now send the credential (especially `credential.authorizationCode`) to your server to create a session
-                                // after they have been validated with Apple (see `Integration` section for more information on how to do this)
-                                ),
+                                    buildMobilePayment();
+                                  }).catchError(catchSignInError());
+                              }
+                                  // Now send the credential (especially `credential.authorizationCode`) to your server to create a session
+                                  // after they have been validated with Apple (see `Integration` section for more information on how to do this)
+                                  ),
+                            ),
+                          ),
                         ],
                       ),
                       if (signInLoading)

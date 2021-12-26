@@ -1449,16 +1449,13 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
                                 await firebaseUser.updateProfile(
                                     displayName: fullName);
                               }
-                              var token = await firebaseUser.getIdToken();
+                              // var token = await firebaseUser.getIdToken();
                               var email = appleIdCredential.email;
                               if (email != null)
-                                sendUserInfoToFirestore(email, fullName, token);
+                                sendUserInfoToFirestore(email, fullName);
                               else
                                 print("there is no email address");
-                            }
-                                // Now send the credential (especially `credential.authorizationCode`) to your server to create a session
-                                // after they have been validated with Apple (see `Integration` section for more information on how to do this)
-                                ),
+                            }),
                         ],
                       ),
                       if (signInLoading)
@@ -1784,8 +1781,7 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
     _flutterFFmpegConfig.disableLogs();
   }
 
-  void sendUserInfoToFirestore(
-      String email, String fullName, String token) async {
+  void sendUserInfoToFirestore(String email, String fullName) async {
     CollectionReference users = FirebaseFirestore.instance.collection('users');
 
     Map<String, dynamic> firestoreDoc = new Map<String, dynamic>();

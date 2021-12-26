@@ -4,7 +4,7 @@ import '../GenerateRandomString.dart';
 
 class UserHandler {
   Future<void> sendUserInfoToFirestore(
-      String email, String fullName, String token) async {
+      String email, String fullName) async {
     CollectionReference users = FirebaseFirestore.instance.collection('users');
 
     Map<String, dynamic> firestoreDoc = new Map<String, dynamic>();
