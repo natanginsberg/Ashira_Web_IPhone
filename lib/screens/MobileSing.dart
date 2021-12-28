@@ -54,11 +54,14 @@ class MobileSing extends StatefulWidget {
   _MobileSingState createState() => _MobileSingState(songs, counter);
 }
 
+enum NextFunction { WATCH_RECORDING, DOWNLOAD_RECORDING }
+
 class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
-  int MAN = 0;
-  int WOMAN = 1;
-  int KID = 2;
-  final Object? STAY_ON_PAGE = "stay on page";
+  static const int MAN = 0;
+  static const int WOMAN = 1;
+  static const int KID = 2;
+  static const Object? STAY_ON_PAGE = "stay on page";
+  static const Object? LOADING = "loading";
 
   static final DeviceInfoPlugin deviceInfoPlugin = DeviceInfoPlugin();
 
@@ -74,7 +77,6 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
 
   final FirebaseAuth firebaseAuth = FirebaseAuth.instance;
   FirebaseService service = new FirebaseService();
-
 
   final ScrollController listViewController = new ScrollController();
   int currentLineIndex = 0;
@@ -191,6 +193,8 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
   // Counting pointers (number of user fingers on screen)
   int _pointers = 0;
 
+  NextFunction? nextFunction;
+
   final FlutterFFmpeg _flutterFFmpeg = new FlutterFFmpeg();
   final FlutterFFmpegConfig _flutterFFmpegConfig = new FlutterFFmpegConfig();
 
@@ -248,14 +252,12 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
     /// Detect the moment headset is plugged or unplugged
     headsetPlugin.setListener((_val) {
       setState(() {
-        print(_val);
         headsetEvent = _val;
       });
     });
   }
 
   void getCameras() async {
-    print(" get here");
     try {
       WidgetsFlutterBinding.ensureInitialized();
       cameras = await availableCameras();
@@ -270,9 +272,7 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
           cameraReady = true;
         });
       });
-    } on CameraException catch (e) {
-      print("Error occured " + e.toString());
-    }
+    } on CameraException catch (e) {}
   }
 
   @override
@@ -1231,8 +1231,15 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
                                         endOfSongMenu(
                                             AppLocalizations.of(context)!
                                                 .loading);
-                                        await finishVideoRecording();
-                                        shrinkFileAndDownload();
+                                        if (videoFile == null)
+                                          await finishVideoRecording();
+                                        if (!service.isUserSignedIn()) {
+                                          nextFunction =
+                                              NextFunction.DOWNLOAD_RECORDING;
+                                          signInOptions(false);
+                                        } else {
+                                          shrinkFileAndDownload();
+                                        }
                                       }
                                     },
                                     child: Text(
@@ -1257,12 +1264,12 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
                                     AppLocalizations.of(context)!.loading);
                                 if (videoFile == null)
                                   await finishVideoRecording();
-                                if (concatedFile == "")
-                                  await concatFiles(
-                                      delay, new Duration(seconds: 0));
-                                else
-                                  watchRecording(
-                                      delay, new Duration(seconds: 0));
+                                if (!service.isUserSignedIn()) {
+                                  nextFunction = NextFunction.WATCH_RECORDING;
+                                  signInOptions(false);
+                                } else {
+                                  continueWatchRecording();
+                                }
                               },
                               child: Text(
                                 AppLocalizations.of(context)!.watch,
@@ -1273,17 +1280,7 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
                                 ),
                               )),
                         ),
-                        const Divider(
-                          thickness: 1,
-                          // thickness of the line
-                          indent: 30,
-                          // empty space to the leading edge of divider.
-                          endIndent: 30,
-                          // empty space to the trailing edge of the divider.
-                          color: Colors
-                              .white, // The color to use when painting the line.
-                          // height: 20, // The divider's height extent.
-                        ),
+                        divider(),
                         Container(
                           child: TextButton(
                               onPressed: () {
@@ -1303,43 +1300,7 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
                                 ),
                               )),
                         ),
-                        const Divider(
-                          thickness: 1,
-                          // thickness of the line
-                          indent: 30,
-                          // empty space to the leading edge of divider.
-                          endIndent: 30,
-                          // empty space to the trailing edge of the divider.
-                          color: Colors
-                              .white, // The color to use when painting the line.
-                          // height: 20, // The divider's height extent.
-                        ),
-                        Container(
-                          child: TextButton(
-                              onPressed: () async {
-                                await finishVideoRecording();
-                                signInOptions(false);
-                              },
-                              child: Text(
-                                "Sign in",
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  color: Colors.white,
-                                  //    letterSpacing: 1.5
-                                ),
-                              )),
-                        ),
-                        const Divider(
-                          thickness: 1,
-                          // thickness of the line
-                          indent: 30,
-                          // empty space to the leading edge of divider.
-                          endIndent: 30,
-                          // empty space to the trailing edge of the divider.
-                          color: Colors
-                              .white, // The color to use when painting the line.
-                          // height: 20, // The divider's height extent.
-                        ),
+                        divider(),
                         Container(
                           child: TextButton(
                               onPressed: () {
@@ -1381,10 +1342,12 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
   }
 
   signInOptions(bool signInLoading, [signInError = ""]) {
+    // Navigator.of(context).pop(STAY_ON_PAGE);
     double popupHeight = 450;
     double popupWidth = 330;
     showDialog(
         context: context,
+        barrierDismissible: signInLoading ? false : true,
         builder: (BuildContext context) {
           return Dialog(
               shape: RoundedRectangleBorder(
@@ -1407,19 +1370,20 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
                   textDirection: Directionality.of(context),
                   child: Stack(
                     children: [
-                      SafeArea(
-                        child: Align(
-                          alignment: Alignment.topRight,
-                          child: IconButton(
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                              },
-                              icon: Icon(
-                                Icons.cancel_outlined,
-                                color: Colors.white,
-                              )),
+                      if (!signInLoading)
+                        SafeArea(
+                          child: Align(
+                            alignment: Alignment.topRight,
+                            child: IconButton(
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                },
+                                icon: Icon(
+                                  Icons.cancel_outlined,
+                                  color: Colors.white,
+                                )),
+                          ),
                         ),
-                      ),
                       Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -1447,7 +1411,9 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
                               padding: const EdgeInsets.all(20.0),
                               child: Center(
                                 child:
-                                SignInWithAppleButton(onPressed: () async {
+                                    SignInWithAppleButton(onPressed: () async {
+                                      Navigator.of(context).pop(LOADING);
+                                      signInOptions(true);
                                   AppleSignIn appleSignIn = AppleSignIn();
                                   await appleSignIn.signIn();
                                   addUserToFirebase();
@@ -1456,41 +1422,41 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
                             ),
                           !signInLoading
                               ? SizedBox(
-                            width: popupWidth * 0.65,
-                            child: OutlinedButton.icon(
-                              icon: FaIcon(FontAwesomeIcons.google),
-                              onPressed: () async {
-                                Navigator.of(context).pop();
-                                signInOptions(true);
-                                try {
-                                  await service.signInWithGoogle();
-                                  if (firebaseAuth.currentUser != null &&
-                                      firebaseAuth.currentUser!.email !=
-                                          null) {
-                                    addUserToFirebase();
-                                  } else
-                                    catchSignInError();
-                                } catch (e) {
-                                  if (e is FirebaseAuthException) {
-                                    catchSignInError();
-                                  }
-                                }
-                              },
-                              label: Text(
-                                AppLocalizations.of(context)!
-                                    .googleSignIn,
-                                style: TextStyle(
-                                    color: Colors.black54,
-                                    fontWeight: FontWeight.bold),
-                              ),
-                              style: ButtonStyle(
-                                  backgroundColor:
-                                  MaterialStateProperty.all<Color>(
-                                      Colors.grey),
-                                  side: MaterialStateProperty.all<
-                                      BorderSide>(BorderSide.none)),
-                            ),
-                          )
+                                  width: popupWidth * 0.65,
+                                  child: OutlinedButton.icon(
+                                    icon: FaIcon(FontAwesomeIcons.google),
+                                    onPressed: () async {
+                                      Navigator.of(context).pop(LOADING);
+                                      signInOptions(true);
+                                      try {
+                                        await service.signInWithGoogle();
+                                        if (firebaseAuth.currentUser != null &&
+                                            firebaseAuth.currentUser!.email !=
+                                                null) {
+                                          addUserToFirebase();
+                                        } else
+                                          catchSignInError();
+                                      } catch (e) {
+                                        if (e is FirebaseAuthException) {
+                                          catchSignInError();
+                                        }
+                                      }
+                                    },
+                                    label: Text(
+                                      AppLocalizations.of(context)!
+                                          .googleSignIn,
+                                      style: TextStyle(
+                                          color: Colors.black54,
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                    style: ButtonStyle(
+                                        backgroundColor:
+                                            MaterialStateProperty.all<Color>(
+                                                Colors.grey),
+                                        side: MaterialStateProperty.all<
+                                            BorderSide>(BorderSide.none)),
+                                  ),
+                                )
                               : CircularProgressIndicator()
                         ],
                       ),
@@ -1501,7 +1467,9 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
                   ),
                 ),
               ));
-        });
+        }).then((value) {
+      if (value != LOADING) Navigator.of(context).pop(STAY_ON_PAGE);
+    });
   }
 
   catchSignInError() async {
@@ -1522,7 +1490,6 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
           firebaseAuth.currentUser!.displayName,
           firebaseAuth.currentUser!.photoURL);
       if (userAdded) {
-        mobileSignedIn = true;
         continueWithFunctionRequested();
       } else
         catchSignInError();
@@ -1868,7 +1835,39 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
     addUser();
   }
 
-  void continueWithFunctionRequested() {}
+  void continueWithFunctionRequested() {
+    Navigator.of(context).pop(LOADING);
+    if (nextFunction != null) {
+      if (nextFunction == NextFunction.WATCH_RECORDING)
+        continueWatchRecording();
+      else if (nextFunction == NextFunction.DOWNLOAD_RECORDING)
+        continueDownloadingRecording();
+    }
+  }
+
+  void continueWatchRecording() async {
+    if (concatedFile == "")
+      await concatFiles(delay, new Duration(seconds: 0));
+    else
+      watchRecording(delay, new Duration(seconds: 0));
+  }
+
+  void continueDownloadingRecording() {
+    shrinkFileAndDownload();
+  }
+
+  divider() {
+    return const Divider(
+      thickness: 1,
+      // thickness of the line
+      indent: 30,
+      // empty space to the leading edge of divider.
+      endIndent: 30,
+      // empty space to the trailing edge of the divider.
+      color: Colors.white, // The color to use when painting the line.
+      // height: 20, // The divider's height extent.
+    );
+  }
 }
 
 class Item {

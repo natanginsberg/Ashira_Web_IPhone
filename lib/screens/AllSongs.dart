@@ -15,7 +15,6 @@ import 'package:ashira_flutter/utils/firetools/IpHandler.dart';
 import 'package:ashira_flutter/utils/firetools/UserHandler.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dart_ipify/dart_ipify.dart';
-import 'package:device_info_plus/device_info_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/cupertino.dart';
@@ -29,6 +28,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:universal_html/html.dart' as html;
 import 'package:url_launcher/url_launcher.dart';
@@ -57,7 +57,6 @@ String email = "";
 String id = "";
 Timestamp endTime = Timestamp(10, 10);
 DisplayOptions display = DisplayOptions.NORMAL;
-bool mobileSignedIn = false;
 int changeTime = 7;
 List<String> slowSongs = [];
 List<String> fastSongs = [];
@@ -66,7 +65,6 @@ List<String> fastSongsVideos = [];
 List<dynamic> specialVideos = [];
 
 class _AllSongsState extends State<AllSongs> {
-  static final DeviceInfoPlugin deviceInfoPlugin = DeviceInfoPlugin();
   final TextEditingController controller = new TextEditingController();
   final TextEditingController timeController = new TextEditingController();
   bool _smartPhone = false;
@@ -135,6 +133,8 @@ class _AllSongsState extends State<AllSongs> {
 
   bool noVideos = false;
 
+  late StreamSubscription<dynamic> _subscription;
+
   FirebaseService service = new FirebaseService();
 
   _AllSongsState();
@@ -143,15 +143,18 @@ class _AllSongsState extends State<AllSongs> {
     if (!service.isUserSignedIn())
       await firebaseAuth.signInAnonymously().then((value) => getFirebaseData());
     else {
-      mobileSignedIn = true;
+      endTime = await UserHandler().getUserEndTime(service.getEmail());
+      if (!checkOvertime()) signedIn = true;
+      // signedIn =true;
     }
   }
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     if (!kIsWeb) initializeFirebase();
+
+    receiveBillingInfo();
     // setState(() {
     _mainController = ScrollController();
     _orderEditingController = TextEditingController(text: "");
@@ -161,9 +164,44 @@ class _AllSongsState extends State<AllSongs> {
     _smartPhone = isSmartphone();
     timer =
         Timer.periodic(Duration(seconds: 1), (Timer t) => _getTimeRemaining());
-    if (mobileSignedIn)
+    if (service.isUserSignedIn())
       WidgetsBinding.instance!.addPostFrameCallback((_) => getFirebaseData());
     // });
+  }
+
+  receiveBillingInfo() async {
+    final Stream purchaseUpdated = InAppPurchase.instance.purchaseStream;
+    _subscription = purchaseUpdated.listen((purchaseDetailsList) {
+      _listenToPurchaseUpdated(purchaseDetailsList);
+    }, onDone: () {
+      _subscription.cancel();
+    }, onError: (error) {
+      // handle error here.
+    });
+  }
+
+  void _listenToPurchaseUpdated(List<PurchaseDetails> purchaseDetailsList) {
+    bool productDelivered = false;
+    purchaseDetailsList.forEach((PurchaseDetails purchaseDetails) async {
+      if (purchaseDetails.status == PurchaseStatus.pending) {
+        _showPendingUI();
+      } else {
+        if (purchaseDetails.status == PurchaseStatus.error) {
+          _handleError(purchaseDetails.error!);
+        } else if (purchaseDetails.status == PurchaseStatus.purchased ||
+            purchaseDetails.status == PurchaseStatus.restored) {
+          // bool valid = await _verifyPurchase(purchaseDetails);
+          // if (valid) {
+          productDelivered = await _deliverProduct(purchaseDetails);
+          // } else {
+          //   _handleInvalidPurchase(purchaseDetails);
+          // }
+        }
+        if (productDelivered && purchaseDetails.pendingCompletePurchase) {
+          await InAppPurchase.instance.completePurchase(purchaseDetails);
+        }
+      }
+    });
   }
 
   void _readWebBrowserInfo() async {
@@ -187,7 +225,6 @@ class _AllSongsState extends State<AllSongs> {
                   Duration signInTime = new Duration(hours: 3);
                   DateTime entrance = map['entrance'].toDate();
                   DateTime currentTime = DateTime.now().toUtc();
-                  print(entrance);
                   if (currentTime.compareTo(entrance.add(signInTime)) < 0) {
                     setState(() {
                       signedIn = true;
@@ -393,11 +430,11 @@ class _AllSongsState extends State<AllSongs> {
                         AppLocalizations.of(context)!.signOut,
                       ),
                       onTap: () async {
-                        await service.signOutFromGoogle();
-                        setState(() {
-                          mobileSignedIn = false;
-                        });
+                        service.signOutFromGoogle();
                         _scaffoldKey2.currentState!.openEndDrawer();
+                        setState(() {
+                          signedIn = false;
+                        });
                       },
                     )
                 ],
@@ -447,7 +484,7 @@ class _AllSongsState extends State<AllSongs> {
                                     child: Directionality(
                                       textDirection: TextDirection.ltr,
                                       child: Text(
-                                        signedIn
+                                        signedIn && kIsWeb
                                             // && !Platform.isIOS
                                             ? AppLocalizations.of(context)!
                                                     .timeRemaining +
@@ -721,8 +758,9 @@ class _AllSongsState extends State<AllSongs> {
                                                       openSignIn = true;
                                                     });
                                                   else {
-                                                    if (mobileSignedIn)
-                                                      buildMobilePayment();
+                                                    if (service
+                                                        .isUserSignedIn())
+                                                      buildMobilePayment(false);
                                                     else
                                                       signInOptions(false);
                                                   }
@@ -1005,94 +1043,96 @@ class _AllSongsState extends State<AllSongs> {
   }
 
   expireWording() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Center(
-            child: Text(
-          AppLocalizations.of(context)!.outOfTimeError,
-          style: TextStyle(
-              fontFamily: 'SignInFont',
-              color: Colors.yellow,
-              wordSpacing: 5,
-              fontSize: 40,
-              height: 1.4,
-              letterSpacing: 1.6),
-        )),
-        Directionality(
-          textDirection: Directionality.of(context),
-          child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Text(
-              AppLocalizations.of(context)!.addTime + " ",
-              style: TextStyle(
-                  fontFamily: 'SignInFont',
-                  color: Colors.white,
-                  wordSpacing: 5,
-                  fontSize: 30,
-                  height: 1.4,
-                  letterSpacing: 1.6),
-            ),
-            _loading
-                ? new Container(
-                    color: Colors.transparent,
-                    width: 70.0,
-                    height: 70.0,
-                    child: new Padding(
-                        padding: const EdgeInsets.all(5.0),
-                        child:
-                            new Center(child: new CircularProgressIndicator())),
-                  )
-                : Container(
-                    decoration: BoxDecoration(
-                        color: Colors.blue,
-                        borderRadius:
-                            BorderRadius.all(new Radius.circular(10))),
-                    child: Padding(
-                        padding: const EdgeInsets.fromLTRB(8.0, 4, 8.0, 4),
-                        child: TextButton(
-                            onPressed: addTime,
-                            child: Directionality(
-                              textDirection: TextDirection.ltr,
-                              child: Text(
-                                AppLocalizations.of(context)!.enter,
-                                style: TextStyle(
-                                    fontSize: 15, color: Colors.white),
-                              ),
-                            ))))
-          ]),
-        ),
-        SizedBox(
-          height: 15,
-        ),
-        MouseRegion(
-          cursor: SystemMouseCursors.click,
-          onEnter: (PointerEvent details) => setState(() => amIHovering = true),
-          onExit: (PointerEvent details) => setState(() {
-            amIHovering = false;
-          }),
-          child: RichText(
-              text: TextSpan(
-                  text: AppLocalizations.of(context)!.placeOrder,
-                  style: TextStyle(
-                    fontSize: 25,
-                    color: amIHovering ? Colors.blue[300] : Colors.blue,
-                    decoration: TextDecoration.underline,
-                  ),
-                  recognizer: TapGestureRecognizer()
-                    ..onTap = () {
-                      launch('https://ashira-music.com/product/karaoke/');
-                    })),
-        ),
-        SizedBox(
-          height: 15,
-        ),
-        Text(
-          _errorMessage,
-          style: TextStyle(color: Colors.red, fontSize: 20),
-        )
-      ],
-    );
+    if (kIsWeb)
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Center(
+              child: Text(
+            AppLocalizations.of(context)!.outOfTimeError,
+            style: TextStyle(
+                fontFamily: 'SignInFont',
+                color: Colors.yellow,
+                wordSpacing: 5,
+                fontSize: 40,
+                height: 1.4,
+                letterSpacing: 1.6),
+          )),
+          Directionality(
+            textDirection: Directionality.of(context),
+            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Text(
+                AppLocalizations.of(context)!.addTime + " ",
+                style: TextStyle(
+                    fontFamily: 'SignInFont',
+                    color: Colors.white,
+                    wordSpacing: 5,
+                    fontSize: 30,
+                    height: 1.4,
+                    letterSpacing: 1.6),
+              ),
+              _loading
+                  ? new Container(
+                      color: Colors.transparent,
+                      width: 70.0,
+                      height: 70.0,
+                      child: new Padding(
+                          padding: const EdgeInsets.all(5.0),
+                          child: new Center(
+                              child: new CircularProgressIndicator())),
+                    )
+                  : Container(
+                      decoration: BoxDecoration(
+                          color: Colors.blue,
+                          borderRadius:
+                              BorderRadius.all(new Radius.circular(10))),
+                      child: Padding(
+                          padding: const EdgeInsets.fromLTRB(8.0, 4, 8.0, 4),
+                          child: TextButton(
+                              onPressed: addTime,
+                              child: Directionality(
+                                textDirection: TextDirection.ltr,
+                                child: Text(
+                                  AppLocalizations.of(context)!.enter,
+                                  style: TextStyle(
+                                      fontSize: 15, color: Colors.white),
+                                ),
+                              ))))
+            ]),
+          ),
+          SizedBox(
+            height: 15,
+          ),
+          MouseRegion(
+            cursor: SystemMouseCursors.click,
+            onEnter: (PointerEvent details) =>
+                setState(() => amIHovering = true),
+            onExit: (PointerEvent details) => setState(() {
+              amIHovering = false;
+            }),
+            child: RichText(
+                text: TextSpan(
+                    text: AppLocalizations.of(context)!.placeOrder,
+                    style: TextStyle(
+                      fontSize: 25,
+                      color: amIHovering ? Colors.blue[300] : Colors.blue,
+                      decoration: TextDecoration.underline,
+                    ),
+                    recognizer: TapGestureRecognizer()
+                      ..onTap = () {
+                        launch('https://ashira-music.com/product/karaoke/');
+                      })),
+          ),
+          SizedBox(
+            height: 15,
+          ),
+          Text(
+            _errorMessage,
+            style: TextStyle(color: Colors.red, fontSize: 20),
+          )
+        ],
+      );
   }
 
   checkTime() async {
@@ -1110,6 +1150,10 @@ class _AllSongsState extends State<AllSongs> {
 
   bool overTime() {
     if (!signedIn) return false;
+    return checkOvertime();
+  }
+
+  bool checkOvertime() {
     DateTime currentTime = DateTime.now()
         .toUtc()
         .add(new Duration(milliseconds: getTotalLength()));
@@ -1601,7 +1645,6 @@ class _AllSongsState extends State<AllSongs> {
         getPurchaseFromStore(true, false);
       }
     } catch (error) {
-      print(error);
       printConnectionError();
     }
   }
@@ -1616,8 +1659,6 @@ class _AllSongsState extends State<AllSongs> {
           await api.fetch('orders', namespace: "wc/v2", args: pageArgs);
       try {
         Map<String, int> ret = checkForIdInData(email, res.data);
-        // print("ret");
-        // print(ret.runtimeType);
 
         return ret;
       } catch (error) {
@@ -1670,7 +1711,6 @@ class _AllSongsState extends State<AllSongs> {
         demoSongNames = List.from(demoName.get("songs"));
       }
     } catch (e) {
-      print("this didn't work " + e.toString());
       demoSongNames = [];
     }
   }
@@ -1741,9 +1781,25 @@ class _AllSongsState extends State<AllSongs> {
     return;
   }
 
-  buildMobilePayment() {
+  buildMobilePayment(bool loading, [String billingErrorMessage = ""]) async {
+    String errorVal = billingErrorMessage;
+    List<ProductDetails> products = [];
+    if (!loading) {
+      final bool available = await InAppPurchase.instance.isAvailable();
+      if (!available) {
+        errorVal = AppLocalizations.of(context)!.storeReachError;
+      }
+      const Set<String> _kIds = <String>{"daily_buy", 'monthly_buy'};
+      final ProductDetailsResponse response =
+          await InAppPurchase.instance.queryProductDetails(_kIds);
+      if (response.notFoundIDs.isNotEmpty) {
+        // Handle the error.
+      }
+      products = response.productDetails;
+    }
     showDialog(
         context: context,
+        barrierDismissible: loading ? false : true,
         builder: (BuildContext context) {
           return Dialog(
             backgroundColor: Colors.transparent,
@@ -1782,86 +1838,110 @@ class _AllSongsState extends State<AllSongs> {
                                 ),
                                 Center(
                                     child: Text(
-                                  AppLocalizations.of(context)!.comingSoon,
+                                  errorVal == ""
+                                      ? AppLocalizations.of(context)!
+                                          .billingDisclaimer
+                                      : errorVal,
+                                  textAlign: TextAlign.center,
                                   style: TextStyle(
-                                      color: Colors.white, fontSize: 20),
+                                      color: errorVal == ""
+                                          ? Colors.white
+                                          : Colors.red,
+                                      fontSize: 12),
                                 )),
-                                Center(
-                                  child: Container(
-                                      width:
-                                          MediaQuery.of(context).size.width / 2,
-                                      height: 50,
-                                      decoration: BoxDecoration(
-                                          border:
-                                              Border.all(color: Colors.purple),
-                                          borderRadius: BorderRadius.all(
-                                              new Radius.circular(10.0))),
-                                      child: ElevatedButton(
-                                        style: ButtonStyle(
-                                            backgroundColor:
-                                                MaterialStateProperty.all<
-                                                    Color>(Colors.grey)),
-                                        onPressed: () {},
-                                        child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceEvenly,
-                                            children: [
-                                              Flexible(
-                                                  child: Container(
-                                                child: Text(
-                                                  AppLocalizations.of(context)!
-                                                      .monthlySub,
-                                                  style: TextStyle(
-                                                      color: Colors.white),
-                                                ),
-                                              )),
-                                              Container(
-                                                color: Colors.pink,
-                                                child: Text("50₪",
+                                if (!loading)
+                                  Center(
+                                    child: Container(
+                                        width:
+                                            MediaQuery.of(context).size.width /
+                                                2,
+                                        height: 50,
+                                        decoration: BoxDecoration(
+                                            border: Border.all(
+                                                color: Colors.purple),
+                                            borderRadius: BorderRadius.all(
+                                                new Radius.circular(10.0))),
+                                        child: ElevatedButton(
+                                          style: ButtonStyle(
+                                              backgroundColor:
+                                                  MaterialStateProperty
+                                                      .all<Color>(errorVal == ""
+                                                          ? Colors.blueAccent
+                                                          : Colors.grey)),
+                                          onPressed: () {
+                                            if (errorVal == "")
+                                              startPaymentFlow(products.last);
+                                          },
+                                          child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.spaceEvenly,
+                                              children: [
+                                                Flexible(
+                                                    child: Container(
+                                                  child: Text(
+                                                    AppLocalizations.of(
+                                                            context)!
+                                                        .monthlySub,
                                                     style: TextStyle(
-                                                        color: Colors.white)),
-                                              )
-                                            ]),
-                                      )),
-                                ),
-                                Center(
-                                  child: Container(
-                                      width:
-                                          MediaQuery.of(context).size.width / 2,
-                                      height: 50,
-                                      decoration: BoxDecoration(
-                                          border:
-                                              Border.all(color: Colors.purple),
-                                          borderRadius: BorderRadius.all(
-                                              new Radius.circular(10.0))),
-                                      child: ElevatedButton(
-                                        style: ButtonStyle(
-                                            backgroundColor:
-                                                MaterialStateProperty.all<
-                                                    Color>(Colors.grey)),
-                                        onPressed: () {},
-                                        child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceEvenly,
-                                            children: [
-                                              Flexible(
-                                                  child: Container(
-                                                child: Text(
-                                                  AppLocalizations.of(context)!
-                                                      .dailySub,
-                                                  style: TextStyle(
-                                                      color: Colors.white),
-                                                ),
-                                              )),
-                                              Container(
-                                                color: Colors.pink,
-                                                child: Text("10₪",
+                                                        color: Colors.white),
+                                                  ),
+                                                )),
+                                                Container(
+                                                  color: Colors.pink,
+                                                  child: Text("50₪",
+                                                      style: TextStyle(
+                                                          color: Colors.white)),
+                                                )
+                                              ]),
+                                        )),
+                                  ),
+                                if (!loading)
+                                  Center(
+                                    child: Container(
+                                        width:
+                                            MediaQuery.of(context).size.width /
+                                                2,
+                                        height: 50,
+                                        decoration: BoxDecoration(
+                                            border: Border.all(
+                                                color: Colors.purple),
+                                            borderRadius: BorderRadius.all(
+                                                new Radius.circular(10.0))),
+                                        child: ElevatedButton(
+                                          style: ButtonStyle(
+                                              backgroundColor:
+                                                  MaterialStateProperty
+                                                      .all<Color>(errorVal == ""
+                                                          ? Colors.blueAccent
+                                                          : Colors.grey)),
+                                          onPressed: () {
+                                            if (errorVal == "")
+                                              startPaymentFlow(products.first);
+                                          },
+                                          child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.spaceEvenly,
+                                              children: [
+                                                Flexible(
+                                                    child: Container(
+                                                  child: Text(
+                                                    AppLocalizations.of(
+                                                            context)!
+                                                        .dailySub,
                                                     style: TextStyle(
-                                                        color: Colors.white)),
-                                              )
-                                            ]),
-                                      )),
-                                ),
+                                                        color: Colors.white),
+                                                  ),
+                                                )),
+                                                Container(
+                                                  color: Colors.pink,
+                                                  child: Text("10₪",
+                                                      style: TextStyle(
+                                                          color: Colors.white)),
+                                                )
+                                              ]),
+                                        )),
+                                  ),
+                                if (loading) CircularProgressIndicator()
                               ],
                             ),
                             Align(
@@ -1901,8 +1981,8 @@ class _AllSongsState extends State<AllSongs> {
           openSignIn = true;
         });
       else {
-        if (mobileSignedIn)
-          buildMobilePayment();
+        if (service.isUserSignedIn())
+          buildMobilePayment(false);
         else
           signInOptions(false);
       }
@@ -2301,50 +2381,6 @@ class _AllSongsState extends State<AllSongs> {
 
   void checkIfDeviceRegistered(
       DocumentSnapshot<Map<String, dynamic>> doc, bool saveIp) {
-    //   if (saveIp)
-    //     try {
-    //       List<Map<String, dynamic>> ips
-    //           // List<String> ips
-    //           = List.from(doc.get("ips"));
-    //       int valueToChange = -1;
-    //       for (int i = 0; i < ips.length; i++) {
-    //         var map = ips[i];
-    //         if (map['ip'] == ipAddress) {
-    //           valueToChange = i;
-    //         }
-    //       }
-    //       Map<String, dynamic> newIpAddress = new Map<String, dynamic>();
-    //       newIpAddress['ip'] = ipAddress;
-    //       newIpAddress['entrance'] = DateTime.now();
-    //       if (valueToChange == -1) {
-    //         ips.add(newIpAddress);
-    //       } else {
-    //         ips[valueToChange] = newIpAddress;
-    //       }
-    //       addIpAddressToDocument(doc, ips);
-    //     } catch (error) {
-    //       Map<String, dynamic> newIpAddress = new Map<String, dynamic>();
-    //       newIpAddress['ip'] = ipAddress;
-    //       newIpAddress['entrance'] = DateTime.now();
-    //       addIpAddressToDocument(doc, [newIpAddress]);
-    //     }
-    // }
-    //
-    // void addIpAddressToDocument(DocumentSnapshot<Map<String, dynamic>> doc,
-    //     List<Map<String, dynamic>> ips) {
-    //   Map<String, dynamic> firestoreDoc = new Map<String, dynamic>();
-    //   firestoreDoc['endTime'] = doc.get("endTime");
-    //   firestoreDoc['email'] = doc.get("email");
-    //   firestoreDoc['ips'] = ips;
-    //
-    //   CollectionReference users =
-    //       FirebaseFirestore.instance.collection('internetUsers');
-    //
-    //   Future<void> addUser() {
-    //     return users.doc(email).set(firestoreDoc).catchError((error) => {});
-    //   }
-    //
-    //   addUser();
     IpHandler().checkIfDeviceRegistered(doc, saveIp, ipAddress);
   }
 
@@ -2413,6 +2449,7 @@ class _AllSongsState extends State<AllSongs> {
     double popupWidth = 330;
     showDialog(
         context: context,
+        barrierDismissible: signInLoading ? false : true,
         builder: (BuildContext context) {
           return Dialog(
               shape: RoundedRectangleBorder(
@@ -2435,19 +2472,20 @@ class _AllSongsState extends State<AllSongs> {
                   textDirection: Directionality.of(context),
                   child: Stack(
                     children: [
-                      SafeArea(
-                        child: Align(
-                          alignment: Alignment.topRight,
-                          child: IconButton(
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                              },
-                              icon: Icon(
-                                Icons.cancel_outlined,
-                                color: Colors.white,
-                              )),
+                      if (!signInLoading)
+                        SafeArea(
+                          child: Align(
+                            alignment: Alignment.topRight,
+                            child: IconButton(
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                },
+                                icon: Icon(
+                                  Icons.cancel_outlined,
+                                  color: Colors.white,
+                                )),
+                          ),
                         ),
-                      ),
                       Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -2476,6 +2514,8 @@ class _AllSongsState extends State<AllSongs> {
                               child: Center(
                                 child:
                                     SignInWithAppleButton(onPressed: () async {
+                                  Navigator.of(context).pop();
+                                  signInOptions(true);
                                   AppleSignIn appleSignIn = AppleSignIn();
                                   await appleSignIn.signIn();
                                   addUserToFirebase();
@@ -2541,9 +2581,16 @@ class _AllSongsState extends State<AllSongs> {
     );
   }
 
-  void openBilling() {
+  void openBilling() async {
     Navigator.of(context).pop();
-    buildMobilePayment();
+    endTime = await UserHandler().getUserEndTime(service.getEmail());
+    if (!checkOvertime())
+      setState(() {
+        signedIn = true;
+      });
+    else
+      // signedIn =true;
+      buildMobilePayment(false);
   }
 
   void addUserToFirebase() async {
@@ -2555,12 +2602,63 @@ class _AllSongsState extends State<AllSongs> {
           firebaseAuth.currentUser!.displayName,
           firebaseAuth.currentUser!.photoURL);
       if (userAdded) {
-        mobileSignedIn = true;
+        setState(() {});
         openBilling();
       } else
         catchSignInError();
     } else
       catchSignInError();
+  }
+
+  _showPendingUI() {}
+
+  _handleError(IAPError iapError) {
+    Navigator.of(context).pop();
+    buildMobilePayment(
+      false,
+      AppLocalizations.of(context)!.purchaseError,
+    );
+  }
+
+  _verifyPurchase(PurchaseDetails purchaseDetails) {}
+
+  Future<bool> _deliverProduct(PurchaseDetails purchaseDetails) async {
+    bool timeAdded = false;
+    if (purchaseDetails.productID == "daily_buy") {
+      endTime = Timestamp.fromDate(DateTime.now().add(Duration(days: 1)));
+    } else {
+      endTime = Timestamp.fromDate(DateTime(
+          DateTime.now().year,
+          DateTime.now().month + 1,
+          DateTime.now().day,
+          DateTime.now().hour,
+          DateTime.now().minute));
+    }
+    timeAdded = await UserHandler().addTimeToUser(service.getEmail(), endTime);
+    if (timeAdded) {
+      Navigator.of(context).pop();
+      setState(() {
+        signedIn = true;
+      });
+    } else {
+      endTime = Timestamp(10, 10);
+      Navigator.of(context).pop();
+      buildMobilePayment(
+        false,
+        AppLocalizations.of(context)!.purchaseError,
+      );
+    }
+    return timeAdded;
+  }
+
+  _handleInvalidPurchase(PurchaseDetails purchaseDetails) {}
+
+  void startPaymentFlow(ProductDetails productDetails) {
+    Navigator.of(context).pop();
+    buildMobilePayment(true);
+    final PurchaseParam purchaseParam =
+        PurchaseParam(productDetails: productDetails);
+    InAppPurchase.instance.buyConsumable(purchaseParam: purchaseParam);
   }
 }
 

@@ -68,5 +68,8 @@
     "notEnoughNoise":"You must sing to download",
     "signOut":"Sign Out",
     "googleSignIn":"Sign in with Google",
-    "signInError":"We have a problem with our systems.\nPlease try again soon."
+    "signInError":"We have a problem with our systems.\nPlease try again soon.",
+    "billingDisclaimer":"The audio and recording quality may differ between the devices\n(it is recommended to check the free songs)",
+    "storeReachError":"We are unable to reach the store at this moment\nPlease try again later\nContact Us at ashira.jewishkaraoke@gmail.com",
+    "purchaseError":"We are unable to complete your purchase\nPlease try again later\nContact Us at ashira.jewishkaraoke@gmail.com"
 }

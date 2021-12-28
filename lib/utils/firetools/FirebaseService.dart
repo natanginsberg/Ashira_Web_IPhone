@@ -27,7 +27,9 @@ class FirebaseService {
   }
 
   isUserSignedIn() {
-    print(_auth.currentUser != null && _auth.currentUser!.email != null);
     return _auth.currentUser != null && _auth.currentUser!.email != null;
   }
+
+  getEmail(){return _auth.currentUser!.email;}
+
 }

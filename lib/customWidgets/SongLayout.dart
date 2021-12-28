@@ -133,6 +133,7 @@ class _SongLayoutState extends State<SongLayout> {
                       });
                     },
                     child: RichText(
+                        textAlign: TextAlign.center,
                         text: TextSpan(
                             text: widget.memberText,
                             style: TextStyle(
