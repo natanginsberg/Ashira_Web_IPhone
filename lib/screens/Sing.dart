@@ -25,7 +25,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:http/http.dart' as http;
 import 'package:just_audio/just_audio.dart';
-import 'package:screenshot/screenshot.dart';
 import 'package:universal_html/html.dart' as html;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
@@ -61,7 +60,6 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
 
   late Future parseFuture;
 
-  ScreenshotController screenshotController = ScreenshotController();
   final ScrollController listViewController = new ScrollController();
   int currentLineIndex = 0;
   Map<int, int> sizeOfLines = new Map();
@@ -301,14 +299,11 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
                                               fontSize: 13,
                                               color: Colors.white),
                                         ),
-                                        Screenshot(
-                                          controller: screenshotController,
-                                          child: Text(
-                                            songs[trackNumber].title,
-                                            style: TextStyle(
-                                                fontSize: 18,
-                                                color: Colors.white),
-                                          ),
+                                        Text(
+                                          songs[trackNumber].title,
+                                          style: TextStyle(
+                                              fontSize: 18,
+                                              color: Colors.white),
                                         ),
                                       ],
                                     ),
@@ -473,13 +468,10 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   SafeArea(
-                                    child: Screenshot(
-                                      controller: screenshotController,
-                                      child: Text(
-                                        songs[trackNumber].title,
-                                        style: TextStyle(
-                                            fontSize: 18, color: Colors.white),
-                                      ),
+                                    child: Text(
+                                      songs[trackNumber].title,
+                                      style: TextStyle(
+                                          fontSize: 18, color: Colors.white),
                                     ),
                                   ),
                                   Expanded(
@@ -853,13 +845,6 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
   }
 
   void play() async {
-    screenshotController.capture().then((value) => start()).catchError((onError) {
-      print(onError);
-    });
-
-  }
-
-  start()async{
     if (timesUp()) {
       setState(() {
         // _accessDenied = true;
@@ -877,7 +862,7 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
 
       audioPlayer.processingStateStream.listen((state) {
         if (state == ProcessingState.completed) if (currentLineIndex ==
-            lines.length - 1 &&
+                lines.length - 1 &&
             trackNumber == songs.length - 1) {
           setState(() {
             Wakelock.disable();
@@ -893,7 +878,7 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
 
       timer = Timer.periodic(
           Duration(milliseconds: 100),
-              (Timer t) => updateUI(
+          (Timer t) => updateUI(
               audioPlayer.position, true, false, audioPlayer.currentIndex!));
     }
   }
@@ -1811,7 +1796,7 @@ class _WebcamPageState extends State<WebcamPage> {
 
         tracks.forEach((track) {
           // todo took off for mobile
-          track.stop();
+          // track.stop();
         });
       }
     } catch (error) {}
