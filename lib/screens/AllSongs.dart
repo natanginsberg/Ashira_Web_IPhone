@@ -1789,7 +1789,7 @@ class _AllSongsState extends State<AllSongs> {
       if (!available) {
         errorVal = AppLocalizations.of(context)!.storeReachError;
       }
-      const Set<String> _kIds = <String>{"daily_buy", 'monthly_buy'};
+      const Set<String> _kIds = <String>{"daily_buy"};
       final ProductDetailsResponse response =
           await InAppPurchase.instance.queryProductDetails(_kIds);
       if (response.notFoundIDs.isNotEmpty) {
