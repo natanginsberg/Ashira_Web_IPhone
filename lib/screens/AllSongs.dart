@@ -7,10 +7,12 @@ import 'package:ashira_flutter/customWidgets/GenreButton.dart';
 import 'package:ashira_flutter/customWidgets/SongLayout.dart';
 import 'package:ashira_flutter/model/DisplayOptions.dart';
 import 'package:ashira_flutter/model/Song.dart';
+
 import 'package:ashira_flutter/screens/MobileSing.dart';
 import 'package:ashira_flutter/utils/AppleSignIn.dart';
 import 'package:ashira_flutter/utils/WpHelper.dart' as wph;
 import 'package:ashira_flutter/utils/firetools/FirebaseService.dart';
+import 'package:ashira_flutter/utils/firetools/GetValues.dart';
 import 'package:ashira_flutter/utils/firetools/IpHandler.dart';
 import 'package:ashira_flutter/utils/firetools/UserHandler.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -137,6 +139,10 @@ class _AllSongsState extends State<AllSongs> {
 
   FirebaseService service = new FirebaseService();
 
+  var _isObscure = true;
+
+  GetValues getValues = GetValues();
+
   _AllSongsState();
 
   void signInAnon() async {
@@ -154,7 +160,7 @@ class _AllSongsState extends State<AllSongs> {
     super.initState();
     if (!kIsWeb) initializeFirebase();
 
-    receiveBillingInfo();
+    if (!kIsWeb) receiveBillingInfo();
     // setState(() {
     _mainController = ScrollController();
     _orderEditingController = TextEditingController(text: "");
@@ -206,46 +212,47 @@ class _AllSongsState extends State<AllSongs> {
 
   void _readWebBrowserInfo() async {
     //         });
-    await Ipify.ipv64(format: Format.TEXT).then((value) {
-      ipAddress = value;
-      FirebaseFirestore.instance
-          .collection('internetUsers')
-          // .where("endTime", isGreaterThan: DateTime.now())
-          .get()
-          .then((QuerySnapshot querySnapshot) {
-        querySnapshot.docs.forEach((doc) {
-          if (doc.exists) {
-            Map document = doc.data() as Map;
-            if (document.containsKey("ips")) {
-              List<Map<String, dynamic>> ips = List.from(document["ips"]);
-
-              for (int i = 0; i < ips.length; i++) {
-                var map = ips[i];
-                if (map['ip'] == ipAddress) {
-                  Duration signInTime = new Duration(hours: 3);
-                  DateTime entrance = map['entrance'].toDate();
-                  DateTime currentTime = DateTime.now().toUtc();
-                  if (currentTime.compareTo(entrance.add(signInTime)) < 0) {
-                    setState(() {
-                      signedIn = true;
-                      endTime = doc.get("endTime");
-                      gridSongs = new List.from(songs);
-                    });
-                  }
-                }
-              }
-              // if (ips.contains(value)) {
-              //   setState(() {
-              //     signedIn = true;
-              //     endTime = doc.get("endTime");
-              //     gridSongs = new List.from(songs);
-              //   });
-              // }
-            }
-          }
-        });
+    ipAddress = await Ipify.ipv64(format: Format.TEXT)
+        .catchError((error) => ipAddress = "");
+    try {
+      DocumentSnapshot documentSnapshot =
+          await IpHandler().checkCurrentIpAddress(ipAddress);
+      setState(() {
+        signedIn = true;
+        endTime = documentSnapshot.get("endTime");
+        gridSongs = new List.from(songs);
+        email = documentSnapshot.id;
       });
-    });
+    } catch (error) {}
+    // FirebaseFirestore.instance
+    //     .collection('internetUsers')
+    //     .where("endTime", isGreaterThan: DateTime.now())
+    //     .get()
+    //     .then((QuerySnapshot querySnapshot) {
+    //   querySnapshot.docs.forEach((doc) {
+    //     if (doc.exists) {
+    //       Map document = doc.data() as Map;
+    //       if (document.containsKey("ips")) {
+    //         List<Map<String, dynamic>> ips = List.from(document["ips"]);
+    //         for (int i = 0; i < ips.length; i++) {
+    //           var map = ips[i];
+    //           if (map['ip'] == ipAddress) {
+    //             Duration signInTime = new Duration(hours: 3);
+    //             DateTime entrance = map['entrance'].toDate();
+    //             DateTime currentTime = DateTime.now().toUtc();
+    //             if (currentTime.compareTo(entrance.add(signInTime)) < 0) {
+    //               setState(() {
+    //                 signedIn = true;
+    //                 endTime = doc.get("endTime");
+    //                 gridSongs = new List.from(songs);
+    //               });
+    // }
+    // }
+    // }
+    // }
+    // }
+    // });
+    // });
   }
 
   @override
@@ -430,8 +437,8 @@ class _AllSongsState extends State<AllSongs> {
                         AppLocalizations.of(context)!.signOut,
                       ),
                       onTap: () async {
-                        service.signOutFromGoogle();
                         _scaffoldKey2.currentState!.openEndDrawer();
+                        await service.signOutFromGoogle();
                         setState(() {
                           signedIn = false;
                         });
@@ -814,9 +821,10 @@ class _AllSongsState extends State<AllSongs> {
     );
   }
 
-  getFirebaseData() {
+  getFirebaseData() async {
     myLocale = Localizations.localeOf(context).languageCode;
-    getDemoSongs();
+    // getDemoSongs();
+    demoSongNames = await getValues.getDemoSongs();
     getGenres();
     getBackgroundVideos();
     getSongs();
@@ -900,6 +908,7 @@ class _AllSongsState extends State<AllSongs> {
   buildListView() {
     return Expanded(
       child: ListView.builder(
+          itemExtent: 50.0,
           shrinkWrap: true,
           itemCount: genres.length,
           itemBuilder: (BuildContext ctx, index) {
@@ -995,7 +1004,8 @@ class _AllSongsState extends State<AllSongs> {
               MaterialPageRoute(
                   builder: (_) => Sing(songsPassed, counter.toString())));
         }
-      } else {
+      }
+      else {
         Navigator.push(
             context,
             MaterialPageRoute(
@@ -1257,7 +1267,6 @@ class _AllSongsState extends State<AllSongs> {
       var collection = FirebaseFirestore.instance.collection('internetUsers');
 
       var doc = await collection.doc(id).get();
-
       return doc;
     } catch (e) {
       printConnectionError();
@@ -1377,11 +1386,29 @@ class _AllSongsState extends State<AllSongs> {
                                 child: Directionality(
                                   textDirection: TextDirection.ltr,
                                   child: TextField(
+                                    obscureText: _isObscure,
                                     onSubmitted: (value) {
                                       if (!_loading) checkEmailAndContinue();
                                     },
                                     textAlign: TextAlign.center,
                                     decoration: new InputDecoration(
+                                      prefixIcon: Icon(
+                                        _isObscure
+                                            ? Icons.visibility
+                                            : Icons.visibility_off,
+                                        color: Colors.transparent,
+                                      ),
+                                      suffixIcon: IconButton(
+                                          icon: Icon(
+                                            _isObscure
+                                                ? Icons.visibility
+                                                : Icons.visibility_off,
+                                          ),
+                                          onPressed: () {
+                                            setState(() {
+                                              _isObscure = !_isObscure;
+                                            });
+                                          }),
                                       hintText:
                                           AppLocalizations.of(context)!.email,
                                       hintStyle:
@@ -1696,23 +1723,6 @@ class _AllSongsState extends State<AllSongs> {
     setState(() {
       _loading = true;
     });
-  }
-
-  void getDemoSongs() async {
-    try {
-      var demoCollection =
-          FirebaseFirestore.instance.collection('randomFields');
-
-      if (kIsWeb) {
-        var demoName = await demoCollection.doc("allDemoSongs").get();
-        demoSongNames = List.from(demoName.get("songs"));
-      } else {
-        var demoName = await demoCollection.doc("phoneDemoSongs").get();
-        demoSongNames = List.from(demoName.get("songs"));
-      }
-    } catch (e) {
-      demoSongNames = [];
-    }
   }
 
   checkForIdInData(email, data) {
@@ -2193,18 +2203,13 @@ class _AllSongsState extends State<AllSongs> {
   }
 
   void getGenres() async {
-    try {
-      var genresCollection = FirebaseFirestore.instance.collection('genres');
-
-      var genreLists = await genresCollection.doc("genres").get();
-      hebrewGenres = List.from(genreLists.get("hebrew"));
-      englishGenres = List.from(genreLists.get("english"));
+    bool finished = await getValues.getGenres();
+    hebrewGenres = getValues.getHebrewGenres;
+    englishGenres = getValues.getEnglishGenres;
+    if (finished)
       myLocale == "he"
           ? genres = List.from(hebrewGenres)
           : genres = List.from(englishGenres);
-    } catch (e) {
-      demoSongNames = [];
-    }
   }
 
   searchBar() {
@@ -2381,7 +2386,7 @@ class _AllSongsState extends State<AllSongs> {
 
   void checkIfDeviceRegistered(
       DocumentSnapshot<Map<String, dynamic>> doc, bool saveIp) {
-    IpHandler().checkIfDeviceRegistered(doc, saveIp, ipAddress);
+    IpHandler().checkIfDeviceRegistered(email, doc, saveIp, ipAddress);
   }
 
   Future<void> initializeFirebase() async {

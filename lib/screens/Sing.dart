@@ -3,7 +3,6 @@ import 'dart:convert';
 
 // import 'dart:html';
 import 'dart:math';
-import 'dart:typed_data';
 
 import 'package:ashira_flutter/customWidgets/LineWidget.dart';
 import 'package:ashira_flutter/model/DisplayOptions.dart';
@@ -13,6 +12,7 @@ import 'package:ashira_flutter/utils/FakeUi.dart'
     if (dart.library.html) 'dart:ui' as ui;
 import 'package:ashira_flutter/utils/Parser.dart';
 import 'package:ashira_flutter/utils/WpHelper.dart' as wph;
+import 'package:ashira_flutter/utils/firetools/UserHandler.dart';
 import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
 import 'package:camera/camera.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -850,6 +850,8 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
         // _accessDenied = true;
       });
     } else {
+      if (email != "")
+        UserHandler().addSongsPlayedAndLength(email, songs, songLength);
       if (display == DisplayOptions.WITH_CLIP && _controller != null)
         _controller!.play();
       audioPlayer.play();

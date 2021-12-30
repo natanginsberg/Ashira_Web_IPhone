@@ -83,11 +83,11 @@ class _SignIn extends State<SignIn> {
                   child: Center(
                 child: Container(
                     width: MediaQuery.of(context).size.width,
-                    decoration: BoxDecoration(
-                        image: DecorationImage(
-                      image: AssetImage('assets/compBack.jpg'),
-                      fit: BoxFit.fill,
-                    )),
+                    // decoration: BoxDecoration(
+                    //     image: DecorationImage(
+                    //   image: AssetImage('assets/compBack.jpg'),
+                    //   fit: BoxFit.fill,
+                    // )),
                     child: Stack(children: [
                       Center(
                         child: Container(

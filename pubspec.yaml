@@ -49,7 +49,7 @@ dependencies:
   pdf_render: ^1.0.13
   video_player: ^2.2.7
   dio: ^4.0.3
-  flutter_ffmpeg: ^0.4.2
+#  flutter_ffmpeg: ^0.4.2
   gallery_saver: ^2.3.2
   firebase_crashlytics: ^2.3.0
   sign_in_with_apple: ^3.2.0
