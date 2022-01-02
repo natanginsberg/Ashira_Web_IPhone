@@ -1859,52 +1859,52 @@ class _AllSongsState extends State<AllSongs> {
                                           : Colors.red,
                                       fontSize: 12),
                                 )),
-                                if (!loading)
-                                  Center(
-                                    child: Container(
-                                        width:
-                                            MediaQuery.of(context).size.width /
-                                                2,
-                                        height: 50,
-                                        decoration: BoxDecoration(
-                                            border: Border.all(
-                                                color: Colors.purple),
-                                            borderRadius: BorderRadius.all(
-                                                new Radius.circular(10.0))),
-                                        child: ElevatedButton(
-                                          style: ButtonStyle(
-                                              backgroundColor:
-                                                  MaterialStateProperty
-                                                      .all<Color>(errorVal == ""
-                                                          ? Colors.blueAccent
-                                                          : Colors.grey)),
-                                          onPressed: () {
-                                            if (errorVal == "")
-                                              startPaymentFlow(products.last);
-                                          },
-                                          child: Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.spaceEvenly,
-                                              children: [
-                                                Flexible(
-                                                    child: Container(
-                                                  child: Text(
-                                                    AppLocalizations.of(
-                                                            context)!
-                                                        .monthlySub,
-                                                    style: TextStyle(
-                                                        color: Colors.white),
-                                                  ),
-                                                )),
-                                                Container(
-                                                  color: Colors.pink,
-                                                  child: Text("50₪",
-                                                      style: TextStyle(
-                                                          color: Colors.white)),
-                                                )
-                                              ]),
-                                        )),
-                                  ),
+                                // if (!loading)
+                                //   Center(
+                                //     child: Container(
+                                //         width:
+                                //             MediaQuery.of(context).size.width /
+                                //                 2,
+                                //         height: 50,
+                                //         decoration: BoxDecoration(
+                                //             border: Border.all(
+                                //                 color: Colors.purple),
+                                //             borderRadius: BorderRadius.all(
+                                //                 new Radius.circular(10.0))),
+                                //         child: ElevatedButton(
+                                //           style: ButtonStyle(
+                                //               backgroundColor:
+                                //                   MaterialStateProperty
+                                //                       .all<Color>(errorVal == ""
+                                //                           ? Colors.blueAccent
+                                //                           : Colors.grey)),
+                                //           onPressed: () {
+                                //             if (errorVal == "")
+                                //               startPaymentFlow(products.last);
+                                //           },
+                                //           child: Row(
+                                //               mainAxisAlignment:
+                                //                   MainAxisAlignment.spaceEvenly,
+                                //               children: [
+                                //                 Flexible(
+                                //                     child: Container(
+                                //                   child: Text(
+                                //                     AppLocalizations.of(
+                                //                             context)!
+                                //                         .monthlySub,
+                                //                     style: TextStyle(
+                                //                         color: Colors.white),
+                                //                   ),
+                                //                 )),
+                                //                 Container(
+                                //                   color: Colors.pink,
+                                //                   child: Text("50₪",
+                                //                       style: TextStyle(
+                                //                           color: Colors.white)),
+                                //                 )
+                                //               ]),
+                                //         )),
+                                //   ),
                                 if (!loading)
                                   Center(
                                     child: Container(
