@@ -10,7 +10,7 @@ class LoadingIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: new Container(
-        decoration: BoxDecoration(color: Colors.grey[600], shape: BoxShape.rectangle),
+        decoration: BoxDecoration(color: Colors.grey[600], shape: BoxShape.rectangle, borderRadius: BorderRadius.all(Radius.circular(20))),
         width: 150.0,
         height: 100.0,
         child: Column(children: [
