@@ -79,7 +79,7 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
   FirebaseService service = new FirebaseService();
 
   final ScrollController listViewController = new ScrollController();
-  int currentLineIndex = 0;
+  int currentLineIndex = -1;
   Map<int, int> sizeOfLines = new Map();
   bool isPlaying = false;
 
@@ -719,11 +719,6 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
             if (trackNumber == 0 ||
                 (p.inMilliseconds - songs[trackNumber - 1].length).abs() >
                     1000) {
-              // checking if changed didn't register yet
-              // print(p.inMilliseconds + splits[trackNumber] + 200);
-              // print("changed");
-              // print(p.inMilliseconds);
-              // int newTrack = i;
               changeAudio(i);
               changeSong(i);
               resetRows(new Duration(milliseconds: 1));
@@ -1057,13 +1052,14 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
   }
 
   void animateLyrics(bool animation) {
-    listViewController.animateTo(
-      33.toDouble() * currentLineIndex,
-      duration: animation
-          ? new Duration(milliseconds: 400)
-          : new Duration(milliseconds: 20),
-      curve: Curves.decelerate,
-    );
+    if (currentLineIndex >= 0)
+      listViewController.animateTo(
+        33.toDouble() * currentLineIndex,
+        duration: animation
+            ? new Duration(milliseconds: 400)
+            : new Duration(milliseconds: 20),
+        curve: Curves.decelerate,
+      );
   }
 
   createAllBackgroundPictureArray() async {
@@ -1412,8 +1408,8 @@ class _MobileSingState extends State<MobileSing> with WidgetsBindingObserver {
                               child: Center(
                                 child:
                                     SignInWithAppleButton(onPressed: () async {
-                                      Navigator.of(context).pop(LOADING);
-                                      signInOptions(true);
+                                  Navigator.of(context).pop(LOADING);
+                                  signInOptions(true);
                                   AppleSignIn appleSignIn = AppleSignIn();
                                   await appleSignIn.signIn();
                                   addUserToFirebase();
