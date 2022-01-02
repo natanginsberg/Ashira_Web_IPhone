@@ -2,16 +2,15 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-
 class TonePicker extends StatelessWidget {
   final int MAN = 0;
   final int WOMAN = 1;
   final int KID = 2;
 
   final bool colorful;
-  final Function setSong;
+  final Function(int) setSong;
 
-  const TonePicker({
+  TonePicker({
     required this.colorful,
     required this.setSong,
   });

@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:ashira_flutter/customWidgets/LineWidget.dart';
+import 'package:ashira_flutter/customWidgets/TonePicker.dart';
 import 'package:ashira_flutter/model/DisplayOptions.dart';
 import 'package:ashira_flutter/model/Line.dart';
 import 'package:ashira_flutter/model/Song.dart';
@@ -403,7 +404,16 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
                             alignment: Alignment.bottomCenter,
                             child: playPauseAndRestartIcons()),
                       ),
-                      if (!songPicked) tonePicker(),
+                      if (!songPicked)
+                        TonePicker(
+                          colorful:
+                              (display == DisplayOptions.PERSONAL_MOISHIE ||
+                                      display == DisplayOptions.WITH_CLIP) ||
+                                  _isSmartphone,
+                          setSong: (int value) {
+                            setSong(value);
+                          },
+                        )
                     ]),
                   ),
                 )),
@@ -671,7 +681,15 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
                                 ],
                               ),
                             ),
-                            if (!songPicked) tonePicker(),
+                            if (!songPicked) TonePicker(
+                              colorful:
+                              (display == DisplayOptions.PERSONAL_MOISHIE ||
+                                  display == DisplayOptions.WITH_CLIP) ||
+                                  _isSmartphone,
+                              setSong: (int) {
+
+                              },
+                            ),
                             SafeArea(
                               child: Padding(
                                 padding: const EdgeInsets.all(8.0),

@@ -10,21 +10,21 @@ class LoadingIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: new Container(
-        decoration: BoxDecoration(color: Colors.purple, shape: BoxShape.circle),
-        width: 100.0,
+        decoration: BoxDecoration(color: Colors.grey[600], shape: BoxShape.rectangle),
+        width: 150.0,
         height: 100.0,
-        child: Stack(children: [
+        child: Column(children: [
           new Padding(
               padding: const EdgeInsets.all(5.0),
               child: new Center(
                   child: new Text(
                 text,
                 style: TextStyle(
-                    color: Colors.white, letterSpacing: 1.5, fontSize: 16),
+                    color: Colors.black, letterSpacing: 1.5, fontSize: 16),
               ))),
           Center(
               child: CircularProgressIndicator(
-            color: Colors.black,
+                valueColor:AlwaysStoppedAnimation<Color>(Colors.white),
           ))
         ]),
       ),

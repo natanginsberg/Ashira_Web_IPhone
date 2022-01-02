@@ -112,13 +112,16 @@ class UserHandler {
         .catchError((error) => {});
     if (userFound) {
       String expirationDate = documentSnapshot!.get('expirationDate');
-      String year = expirationDate.substring(0, 4);
-      String month = expirationDate.substring(4, 6);
-      String day = expirationDate.substring(6, 8);
-      String hour = expirationDate.substring(9, 11);
-      String minute = expirationDate.substring(11, 13);
-      return Timestamp.fromDate(DateTime(int.parse(year), int.parse(month),
-          int.parse(day), int.parse(hour), int.parse(minute)));
+      if (expirationDate.length > 13) {
+        String year = expirationDate.substring(0, 4);
+        String month = expirationDate.substring(4, 6);
+        String day = expirationDate.substring(6, 8);
+        String hour = expirationDate.substring(9, 11);
+        String minute = expirationDate.substring(11, 13);
+        return Timestamp.fromDate(DateTime(int.parse(year), int.parse(month),
+            int.parse(day), int.parse(hour), int.parse(minute)));
+      } else
+        return Timestamp(10, 10);
     } else {
       return Timestamp(10, 10);
     }
