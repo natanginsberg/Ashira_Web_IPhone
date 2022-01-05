@@ -3,7 +3,7 @@ import 'dart:ui';
 
 import 'package:ashira_flutter/model/Song.dart';
 import 'package:ashira_flutter/screens/Sing.dart';
-import 'package:ashira_flutter/utils/WpHelper.dart' as wph;
+import '../utils/webPurchases/WpHelper.dart' as wph;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';

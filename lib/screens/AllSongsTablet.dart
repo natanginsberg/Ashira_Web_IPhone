@@ -6,7 +6,7 @@ import 'package:ashira_flutter/customWidgets/GenreButton.dart';
 import 'package:ashira_flutter/customWidgets/SongLayout.dart';
 import 'package:ashira_flutter/model/Song.dart';
 import 'package:ashira_flutter/screens/SingTablet.dart';
-import 'package:ashira_flutter/utils/WpHelper.dart' as wph;
+import '../utils/webPurchases/WpHelper.dart' as wph;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dart_ipify/dart_ipify.dart';
 import 'package:device_info_plus/device_info_plus.dart';

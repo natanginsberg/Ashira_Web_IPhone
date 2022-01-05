@@ -25,6 +25,7 @@
     "noOrderNumberError": "You must make a purchase first",
     "pendingError": "Payment Pending",
     "communicationError": "Connection error",
+    "timeNotStarted":"Your session starts in ",
     "search": "Search",
     "categoryChoice":"Choose a Category",
     "menu":"Menu",

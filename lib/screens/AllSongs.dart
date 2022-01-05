@@ -8,13 +8,15 @@ import 'package:ashira_flutter/customWidgets/SongLayout.dart';
 import 'package:ashira_flutter/model/DisplayOptions.dart';
 import 'package:ashira_flutter/model/Song.dart';
 
-import 'package:ashira_flutter/screens/MobileSing.dart';
+// import 'package:ashira_flutter/screens/MobileSing.dart';
 import 'package:ashira_flutter/utils/AppleSignIn.dart';
-import 'package:ashira_flutter/utils/WpHelper.dart' as wph;
+import 'package:ashira_flutter/utils/WebFlow.dart';
 import 'package:ashira_flutter/utils/firetools/FirebaseService.dart';
 import 'package:ashira_flutter/utils/firetools/GetValues.dart';
 import 'package:ashira_flutter/utils/firetools/IpHandler.dart';
-import 'package:ashira_flutter/utils/firetools/UserHandler.dart';
+import 'package:ashira_flutter/utils/firetools/MobileUserHandler.dart';
+import 'package:ashira_flutter/utils/firetools/WebUserHandler.dart';
+import 'package:ashira_flutter/utils/webPurchases/CheckForPurchase.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dart_ipify/dart_ipify.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -34,9 +36,9 @@ import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:universal_html/html.dart' as html;
 import 'package:url_launcher/url_launcher.dart';
-import 'package:wordpress_api/wordpress_api.dart' as wp;
 
 import '../main.dart';
+import '../utils/webPurchases/WpHelper.dart' as wph;
 import 'Sing.dart';
 
 class AllSongs extends StatefulWidget {
@@ -143,13 +145,20 @@ class _AllSongsState extends State<AllSongs> {
 
   GetValues getValues = GetValues();
 
+  Timer? startTimer;
+
+  var userHandler;
+
+  late WebFlow webFlow;
+
   _AllSongsState();
 
   void signInAnon() async {
     if (!service.isUserSignedIn())
       await firebaseAuth.signInAnonymously().then((value) => getFirebaseData());
     else {
-      endTime = await UserHandler().getUserEndTime(service.getEmail());
+      userHandler.setEmail(service.getEmail());
+      endTime = await userHandler.getUserEndTime();
       if (!checkOvertime()) signedIn = true;
       // signedIn =true;
     }
@@ -161,6 +170,11 @@ class _AllSongsState extends State<AllSongs> {
     if (!kIsWeb) initializeFirebase();
 
     if (!kIsWeb) receiveBillingInfo();
+
+    if (kIsWeb)
+      userHandler = WebUserHandler();
+    else
+      userHandler = MobileUserHandler();
     // setState(() {
     _mainController = ScrollController();
     _orderEditingController = TextEditingController(text: "");
@@ -172,8 +186,36 @@ class _AllSongsState extends State<AllSongs> {
         Timer.periodic(Duration(seconds: 1), (Timer t) => _getTimeRemaining());
     if (service.isUserSignedIn())
       WidgetsBinding.instance!.addPostFrameCallback((_) => getFirebaseData());
-    // });
+    if (kIsWeb)
+      WidgetsBinding.instance!.addPostFrameCallback((_) => webFlow = WebFlow(
+          buildContext: context,
+          getValues: getValues,
+          userHandler: userHandler,
+          signInSuccessful: () {
+            setState(() {
+              _accessDenied = false;
+              signedIn = true;
+              openSignIn = false;
+              gridSongs = new List.from(songs);
+            });
+          },
+          close: () {
+            setState(() {
+              openSignIn = false;
+            });
+          }));
   }
+
+  // VoidCallback signInSuccessful() {
+  //   setState(() {
+  //     _accessDenied = false;
+  //     signedIn = true;
+  //     openSignIn = false;
+  //     gridSongs = new List.from(songs);
+  //   });
+  // }
+
+  // VoidCallback closeSignIn
 
   receiveBillingInfo() async {
     final Stream purchaseUpdated = InAppPurchase.instance.purchaseStream;
@@ -224,35 +266,6 @@ class _AllSongsState extends State<AllSongs> {
         email = documentSnapshot.id;
       });
     } catch (error) {}
-    // FirebaseFirestore.instance
-    //     .collection('internetUsers')
-    //     .where("endTime", isGreaterThan: DateTime.now())
-    //     .get()
-    //     .then((QuerySnapshot querySnapshot) {
-    //   querySnapshot.docs.forEach((doc) {
-    //     if (doc.exists) {
-    //       Map document = doc.data() as Map;
-    //       if (document.containsKey("ips")) {
-    //         List<Map<String, dynamic>> ips = List.from(document["ips"]);
-    //         for (int i = 0; i < ips.length; i++) {
-    //           var map = ips[i];
-    //           if (map['ip'] == ipAddress) {
-    //             Duration signInTime = new Duration(hours: 3);
-    //             DateTime entrance = map['entrance'].toDate();
-    //             DateTime currentTime = DateTime.now().toUtc();
-    //             if (currentTime.compareTo(entrance.add(signInTime)) < 0) {
-    //               setState(() {
-    //                 signedIn = true;
-    //                 endTime = doc.get("endTime");
-    //                 gridSongs = new List.from(songs);
-    //               });
-    // }
-    // }
-    // }
-    // }
-    // }
-    // });
-    // });
   }
 
   @override
@@ -794,7 +807,8 @@ class _AllSongsState extends State<AllSongs> {
                 ),
               ),
               if (openSignIn)
-                if (kIsWeb) buildWebSignInPopup(),
+                if (kIsWeb) webFlow.buildWebSignInPopup(isSmartphone()),
+              // buildWebSignInPopup(),
               if (openPrivacyOptions)
                 Center(
                     child: Container(
@@ -826,8 +840,8 @@ class _AllSongsState extends State<AllSongs> {
     // getDemoSongs();
     demoSongNames = await getValues.getDemoSongs();
     getGenres();
-    getBackgroundVideos();
     getSongs();
+    if (kIsWeb) getBackgroundVideos();
   }
 
   getSongs() {
@@ -1005,12 +1019,12 @@ class _AllSongsState extends State<AllSongs> {
                   builder: (_) => Sing(songsPassed, counter.toString())));
         }
       }
-      else {
-        Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (_) => MobileSing(songsPassed, counter.toString())));
-      }
+      // else {
+      //   Navigator.push(
+      //       context,
+      //       MaterialPageRoute(
+      //           builder: (_) => MobileSing(songsPassed, counter.toString())));
+      // }
       setState(() {
         songsClicked.clear();
       });
@@ -1274,23 +1288,7 @@ class _AllSongsState extends State<AllSongs> {
     }
   }
 
-  Future<List<String>> getCouponCode() async {
-    var collection = FirebaseFirestore.instance.collection('randomFields');
-
-    var doc = await collection.doc("coupon").get();
-
-    return List.from(doc.get("code"));
-  }
-
-  bool timeIsStillAllocated(DocumentSnapshot<Map<String, dynamic>> doc) {
-    DateTime currentTime = DateTime.now().toUtc();
-    endTime = doc.get("endTime");
-    DateTime myDateTime = endTime.toDate();
-    return currentTime.compareTo(myDateTime) < 0;
-  }
-
-  addTimeToFirebase(int quantity) {
-    Map<String, dynamic> firestoreDoc = new Map<String, dynamic>();
+  addTimeToFirebase(int quantity) async {
     if (!signedIn || timesUp())
       setState(() {
         endTime =
@@ -1302,31 +1300,23 @@ class _AllSongsState extends State<AllSongs> {
             .add(Duration(hours: quantity))
             .add(endTime.toDate().difference(DateTime.now().toUtc())));
       });
-    firestoreDoc['endTime'] = endTime;
-    firestoreDoc['email'] = email;
-
-    CollectionReference users =
-        FirebaseFirestore.instance.collection('internetUsers');
-
-    Future<void> addUser() {
-      return users
-          .doc(email)
-          .set(firestoreDoc)
-          .then((value) => setState(() {
-                _accessDenied = false;
-                _errorMessage = "";
-                _loading = false;
-                signedIn = true;
-                openSignIn = false;
-                gridSongs = new List.from(songs);
-              }))
-          .catchError((error) => setState(() {
-                _errorMessage = error.toString();
-                _loading = false;
-              }));
+    userHandler.setEndTime(endTime);
+    bool timeAdded = await userHandler.addTimeToUser();
+    if (timeAdded)
+      setState(() {
+        _accessDenied = false;
+        _errorMessage = "";
+        _loading = false;
+        signedIn = true;
+        openSignIn = false;
+        gridSongs = new List.from(songs);
+      });
+    else {
+      setState(() {
+        _loading = false;
+      });
+      printConnectionError();
     }
-
-    addUser();
   }
 
   printConnectionError() {
@@ -1336,427 +1326,13 @@ class _AllSongsState extends State<AllSongs> {
     });
   }
 
-  buildWebSignInPopup() {
-    return Directionality(
-      textDirection: Directionality.of(context),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-              child: Center(
-            child: Stack(children: [
-              Center(
-                child: Container(
-                  height: MediaQuery.of(context).size.height - 40,
-                  width: isSmartphone()
-                      ? MediaQuery.of(context).size.width
-                      : MediaQuery.of(context).size.width / 3,
-                  decoration: BoxDecoration(
-                      color: Colors.black,
-                      border: Border.all(color: Colors.purple),
-                      borderRadius:
-                          BorderRadius.all(new Radius.circular(20.0))),
-                  child: Stack(children: [
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Container(
-                          height: MediaQuery.of(context).size.height / 3.5,
-                          width: MediaQuery.of(context).size.height / 3.5,
-                          decoration: BoxDecoration(
-                            image: DecorationImage(
-                              image: AssetImage('assets/ashira.png'),
-                              fit: BoxFit.fill,
-                            ),
-                            shape: BoxShape.rectangle,
-                          ),
-                        ),
-                        Center(
-                          child: Container(
-                              width: isSmartphone()
-                                  ? MediaQuery.of(context).size.width / 2
-                                  : MediaQuery.of(context).size.width / 4,
-                              height: 50,
-                              decoration: BoxDecoration(
-                                  border: Border.all(color: Colors.purple),
-                                  borderRadius: BorderRadius.all(
-                                      new Radius.circular(20.0))),
-                              child: Center(
-                                child: Directionality(
-                                  textDirection: TextDirection.ltr,
-                                  child: TextField(
-                                    obscureText: _isObscure,
-                                    onSubmitted: (value) {
-                                      if (!_loading) checkEmailAndContinue();
-                                    },
-                                    textAlign: TextAlign.center,
-                                    decoration: new InputDecoration(
-                                      prefixIcon: Icon(
-                                        _isObscure
-                                            ? Icons.visibility
-                                            : Icons.visibility_off,
-                                        color: Colors.transparent,
-                                      ),
-                                      suffixIcon: IconButton(
-                                          icon: Icon(
-                                            _isObscure
-                                                ? Icons.visibility
-                                                : Icons.visibility_off,
-                                          ),
-                                          onPressed: () {
-                                            setState(() {
-                                              _isObscure = !_isObscure;
-                                            });
-                                          }),
-                                      hintText:
-                                          AppLocalizations.of(context)!.email,
-                                      hintStyle:
-                                          TextStyle(color: Color(0xFF787676)),
-                                      fillColor: Colors.transparent,
-                                    ),
-                                    style: TextStyle(
-                                        fontSize: 15, color: Colors.white),
-                                    autofocus: true,
-                                    controller: _userNameEditingController,
-                                  ),
-                                ),
-                              )),
-                        ),
-                        Center(
-                          child: Container(
-                              width: isSmartphone()
-                                  ? MediaQuery.of(context).size.width / 2
-                                  : MediaQuery.of(context).size.width / 4,
-                              height: 50,
-                              decoration: BoxDecoration(
-                                  border: Border.all(color: Colors.purple),
-                                  borderRadius: BorderRadius.all(
-                                      new Radius.circular(20.0))),
-                              child: Center(
-                                child: Directionality(
-                                  textDirection: TextDirection.ltr,
-                                  child: TextField(
-                                    onSubmitted: (value) {
-                                      if (!_loading) checkEmailAndContinue();
-                                    },
-                                    textAlign: TextAlign.center,
-                                    decoration: new InputDecoration(
-                                      hintText:
-                                          AppLocalizations.of(context)!.coupon,
-                                      hintStyle:
-                                          TextStyle(color: Color(0xFF787676)),
-                                      fillColor: Colors.transparent,
-                                    ),
-                                    style: TextStyle(
-                                        fontSize: 15, color: Colors.white),
-                                    autofocus: true,
-                                    controller: _couponEditingController,
-                                  ),
-                                ),
-                              )),
-                        ),
-                        !_loading
-                            ? Container(
-                                decoration: BoxDecoration(
-                                    color: Colors.blue,
-                                    borderRadius: BorderRadius.all(
-                                        new Radius.circular(10))),
-                                child: Padding(
-                                  padding:
-                                      const EdgeInsets.fromLTRB(8.0, 4, 8.0, 4),
-                                  child: TextButton(
-                                      onPressed: checkEmailAndContinue,
-                                      child: Directionality(
-                                        textDirection: TextDirection.ltr,
-                                        child: Text(
-                                          AppLocalizations.of(context)!.enter,
-                                          style: TextStyle(
-                                              fontSize: 20,
-                                              color: Colors.white),
-                                        ),
-                                      )),
-                                ),
-                              )
-                            : new Align(
-                                child: new Container(
-                                  color: Colors.transparent,
-                                  width: 70.0,
-                                  height: 70.0,
-                                  child: new Padding(
-                                      padding: const EdgeInsets.all(5.0),
-                                      child: new Center(
-                                          child:
-                                              new CircularProgressIndicator())),
-                                ),
-                                alignment: FractionalOffset.center,
-                              ),
-                        if (_errorMessage != "")
-                          Center(
-                              child: Directionality(
-                            textDirection: TextDirection.ltr,
-                            child: Text(
-                              _errorMessage,
-                              style: TextStyle(
-                                color: Colors.red,
-                                fontSize: 20,
-                              ),
-                            ),
-                          )),
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            // Center(
-                            //     child: Directionality(
-                            //   textDirection: TextDirection.rtl,
-                            //   child: Text(
-                            //     AppLocalizations.of(context)!.personalUse,
-                            //     // data,
-                            //     style: TextStyle(
-                            //       //   fontFamily: 'SignInFont',
-                            //       color: Colors.white,
-                            //       //wordSpacing: 5,
-                            //       fontSize: 20,
-                            //       //height: 1.4,
-                            //       //letterSpacing: 1.6
-                            //     ),
-                            //   ),
-                            // )),
-                            Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Center(
-                                  child: Text(
-                                AppLocalizations.of(context)!.publicUse,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  //fontFamily: 'SignInFont',
-                                  color: Colors.white,
-                                  // wordSpacing: 5,
-                                  fontSize: 20,
-                                  height: 1.5,
-
-                                  //height: 1.4,
-                                  // letterSpacing: 1.6
-                                ),
-                              )),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Center(
-                                  child: Text(
-                                AppLocalizations.of(context)!
-                                    .questionsAndInquiries,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  //fontFamily: 'SignInFont',
-                                  color: Colors.white,
-                                  // wordSpacing: 5,
-                                  fontSize: 20,
-                                  height: 1.5,
-
-                                  //height: 1.4,
-                                  // letterSpacing: 1.6
-                                ),
-                              )),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.all(5.0),
-                              child: Center(
-                                child: MouseRegion(
-                                  cursor: SystemMouseCursors.click,
-                                  onEnter: (PointerEvent details) =>
-                                      setState(() => amIWatsAppHovering = true),
-                                  onExit: (PointerEvent details) =>
-                                      setState(() {
-                                    amIWatsAppHovering = false;
-                                  }),
-                                  child: RichText(
-                                      text: TextSpan(
-                                          text: AppLocalizations.of(context)!
-                                              .watsappNumber,
-                                          style: TextStyle(
-                                            fontSize: 18,
-                                            color: amIWatsAppHovering
-                                                ? Colors.green[300]
-                                                : Colors.blue,
-                                            decoration:
-                                                TextDecoration.underline,
-                                          ),
-                                          recognizer: TapGestureRecognizer()
-                                            ..onTap = () {
-                                              launch(
-                                                  "https://wa.me/message/6CROFFTK7A5BE1");
-                                            })),
-                                ),
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.all(5.0),
-                              child: Center(
-                                  child: Text(
-                                AppLocalizations.of(context)!.emailUsAt,
-                                style: TextStyle(
-                                  //fontFamily: 'SignInFont',
-                                  color: Colors.white,
-                                  //wordSpacing: 5,
-                                  fontSize: 20,
-                                  // height: 1.4,
-                                  //letterSpacing: 1.6
-                                ),
-                              )),
-                            ),
-                          ],
-                        )
-                      ],
-                    ),
-                    Align(
-                      alignment: Alignment.topRight,
-                      child: IconButton(
-                        icon: Icon(Icons.close),
-                        color: Colors.white,
-                        onPressed: () {
-                          setState(() {
-                            openSignIn = false;
-                          });
-                        },
-                      ),
-                    ),
-                  ]),
-                ),
-              ),
-            ]),
-          )),
-        ],
-      ),
-    );
-  }
-
-  checkEmailAndContinue() async {
-    setState(() {
-      _loading = true;
-    });
-    String coupon = _couponEditingController.text.toLowerCase();
-    List<String> code = new List.empty();
-    if (coupon != "") code = await getCouponCode();
-    email = _userNameEditingController.text.toLowerCase();
-    if (email == "") {
-      setState(() {
-        _errorMessage = AppLocalizations.of(context)!.emailEmptyError;
-        _loading = false;
-      });
-      return;
-    }
-    try {
-      DocumentSnapshot<Map<String, dynamic>> doc = await checkFirebaseId(email);
-      if (doc.exists) {
-        if (!timeIsStillAllocated(doc)) {
-          if (coupon == "") {
-            getPurchaseFromStore(true, true);
-          } else {
-            validateCoupon(code, coupon);
-          }
-        } else {
-          checkIfDeviceRegistered(doc, !(coupon != "" && coupon == code[0]));
-          setState(() {
-            gridSongs = new List.from(songs);
-            signedIn = true;
-            _loading = false;
-            openSignIn = false;
-          });
-          return;
-        }
-      } else if (coupon != "") {
-        validateCoupon(code, coupon);
-      } else {
-        getPurchaseFromStore(true, false);
-      }
-    } catch (error) {
-      printConnectionError();
-    }
-  }
-
-  Future<Map<String, int>> getWooCommerceId(
-      wph.WordPressAPI api, String email) async {
-    try {
-      Map<String, dynamic> pageArgs = new Map();
-      pageArgs["per_page"] = 50;
-      pageArgs["status"] = "processing";
-      final wp.WPResponse res =
-          await api.fetch('orders', namespace: "wc/v2", args: pageArgs);
-      try {
-        Map<String, int> ret = checkForIdInData(email, res.data);
-
-        return ret;
-      } catch (error) {
-        if (error.toString() == "No document") {
-          int pages = res.meta!.totalPages!;
-          for (int i = 2; i <= pages; i++) {
-            pageArgs["page"] = i;
-            final wp.WPResponse res =
-                await api.fetch('orders', namespace: "wc/v2", args: pageArgs);
-            try {
-              return checkForIdInData(email, res.data);
-            } catch (error) {
-              if (error.toString() == "No document") {
-                continue;
-              } else {
-                rethrow;
-              }
-            }
-          }
-
-          throw "No document";
-        } else {
-          rethrow;
-        }
-      }
-    } catch (error) {
-      rethrow;
-    }
-  }
-
-  void assignOrderAsCompleted(wph.WordPressAPI api, int id) {
-    Map<String, dynamic> params = new Map();
-    params["status"] = "completed";
-    api.put('orders/$id', namespace: "wc/v2", args: params);
-    setState(() {
-      _loading = true;
-    });
-  }
-
-  checkForIdInData(email, data) {
-    for (var d in data) {
-      if (d["billing"]["email"].toString().toLowerCase() == email) {
-        Map<String, int> returnArgs = new Map();
-        returnArgs["id"] = d["id"];
-        returnArgs["quantity"] = getQuantity(d);
-        return returnArgs;
-      }
-    }
-    throw "No document";
-  }
-
-  int getQuantity(json) {
-    int quantity = 0;
-    var itemObjsJson = json['line_items'] as List;
-    List<Item> items =
-        itemObjsJson.map((itemJson) => Item.fromJson(itemJson)).toList();
-    for (Item item in items) {
-      if (item.sku == '110011') {
-        quantity = item.quantity;
-      }
-    }
-    return quantity;
-  }
-
   void getPurchaseFromStore(bool newUser, bool timesUp) async {
     wph.WordPressAPI api = wph.WordPressAPI('https://ashira-music.com');
     try {
       try {
-        var res = await getWooCommerceId(api, email);
+        var res = await CheckForPurchase().getWooCommerceId(email);
         await addTimeToFirebase((res)["quantity"]!);
-        assignOrderAsCompleted(api, (res)["id"]!);
+        CheckForPurchase().assignOrderAsCompleted((res)["id"]!);
       } catch (error) {
         if (error.toString() == "No document") {
           setState(() {
@@ -1773,22 +1349,6 @@ class _AllSongsState extends State<AllSongs> {
     } catch (e) {
       printConnectionError();
     }
-  }
-
-  void validateCoupon(List<String> code, String coupon) {
-    for (int i = 1; i < code.length; i++) {
-      String c = code[i];
-      if (coupon.contains(c) && c.length == coupon.length) {
-        addTimeToFirebase(i);
-        return;
-      }
-    }
-    setState(() {
-      _errorMessage = AppLocalizations.of(context)!.couponError;
-      _loading = false;
-    });
-    email = "";
-    return;
   }
 
   buildMobilePayment(bool loading, [String billingErrorMessage = ""]) async {
@@ -2384,11 +1944,6 @@ class _AllSongsState extends State<AllSongs> {
       );
   }
 
-  void checkIfDeviceRegistered(
-      DocumentSnapshot<Map<String, dynamic>> doc, bool saveIp) {
-    IpHandler().checkIfDeviceRegistered(email, doc, saveIp, ipAddress);
-  }
-
   Future<void> initializeFirebase() async {
     await Firebase.initializeApp();
     // FirebaseCrashlytics.instance.crash();
@@ -2588,7 +2143,8 @@ class _AllSongsState extends State<AllSongs> {
 
   void openBilling() async {
     Navigator.of(context).pop();
-    endTime = await UserHandler().getUserEndTime(service.getEmail());
+    userHandler.setEmail(email);
+    endTime = await userHandler.getUserEndTime();
     if (!checkOvertime())
       setState(() {
         signedIn = true;
@@ -2602,12 +2158,14 @@ class _AllSongsState extends State<AllSongs> {
     String? userEmail = firebaseAuth.currentUser!.email;
     if (userEmail != null) {
       // Navigator.pushNamedAndRemoveUntil(context, Constants.homeNavigate, (route) => false);
-      bool userAdded = await UserHandler().sendUserInfoToFirestore(
+      bool userAdded = await userHandler.sendUserInfoToFirestore(
           userEmail,
           firebaseAuth.currentUser!.displayName,
           firebaseAuth.currentUser!.photoURL);
       if (userAdded) {
-        setState(() {});
+        setState(() {
+          email = userEmail;
+        });
         openBilling();
       } else
         catchSignInError();
@@ -2629,6 +2187,7 @@ class _AllSongsState extends State<AllSongs> {
 
   Future<bool> _deliverProduct(PurchaseDetails purchaseDetails) async {
     bool timeAdded = false;
+
     if (purchaseDetails.productID == "daily_buy") {
       endTime = Timestamp.fromDate(DateTime.now().add(Duration(days: 1)));
     } else {
@@ -2639,7 +2198,10 @@ class _AllSongsState extends State<AllSongs> {
           DateTime.now().hour,
           DateTime.now().minute));
     }
-    timeAdded = await UserHandler().addTimeToUser(service.getEmail(), endTime);
+    userHandler.setEmail(service.getEmail());
+    userHandler.setEndTime(endTime);
+    timeAdded = await userHandler.addTimeToUser();
+    // timeAdded = await UserHandler().addTimeToUser(service.getEmail(), endTime);
     if (timeAdded) {
       Navigator.of(context).pop();
       setState(() {

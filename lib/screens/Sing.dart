@@ -12,8 +12,8 @@ import 'package:ashira_flutter/model/Song.dart';
 import 'package:ashira_flutter/utils/FakeUi.dart'
     if (dart.library.html) 'dart:ui' as ui;
 import 'package:ashira_flutter/utils/Parser.dart';
-import 'package:ashira_flutter/utils/WpHelper.dart' as wph;
-import 'package:ashira_flutter/utils/firetools/UserHandler.dart';
+import '../utils/webPurchases/WpHelper.dart' as wph;
+import 'package:ashira_flutter/utils/firetools/WebUserHandler.dart';
 import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
 import 'package:camera/camera.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -413,6 +413,7 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
                           setSong: (int value) {
                             setSong(value);
                           },
+                          buildContext: context,
                         )
                     ]),
                   ),
@@ -681,15 +682,17 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
                                 ],
                               ),
                             ),
-                            if (!songPicked) TonePicker(
-                              colorful:
-                              (display == DisplayOptions.PERSONAL_MOISHIE ||
-                                  display == DisplayOptions.WITH_CLIP) ||
-                                  _isSmartphone,
-                              setSong: (int) {
-
-                              },
-                            ),
+                            if (!songPicked)
+                              TonePicker(
+                                colorful: (display ==
+                                            DisplayOptions.PERSONAL_MOISHIE ||
+                                        display == DisplayOptions.WITH_CLIP) ||
+                                    _isSmartphone,
+                                setSong: (int value) {
+                                  setSong(value);
+                                },
+                                buildContext: context,
+                              ),
                             SafeArea(
                               child: Padding(
                                 padding: const EdgeInsets.all(8.0),
@@ -869,7 +872,7 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
       });
     } else {
       if (email != "")
-        UserHandler().addSongsPlayedAndLength(email, songs, songLength);
+        WebUserHandler().addSongsPlayedAndLength(email, songs, songLength);
       if (display == DisplayOptions.WITH_CLIP && _controller != null)
         _controller!.play();
       audioPlayer.play();
@@ -1131,214 +1134,6 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
       if (newTrack < splits.length - 1) initiateNextController(newTrack + 1);
       _controller!.play();
     }
-  }
-
-  tonePicker() {
-    return Directionality(
-      textDirection: Directionality.of(context),
-      child: Center(
-        child: Container(
-          height: 450,
-          width: 330,
-          decoration: BoxDecoration(
-              border: Border.all(color: Colors.purple),
-              borderRadius: BorderRadius.all(new Radius.circular(20.0)),
-              gradient: RadialGradient(
-                center: Alignment.center,
-                radius: 0.8,
-                colors: [
-                  const Color(0xFF221A4D), // blue sky
-                  const Color(0xFF000000), // yellow sun
-                ],
-              )),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Column(
-                children: [
-                  Text(
-                    AppLocalizations.of(context)!.toneQuestion,
-                    style: TextStyle(fontSize: 18, color: Colors.white),
-                  ),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  Text(
-                    AppLocalizations.of(context)!.toneExplanation,
-                    style: TextStyle(fontSize: 18, color: Colors.white),
-                  ),
-                ],
-              ),
-              ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: Stack(children: <Widget>[
-                    Positioned.fill(
-                      child: Container(
-                        decoration: (display ==
-                                        DisplayOptions.PERSONAL_MOISHIE ||
-                                    display == DisplayOptions.WITH_CLIP) ||
-                                _isSmartphone
-                            ? BoxDecoration(
-                                borderRadius:
-                                    BorderRadius.all(new Radius.circular(50.0)),
-                                gradient: LinearGradient(
-                                  colors: <Color>[
-                                    Color(0xFF0D47A1),
-                                    Color(0xFF1976D2),
-                                    Color(0xFF42A5F5),
-                                  ],
-                                ),
-                              )
-                            : BoxDecoration(
-                                color: Colors.purple,
-                                // border: Border.all(color: Colors.tealAccent),
-                                borderRadius:
-                                    BorderRadius.all(new Radius.circular(60.0)),
-                                gradient: RadialGradient(
-                                  colors: <Color>[
-                                    Colors.purple.shade200,
-                                    Colors.purple.shade800,
-                                    Colors.purple.shade500,
-                                  ],
-                                  stops: [0.2, 0.7, 1],
-                                  center: Alignment(0.1, 0.3),
-                                  focal: Alignment(-0.1, 0.6),
-                                  focalRadius: 2,
-                                ),
-                              ),
-                      ),
-                    ),
-                    Container(
-                      height: 50,
-                      width: 130,
-                      child: TextButton(
-                          onPressed: () {
-                            setSong(MAN);
-                          },
-                          child: Text(
-                            AppLocalizations.of(context)!.man,
-                            style: TextStyle(
-                              fontSize: 20,
-                              color: Colors.white,
-                              // letterSpacing: 1.5
-                            ),
-                          )),
-                    ),
-                  ])),
-              ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: Stack(children: <Widget>[
-                    Positioned.fill(
-                      child: Container(
-                        decoration: (display ==
-                                        DisplayOptions.PERSONAL_MOISHIE ||
-                                    display == DisplayOptions.WITH_CLIP) ||
-                                _isSmartphone
-                            ? BoxDecoration(
-                                borderRadius:
-                                    BorderRadius.all(new Radius.circular(60.0)),
-                                gradient: LinearGradient(
-                                  colors: <Color>[
-                                    Color(0xFF630DA1),
-                                    Color(0xFF7A37E5),
-                                    Color(0xFFB47DF1),
-                                  ],
-                                ),
-                              )
-                            : BoxDecoration(
-                                gradient: RadialGradient(
-                                  colors: <Color>[
-                                    Colors.purple.shade200,
-                                    Colors.purple.shade800,
-                                    Colors.purple.shade500,
-                                  ],
-                                  stops: [0.2, 0.7, 1],
-                                  center: Alignment(0.1, 0.3),
-                                  focal: Alignment(-0.1, 0.6),
-                                  focalRadius: 3,
-                                ),
-                                borderRadius:
-                                    BorderRadius.all(new Radius.circular(75.0)),
-                              ),
-                      ),
-                    ),
-                    Container(
-                      height: 50,
-                      width: 130,
-                      child: TextButton(
-                          onPressed: () {
-                            setSong(WOMAN);
-                          },
-                          child: Text(
-                            AppLocalizations.of(context)!.woman,
-                            style: TextStyle(
-                              fontSize: 20,
-                              color: Colors.white,
-                              //letterSpacing: 1.5
-                            ),
-                          )),
-                    ),
-                  ])),
-              ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: Stack(children: <Widget>[
-                    Positioned.fill(
-                      child: Container(
-                        decoration: (display ==
-                                        DisplayOptions.PERSONAL_MOISHIE ||
-                                    display == DisplayOptions.WITH_CLIP) ||
-                                _isSmartphone
-                            ? BoxDecoration(
-                                borderRadius:
-                                    BorderRadius.all(new Radius.circular(60.0)),
-                                gradient: LinearGradient(
-                                  colors: <Color>[
-                                    Color(0xFF0D47A1),
-                                    Color(0xFF19D247),
-                                    Color(0xFFF5AD42),
-                                  ],
-                                ),
-                              )
-                            : BoxDecoration(
-                                gradient: RadialGradient(
-                                  colors: <Color>[
-                                    Colors.purple.shade200,
-                                    Colors.purple.shade800,
-                                    Colors.purple.shade500,
-                                  ],
-                                  stops: [0.2, 0.7, 1],
-                                  center: Alignment(0.1, 0.3),
-                                  focal: Alignment(-0.1, 0.6),
-                                  focalRadius: 4,
-                                ),
-                                borderRadius:
-                                    BorderRadius.all(new Radius.circular(90.0)),
-                              ),
-                      ),
-                    ),
-                    Container(
-                      height: 50,
-                      width: 130,
-                      child: TextButton(
-                          onPressed: () {
-                            setSong(KID);
-                          },
-                          child: Text(
-                            AppLocalizations.of(context)!.kid,
-                            style: TextStyle(
-                              fontSize: 20,
-                              color: Colors.white,
-                              //    letterSpacing: 1.5
-                            ),
-                          )),
-                    ),
-                  ])),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 
   void changeAudio(int newTrack) {

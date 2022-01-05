@@ -62,7 +62,7 @@ class IpHandler {
     {
       if (doc.exists) {
         Map document = doc.data() as Map;
-        if (document.containsKey("ips")) {
+        if (timeStarted(doc)) if (document.containsKey("ips")) {
           List<Map<String, dynamic>> ips = List.from(document["ips"]);
           for (int i = 0; i < ips.length; i++) {
             var map = ips[i];
@@ -81,6 +81,17 @@ class IpHandler {
       }
     }
     throw "no ip exists";
+  }
+
+  bool timeStarted(DocumentSnapshot<dynamic> doc) {
+    Map document = doc.data() as Map;
+    if (document.containsKey("startTime")) {
+      DateTime currentTime = DateTime.now().toUtc();
+      Timestamp startTime = document["startTime"];
+      DateTime myStartTime = startTime.toDate();
+      return currentTime.compareTo(myStartTime) > 0;
+    } else
+      return true;
   }
 
   DateTime getEarliestTime(DateTime signInTime, DateTime endTime) {

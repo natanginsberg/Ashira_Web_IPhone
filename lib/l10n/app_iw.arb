@@ -25,6 +25,7 @@
     "noOrderNumberError": "שים לב, יש לבצע רכישה",
     "pendingError": "ממתין לאישור התשלום",
     "communicationError": "בעיית תקשרות",
+    "timeNotStarted":"ההפעלה שלך מתחילה בעוד ",
     "search": "חפש",
     "categoryChoice":"לבחירת קטגוריה",
     "menu":"תפריט",

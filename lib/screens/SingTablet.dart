@@ -9,7 +9,7 @@ import 'package:ashira_flutter/model/Song.dart';
 import 'package:ashira_flutter/utils/FakeUi.dart'
     if (dart.library.html) 'dart:ui' as ui;
 import 'package:ashira_flutter/utils/Parser.dart';
-import 'package:ashira_flutter/utils/WpHelper.dart' as wph;
+import '../utils/webPurchases/WpHelper.dart' as wph;
 import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
 import 'package:camera/camera.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';

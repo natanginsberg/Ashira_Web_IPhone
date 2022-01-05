@@ -1,3 +1,5 @@
+import 'dart:js';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -9,16 +11,17 @@ class TonePicker extends StatelessWidget {
 
   final bool colorful;
   final Function(int) setSong;
+  final BuildContext buildContext;
 
   TonePicker({
     required this.colorful,
-    required this.setSong,
+    required this.setSong, required this.buildContext,
   });
 
   @override
   Widget build(BuildContext context) {
     return Directionality(
-      textDirection: Directionality.of(context),
+      textDirection: Directionality.of(buildContext),
       child: Center(
         child: Container(
           height: 450,
@@ -41,14 +44,14 @@ class TonePicker extends StatelessWidget {
               Column(
                 children: [
                   Text(
-                    AppLocalizations.of(context)!.toneQuestion,
+                    AppLocalizations.of(buildContext)!.toneQuestion,
                     style: TextStyle(fontSize: 18, color: Colors.white),
                   ),
                   SizedBox(
                     height: 10,
                   ),
                   Text(
-                    AppLocalizations.of(context)!.toneExplanation,
+                    AppLocalizations.of(buildContext)!.toneExplanation,
                     style: TextStyle(fontSize: 18, color: Colors.white),
                   ),
                 ],
@@ -97,7 +100,7 @@ class TonePicker extends StatelessWidget {
                             setSong(MAN);
                           },
                           child: Text(
-                            AppLocalizations.of(context)!.man,
+                            AppLocalizations.of(buildContext)!.man,
                             style: TextStyle(
                               fontSize: 20,
                               color: Colors.white,
@@ -148,7 +151,7 @@ class TonePicker extends StatelessWidget {
                             setSong(WOMAN);
                           },
                           child: Text(
-                            AppLocalizations.of(context)!.woman,
+                            AppLocalizations.of(buildContext)!.woman,
                             style: TextStyle(
                               fontSize: 20,
                               color: Colors.white,
@@ -199,7 +202,7 @@ class TonePicker extends StatelessWidget {
                             setSong(KID);
                           },
                           child: Text(
-                            AppLocalizations.of(context)!.kid,
+                            AppLocalizations.of(buildContext)!.kid,
                             style: TextStyle(
                               fontSize: 20,
                               color: Colors.white,
