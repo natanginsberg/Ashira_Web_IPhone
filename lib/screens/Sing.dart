@@ -12,7 +12,6 @@ import 'package:ashira_flutter/model/Song.dart';
 import 'package:ashira_flutter/utils/FakeUi.dart'
     if (dart.library.html) 'dart:ui' as ui;
 import 'package:ashira_flutter/utils/Parser.dart';
-import '../utils/webPurchases/WpHelper.dart' as wph;
 import 'package:ashira_flutter/utils/firetools/WebUserHandler.dart';
 import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
 import 'package:camera/camera.dart';
@@ -27,11 +26,11 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:http/http.dart' as http;
 import 'package:just_audio/just_audio.dart';
 import 'package:universal_html/html.dart' as html;
-import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
 import 'package:wakelock/wakelock.dart';
 import 'package:wordpress_api/wordpress_api.dart' as wp;
 
+import '../utils/webPurchases/WpHelper.dart' as wph;
 import 'AllSongs.dart';
 // List<CameraDescription> cameras;
 
@@ -721,141 +720,35 @@ class _SingState extends State<Sing> with WidgetsBindingObserver {
   }
 
   expireWording() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Center(
-            child: Text(
-          AppLocalizations.of(context)!.outOfTimeError,
-          style: TextStyle(
-              fontFamily: 'SignInFont',
-              color: Colors.yellow,
-              wordSpacing: 5,
-              fontSize: 40,
-              height: 1.4,
-              letterSpacing: 1.6),
-        )),
-        Directionality(
-          textDirection: Directionality.of(context),
-          child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Text(
-              AppLocalizations.of(context)!.addTime + " ",
+    if (kIsWeb)
+      return Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Center(
+                child: Text(
+              AppLocalizations.of(context)!.outOfTimeError,
               style: TextStyle(
                   fontFamily: 'SignInFont',
-                  color: Colors.white,
+                  color: Colors.yellow,
                   wordSpacing: 5,
-                  fontSize: 30,
+                  fontSize: 40,
                   height: 1.4,
                   letterSpacing: 1.6),
-            ),
-            _loading
-                ? new Container(
-                    color: Colors.transparent,
-                    width: 70.0,
-                    height: 70.0,
-                    child: new Padding(
-                        padding: const EdgeInsets.all(5.0),
-                        child:
-                            new Center(child: new CircularProgressIndicator())),
-                  )
-                : Container(
-                    decoration: BoxDecoration(
-                        color: Colors.blue,
-                        borderRadius:
-                            BorderRadius.all(new Radius.circular(10))),
-                    child: Padding(
-                        padding: const EdgeInsets.fromLTRB(8.0, 4, 8.0, 4),
-                        child: TextButton(
-                            onPressed: addTime,
-                            child: Directionality(
-                              textDirection: TextDirection.ltr,
-                              child: Text(
-                                AppLocalizations.of(context)!.enter,
-                                style: TextStyle(
-                                    fontSize: 15, color: Colors.white),
-                              ),
-                            ))))
-          ]),
-        ),
-        SizedBox(
-          height: 15,
-        ),
-        Directionality(
-          textDirection: Directionality.of(context),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Row(
-                children: [
-                  IconButton(
-                    icon: Icon(
-                      Icons.remove,
+            )),
+            Directionality(
+                textDirection: Directionality.of(context),
+                child: Text(
+                  AppLocalizations.of(context)!.addTime,
+                  style: TextStyle(
+                      fontFamily: 'SignInFont',
                       color: Colors.white,
-                    ),
-                    onPressed: () {
-                      if (quantity > 0)
-                        setState(() {
-                          quantity -= 1;
-                        });
-                    },
-                  ),
-                  Text(
-                      quantity.toString() +
-                          " " +
-                          AppLocalizations.of(context)!.hours,
-                      style: TextStyle(color: Colors.white)),
-                  IconButton(
-                    icon: Icon(
-                      Icons.add,
-                      color: Colors.white,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        quantity += 1;
-                      });
-                    },
-                  ),
-                ],
-              ),
-              SizedBox(
-                width: 20,
-              ),
-              Center(
-                child: MouseRegion(
-                  cursor: SystemMouseCursors.click,
-                  onEnter: (PointerEvent details) =>
-                      setState(() => amIHovering = true),
-                  onExit: (PointerEvent details) => setState(() {
-                    amIHovering = false;
-                  }),
-                  child: RichText(
-                      text: TextSpan(
-                          text: AppLocalizations.of(context)!.placeOrder,
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: amIHovering ? Colors.blue[300] : Colors.blue,
-                            decoration: TextDecoration.underline,
-                          ),
-                          recognizer: TapGestureRecognizer()
-                            ..onTap = () {
-                              launch(
-                                  "https://ashira-music.com/checkout/?add-to-cart=1102&quantity=$quantity");
-                            })),
-                ),
-              ),
-            ],
-          ),
-        ),
-        SizedBox(
-          height: 15,
-        ),
-        Text(
-          _errorMessage,
-          style: TextStyle(color: Colors.red, fontSize: 20),
-        )
-      ],
-    );
+                      wordSpacing: 5,
+                      fontSize: 30,
+                      height: 1.4,
+                      letterSpacing: 1.6),
+                ))
+          ]);
   }
 
   bool timesUp() {

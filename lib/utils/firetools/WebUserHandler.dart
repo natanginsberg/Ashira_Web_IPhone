@@ -6,11 +6,13 @@ class WebUserHandler extends UserHandler{
   CollectionReference users =
   FirebaseFirestore.instance.collection('internetUsers');
 
-  Future<bool> addTimeToUser() async {
+  Future<bool> addTimeToUser([int quantity = 0]) async {
     Map<String, dynamic> firestoreDoc = new Map<String, dynamic>();
     bool timeAdded = false;
     firestoreDoc["endTime"] = endTime;
     firestoreDoc['email'] = email;
+    firestoreDoc['hours'] = quantity;
+    firestoreDoc['password'] = password;
 
     CollectionReference users =
     FirebaseFirestore.instance.collection('internetUsers');

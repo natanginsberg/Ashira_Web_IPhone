@@ -12,8 +12,10 @@ class SongLayout extends StatefulWidget {
   final VoidCallback onTapAction;
 
   bool isSmartphone;
+  bool demoSong;
 
   String memberText;
+  String demoSongWording;
 
   SongLayout(
       {required this.song,
@@ -22,7 +24,8 @@ class SongLayout extends StatefulWidget {
       required this.clickedIndex,
       required this.onTapAction,
       required this.isSmartphone,
-      required this.memberText});
+      required this.memberText,
+      required this.demoSong, required this.demoSongWording});
 
   @override
   _SongLayoutState createState() => _SongLayoutState();
@@ -115,6 +118,16 @@ class _SongLayoutState extends State<SongLayout> {
                 ),
               ],
             ),
+            if (widget.demoSong)
+              Padding(
+                  padding: EdgeInsets.all(10),
+                  child: Align(
+                    alignment: Alignment.bottomCenter,
+                    child: Text(
+                      widget.demoSongWording,
+                      style: TextStyle(color: Colors.green),
+                    ),
+                  )),
             if (!widget.open)
               Padding(
                 padding: EdgeInsets.all(10),

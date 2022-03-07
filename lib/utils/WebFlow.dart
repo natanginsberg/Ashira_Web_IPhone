@@ -7,10 +7,8 @@ import 'package:ashira_flutter/utils/webPurchases/CheckForPurchase.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dart_ipify/dart_ipify.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import 'firetools/IpHandler.dart';
 
@@ -32,7 +30,7 @@ class WebFlow {
   Timer? startTimer;
 
   TextEditingController _userNameEditingController = TextEditingController();
-  TextEditingController _couponEditingController = TextEditingController();
+  TextEditingController _passwordEditingController = TextEditingController();
 
   bool mounted = false;
 
@@ -89,87 +87,87 @@ class WebFlow {
                               shape: BoxShape.rectangle,
                             ),
                           ),
-                          Directionality(
-                            textDirection: Directionality.of(buildContext),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Row(
-                                  children: [
-                                    // Text(
-                                    //     AppLocalizations.of(buildContext)!
-                                    //         .notACustomer,
-                                    //     style: TextStyle(
-                                    //         fontSize: 16, color: Colors.white)),
-                                    // SizedBox(
-                                    //   width: 15,
-                                    // ),
-                                    IconButton(
-                                      icon: Icon(
-                                        Icons.remove,
-                                        color: Colors.white,
-                                      ),
-                                      onPressed: () {
-                                        if (quantity > 0)
-                                          setState(() {
-                                            quantity -= 1;
-                                          });
-                                      },
-                                    ),
-                                    Text(
-                                        quantity.toString() +
-                                            " " +
-                                            AppLocalizations.of(buildContext)!
-                                                .hours,
-                                        style: TextStyle(color: Colors.white)),
-                                    IconButton(
-                                      icon: Icon(
-                                        Icons.add,
-                                        color: Colors.white,
-                                      ),
-                                      onPressed: () {
-                                        setState(() {
-                                          quantity += 1;
-                                        });
-                                      },
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(
-                                  width: 20,
-                                ),
-                                Center(
-                                  child: MouseRegion(
-                                    cursor: SystemMouseCursors.click,
-                                    onEnter: (PointerEvent details) =>
-                                        setState(() => amIHovering = true),
-                                    onExit: (PointerEvent details) =>
-                                        setState(() {
-                                      amIHovering = false;
-                                    }),
-                                    child: RichText(
-                                        text: TextSpan(
-                                            text: AppLocalizations.of(
-                                                    buildContext)!
-                                                .placeOrder,
-                                            style: TextStyle(
-                                              fontSize: 18,
-                                              color: amIHovering
-                                                  ? Colors.blue[300]
-                                                  : Colors.blue,
-                                              decoration:
-                                                  TextDecoration.underline,
-                                            ),
-                                            recognizer: TapGestureRecognizer()
-                                              ..onTap = () {
-                                                launch(
-                                                    "https://ashira-music.com/checkout/?add-to-cart=1102&quantity=$quantity");
-                                              })),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                          // Directionality(
+                          //   textDirection: Directionality.of(buildContext),
+                          //   child: Row(
+                          //     mainAxisAlignment: MainAxisAlignment.center,
+                          //     children: [
+                          //       Row(
+                          //         children: [
+                          //           // Text(
+                          //           //     AppLocalizations.of(buildContext)!
+                          //           //         .notACustomer,
+                          //           //     style: TextStyle(
+                          //           //         fontSize: 16, color: Colors.white)),
+                          //           // SizedBox(
+                          //           //   width: 15,
+                          //           // ),
+                          //           IconButton(
+                          //             icon: Icon(
+                          //               Icons.remove,
+                          //               color: Colors.white,
+                          //             ),
+                          //             onPressed: () {
+                          //               if (quantity > 0)
+                          //                 setState(() {
+                          //                   quantity -= 1;
+                          //                 });
+                          //             },
+                          //           ),
+                          //           Text(
+                          //               quantity.toString() +
+                          //                   " " +
+                          //                   AppLocalizations.of(buildContext)!
+                          //                       .hours,
+                          //               style: TextStyle(color: Colors.white)),
+                          //           IconButton(
+                          //             icon: Icon(
+                          //               Icons.add,
+                          //               color: Colors.white,
+                          //             ),
+                          //             onPressed: () {
+                          //               setState(() {
+                          //                 quantity += 1;
+                          //               });
+                          //             },
+                          //           ),
+                          //         ],
+                          //       ),
+                          //       SizedBox(
+                          //         width: 20,
+                          //       ),
+                          //       Center(
+                          //         child: MouseRegion(
+                          //           cursor: SystemMouseCursors.click,
+                          //           onEnter: (PointerEvent details) =>
+                          //               setState(() => amIHovering = true),
+                          //           onExit: (PointerEvent details) =>
+                          //               setState(() {
+                          //             amIHovering = false;
+                          //           }),
+                          //           child: RichText(
+                          //               text: TextSpan(
+                          //                   text: AppLocalizations.of(
+                          //                           buildContext)!
+                          //                       .placeOrder,
+                          //                   style: TextStyle(
+                          //                     fontSize: 18,
+                          //                     color: amIHovering
+                          //                         ? Colors.blue[300]
+                          //                         : Colors.blue,
+                          //                     decoration:
+                          //                         TextDecoration.underline,
+                          //                   ),
+                          //                   recognizer: TapGestureRecognizer()
+                          //                     ..onTap = () {
+                          //                       launch(
+                          //                           "https://ashira- music.com/checkout/?add-to-cart=1102&quantity=$quantity");
+                          //                     })),
+                          //         ),
+                          //       ),
+                          //     ],
+                          //   ),
+                          // ),
                           Center(
                             child: Container(
                                 width: isSmartphone
@@ -185,28 +183,12 @@ class WebFlow {
                                   child: Directionality(
                                     textDirection: TextDirection.ltr,
                                     child: TextField(
-                                      obscureText: _isObscure,
                                       onSubmitted: (value) {
                                         if (!_loading)
                                           checkEmailAndContinue(setState);
                                       },
                                       textAlign: TextAlign.center,
                                       decoration: new InputDecoration(
-                                        prefixIcon: Icon(
-                                          _isObscure
-                                              ? Icons.visibility
-                                              : Icons.visibility_off,
-                                          color: Colors.transparent,
-                                        ),
-                                        suffixIcon: IconButton(
-                                            icon: Icon(
-                                              _isObscure
-                                                  ? Icons.visibility
-                                                  : Icons.visibility_off,
-                                            ),
-                                            onPressed: () => setState(() {
-                                                  _isObscure = !_isObscure;
-                                                })),
                                         hintText:
                                             AppLocalizations.of(buildContext)!
                                                 .email,
@@ -237,23 +219,39 @@ class WebFlow {
                                   child: Directionality(
                                     textDirection: TextDirection.ltr,
                                     child: TextField(
+                                      obscureText: _isObscure,
                                       onSubmitted: (value) {
                                         if (!_loading)
                                           checkEmailAndContinue(setState);
                                       },
                                       textAlign: TextAlign.center,
                                       decoration: new InputDecoration(
+                                        prefixIcon: Icon(
+                                          _isObscure
+                                              ? Icons.visibility
+                                              : Icons.visibility_off,
+                                          color: Colors.transparent,
+                                        ),
                                         hintText:
                                             AppLocalizations.of(buildContext)!
                                                 .coupon,
                                         hintStyle:
                                             TextStyle(color: Color(0xFF787676)),
                                         fillColor: Colors.transparent,
+                                        suffixIcon: IconButton(
+                                            icon: Icon(
+                                              _isObscure
+                                                  ? Icons.visibility
+                                                  : Icons.visibility_off,
+                                            ),
+                                            onPressed: () => setState(() {
+                                                  _isObscure = !_isObscure;
+                                                })),
                                       ),
                                       style: TextStyle(
                                           fontSize: 15, color: Colors.white),
                                       autofocus: true,
-                                      controller: _couponEditingController,
+                                      controller: _passwordEditingController,
                                     ),
                                   ),
                                 )),
@@ -451,11 +449,8 @@ class WebFlow {
       setState(() {
         _loading = true;
       });
-    String coupon = _couponEditingController.text.toLowerCase();
-    List<String> code = new List.empty();
-    if (coupon != "") code = await getValues.getCouponCode();
+    String password = _passwordEditingController.text.toLowerCase();
     email = _userNameEditingController.text.toLowerCase();
-    userHandler.setEmail(email);
     if (email == "") {
       if (mounted)
         setState(() {
@@ -464,24 +459,63 @@ class WebFlow {
         });
       return;
     }
-    bool saveIp = !(coupon != "" && coupon == code[0]);
+    if (password == "") {
+      if (mounted)
+        setState(() {
+          _errorMessage = AppLocalizations.of(buildContext)!.passwordEmptyError;
+          _loading = false;
+        });
+      return;
+    }
+    userHandler.setEmail(email);
+    userHandler.setPassword(password);
+    bool saveIp = !(password != "" && password == "בלי");
     try {
       DocumentSnapshot<Map<String, dynamic>> doc =
           await userHandler.checkUser();
       if (doc.exists) {
-        if (!timeIsStillAllocated(doc)) {
-          if (coupon == "") {
-            getPurchaseFromStore(true, true);
+        if ((doc.data()!.containsKey("password"))) {
+          if (password != doc.get("password")) {
+            if (mounted)
+              setState(() {
+                _errorMessage = AppLocalizations.of(buildContext)!
+                    .passwordAndUserNameDoNotMatch;
+                _loading = false;
+              });
+            return;
           } else {
-            validateCoupon(code, coupon);
+            if (mounted)
+              setState(() {
+                _errorMessage = AppLocalizations.of(buildContext)!
+                    .passwordAndUserNameDoNotMatch;
+                _loading = false;
+              });
+            return;
+          }
+        }
+        if ((doc.data()!.containsKey("endTime"))) // time was already allocated
+        {
+          if (!timeIsStillAllocated(doc)) {
+            if (mounted)
+              setState(() {
+                AppLocalizations.of(buildContext)!.outOfTimeError;
+                _loading = false;
+              });
+          } else {
+            validateDocument(doc, saveIp);
           }
         } else {
-          validateDocument(doc, saveIp);
+          if (doc.data()!.containsKey("hours")) {
+            await addTimeToFirebase(doc.get("hours"));
+          }
         }
-      } else if (coupon != "") {
-        validateCoupon(code, coupon);
       } else {
-        getPurchaseFromStore(true, false);
+        if (mounted)
+          setState(() {
+            _errorMessage =
+                AppLocalizations.of(buildContext)!.noOrderNumberError;
+            _loading = false;
+          });
       }
     } catch (error) {
       printConnectionError(setState);
@@ -501,23 +535,6 @@ class WebFlow {
         _errorMessage = AppLocalizations.of(buildContext)!.communicationError;
         _loading = false;
       });
-  }
-
-  void validateCoupon(List<String> code, String coupon) {
-    for (int i = 1; i < code.length; i++) {
-      String c = code[i];
-      if (coupon.contains(c) && c.length == coupon.length) {
-        addTimeToFirebase(i);
-        return;
-      }
-    }
-    if (mounted)
-      setState(() {
-        _errorMessage = AppLocalizations.of(buildContext)!.couponError;
-        _loading = false;
-      });
-    email = "";
-    return;
   }
 
   validateDocument(DocumentSnapshot<Map<String, dynamic>> doc,
@@ -615,7 +632,7 @@ class WebFlow {
   addTimeToFirebase(int quantity) async {
     endTime = Timestamp.fromDate(DateTime.now().add(Duration(hours: quantity)));
     userHandler.setEndTime(endTime);
-    bool timeAdded = await userHandler.addTimeToUser();
+    bool timeAdded = await userHandler.addTimeToUser(quantity);
     if (timeAdded) {
       if (mounted)
         setState(() {

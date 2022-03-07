@@ -7,8 +7,6 @@ import 'package:ashira_flutter/customWidgets/GenreButton.dart';
 import 'package:ashira_flutter/customWidgets/SongLayout.dart';
 import 'package:ashira_flutter/model/DisplayOptions.dart';
 import 'package:ashira_flutter/model/Song.dart';
-
-import 'package:ashira_flutter/screens/MobileSing.dart';
 import 'package:ashira_flutter/utils/AppleSignIn.dart';
 import 'package:ashira_flutter/utils/WebFlow.dart';
 import 'package:ashira_flutter/utils/firetools/FirebaseService.dart';
@@ -743,69 +741,65 @@ class _AllSongsState extends State<AllSongs> {
                               ],
                             ),
                           ),
-                        signedIn
-                            ? placeNewOrder()
-                            : Container(
-                                height: 50,
-                                color: Colors.black,
-                                child: Directionality(
-                                  textDirection: Directionality.of(context),
-                                  child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          AppLocalizations.of(context)!
-                                              .enterSystem,
-                                          style: TextStyle(
-                                              fontFamily: 'SignInFont',
-                                              color: Colors.white,
-                                              wordSpacing: 5,
-                                              height: 1.4,
-                                              letterSpacing: 1.6),
-                                        ),
-                                        SizedBox(
-                                          width: 15,
-                                        ),
-                                        Container(
-                                            decoration: BoxDecoration(
-                                                color: Colors.blue,
-                                                borderRadius: BorderRadius.all(
-                                                    new Radius.circular(10))),
-                                            child: Padding(
-                                                padding:
-                                                    const EdgeInsets.fromLTRB(
-                                                        8.0, 4, 8.0, 4),
-                                                child: TextButton(
-                                                    onPressed: () {
-                                                      if (kIsWeb)
-                                                        setState(() {
-                                                          openSignIn = true;
-                                                        });
-                                                      else {
-                                                        if (service
-                                                            .isUserSignedIn())
-                                                          buildMobilePayment(
-                                                              false);
-                                                        else
-                                                          signInOptions(false);
-                                                      }
-                                                    },
-                                                    child: Directionality(
-                                                      textDirection:
-                                                          TextDirection.ltr,
-                                                      child: Text(
-                                                        AppLocalizations.of(
-                                                                context)!
-                                                            .enter,
-                                                        style: TextStyle(
-                                                            color:
-                                                                Colors.white),
-                                                      ),
-                                                    )))),
-                                      ]),
-                                ),
-                              )
+                        if (!signedIn)
+                          // ? placeNewOrder()
+                          // :
+                          Container(
+                            height: 50,
+                            color: Colors.black,
+                            child: Directionality(
+                              textDirection: Directionality.of(context),
+                              child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      AppLocalizations.of(context)!.enterSystem,
+                                      style: TextStyle(
+                                          fontFamily: 'SignInFont',
+                                          color: Colors.white,
+                                          wordSpacing: 5,
+                                          height: 1.4,
+                                          letterSpacing: 1.6),
+                                    ),
+                                    SizedBox(
+                                      width: 15,
+                                    ),
+                                    Container(
+                                        decoration: BoxDecoration(
+                                            color: Colors.blue,
+                                            borderRadius: BorderRadius.all(
+                                                new Radius.circular(10))),
+                                        child: Padding(
+                                            padding: const EdgeInsets.fromLTRB(
+                                                8.0, 4, 8.0, 4),
+                                            child: TextButton(
+                                                onPressed: () {
+                                                  if (kIsWeb)
+                                                    setState(() {
+                                                      openSignIn = true;
+                                                    });
+                                                  else {
+                                                    if (service
+                                                        .isUserSignedIn())
+                                                      buildMobilePayment(false);
+                                                    else
+                                                      signInOptions(false);
+                                                  }
+                                                },
+                                                child: Directionality(
+                                                  textDirection:
+                                                      TextDirection.ltr,
+                                                  child: Text(
+                                                    AppLocalizations.of(
+                                                            context)!
+                                                        .enter,
+                                                    style: TextStyle(
+                                                        color: Colors.white),
+                                                  ),
+                                                )))),
+                                  ]),
+                            ),
+                          )
                       ],
                     ),
                     genreOptions(),
@@ -1026,12 +1020,12 @@ class _AllSongsState extends State<AllSongs> {
                   builder: (_) => Sing(songsPassed, counter.toString())));
         }
       }
-      else {
-        Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (_) => MobileSing(songsPassed, counter.toString())));
-      }
+      // else {
+      //   Navigator.push(
+      //       context,
+      //       MaterialPageRoute(
+      //           builder: (_) => MobileSing(songsPassed, counter.toString())));
+      // }
       setState(() {
         songsClicked.clear();
       });
@@ -1040,15 +1034,18 @@ class _AllSongsState extends State<AllSongs> {
 
   buildSongLayout(Song song, int index) {
     return SongLayout(
-        song: song,
-        index: index,
-        open: signedIn || demoSongNames.contains(song.title),
-        clickedIndex: songsClicked.indexWhere((element) =>
-                element.songResourceFile == song.songResourceFile) +
-            1,
-        onTapAction: () => _onSongPressed(song),
-        isSmartphone: _smartPhone,
-        memberText: AppLocalizations.of(context)!.membersOnly);
+      song: song,
+      index: index,
+      open: signedIn || demoSongNames.contains(song.title),
+      clickedIndex: songsClicked.indexWhere(
+              (element) => element.songResourceFile == song.songResourceFile) +
+          1,
+      onTapAction: () => _onSongPressed(song),
+      isSmartphone: _smartPhone,
+      memberText: AppLocalizations.of(context)!.membersOnly,
+      demoSongWording: AppLocalizations.of(context)!.demoWording,
+      demoSong: !signedIn && demoSongNames.contains(song.title),
+    );
   }
 
   bool isSmartphone() {
@@ -1076,94 +1073,33 @@ class _AllSongsState extends State<AllSongs> {
   expireWording() {
     if (kIsWeb)
       return Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Center(
-              child: Text(
-            AppLocalizations.of(context)!.outOfTimeError,
-            style: TextStyle(
-                fontFamily: 'SignInFont',
-                color: Colors.yellow,
-                wordSpacing: 5,
-                fontSize: 40,
-                height: 1.4,
-                letterSpacing: 1.6),
-          )),
-          Directionality(
-            textDirection: Directionality.of(context),
-            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Text(
-                AppLocalizations.of(context)!.addTime + " ",
-                style: TextStyle(
-                    fontFamily: 'SignInFont',
-                    color: Colors.white,
-                    wordSpacing: 5,
-                    fontSize: 30,
-                    height: 1.4,
-                    letterSpacing: 1.6),
-              ),
-              _loading
-                  ? new Container(
-                      color: Colors.transparent,
-                      width: 70.0,
-                      height: 70.0,
-                      child: new Padding(
-                          padding: const EdgeInsets.all(5.0),
-                          child: new Center(
-                              child: new CircularProgressIndicator())),
-                    )
-                  : Container(
-                      decoration: BoxDecoration(
-                          color: Colors.blue,
-                          borderRadius:
-                              BorderRadius.all(new Radius.circular(10))),
-                      child: Padding(
-                          padding: const EdgeInsets.fromLTRB(8.0, 4, 8.0, 4),
-                          child: TextButton(
-                              onPressed: addTime,
-                              child: Directionality(
-                                textDirection: TextDirection.ltr,
-                                child: Text(
-                                  AppLocalizations.of(context)!.enter,
-                                  style: TextStyle(
-                                      fontSize: 15, color: Colors.white),
-                                ),
-                              ))))
-            ]),
-          ),
-          SizedBox(
-            height: 15,
-          ),
-          MouseRegion(
-            cursor: SystemMouseCursors.click,
-            onEnter: (PointerEvent details) =>
-                setState(() => amIHovering = true),
-            onExit: (PointerEvent details) => setState(() {
-              amIHovering = false;
-            }),
-            child: RichText(
-                text: TextSpan(
-                    text: AppLocalizations.of(context)!.placeOrder,
-                    style: TextStyle(
-                      fontSize: 25,
-                      color: amIHovering ? Colors.blue[300] : Colors.blue,
-                      decoration: TextDecoration.underline,
-                    ),
-                    recognizer: TapGestureRecognizer()
-                      ..onTap = () {
-                        launch('https://ashira-music.com/product/karaoke/');
-                      })),
-          ),
-          SizedBox(
-            height: 15,
-          ),
-          Text(
-            _errorMessage,
-            style: TextStyle(color: Colors.red, fontSize: 20),
-          )
-        ],
-      );
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Center(
+                child: Text(
+              AppLocalizations.of(context)!.outOfTimeError,
+              style: TextStyle(
+                  fontFamily: 'SignInFont',
+                  color: Colors.yellow,
+                  wordSpacing: 5,
+                  fontSize: 40,
+                  height: 1.4,
+                  letterSpacing: 1.6),
+            )),
+            Directionality(
+                textDirection: Directionality.of(context),
+                child: Text(
+                  AppLocalizations.of(context)!.addTime,
+                  style: TextStyle(
+                      fontFamily: 'SignInFont',
+                      color: Colors.white,
+                      wordSpacing: 5,
+                      fontSize: 30,
+                      height: 1.4,
+                      letterSpacing: 1.6),
+                ))
+          ]);
   }
 
   checkTime() async {
@@ -1613,40 +1549,6 @@ class _AllSongsState extends State<AllSongs> {
                       child: RichText(
                         text: TextSpan(children: [
                           TextSpan(
-                              text: AppLocalizations.of(context)!.advanced,
-                              style: TextStyle(
-                                color: Colors.white,
-                              ),
-                              recognizer: TapGestureRecognizer()
-                                ..onTap = () {
-                                  setState(() {
-                                    display = DisplayOptions.PERSONAL_MOISHIE;
-                                  });
-                                }),
-                        ]),
-                      ),
-                    ),
-                    Theme(
-                      data: ThemeData(unselectedWidgetColor: Colors.red),
-                      child: Checkbox(
-                        //    <-- label
-                        value: display == DisplayOptions.PERSONAL_MOISHIE,
-                        onChanged: (newValue) {
-                          setState(() {
-                            display = DisplayOptions.PERSONAL_MOISHIE;
-                          });
-                        },
-                      ),
-                    )
-                  ],
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    Flexible(
-                      child: RichText(
-                        text: TextSpan(children: [
-                          TextSpan(
                               text: AppLocalizations.of(context)!.cameraOn,
                               style: TextStyle(
                                 color: Colors.white,
@@ -1672,37 +1574,6 @@ class _AllSongsState extends State<AllSongs> {
                         },
                       ),
                     ),
-                    if (!noVideos)
-                      Flexible(
-                        child: RichText(
-                          text: TextSpan(children: [
-                            TextSpan(
-                                text: AppLocalizations.of(context)!.withClip,
-                                style: TextStyle(
-                                  color: Colors.white,
-                                ),
-                                recognizer: TapGestureRecognizer()
-                                  ..onTap = () {
-                                    setState(() {
-                                      display = DisplayOptions.WITH_CLIP;
-                                    });
-                                  }),
-                          ]),
-                        ),
-                      ),
-                    if (!noVideos)
-                      Theme(
-                        data: ThemeData(unselectedWidgetColor: Colors.red),
-                        child: Checkbox(
-                          //    <-- label
-                          value: display == DisplayOptions.WITH_CLIP,
-                          onChanged: (newValue) {
-                            setState(() {
-                              display = DisplayOptions.WITH_CLIP;
-                            });
-                          },
-                        ),
-                      ),
                   ],
                 ),
               ],

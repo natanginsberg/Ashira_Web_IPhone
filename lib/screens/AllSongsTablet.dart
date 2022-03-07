@@ -6,10 +6,10 @@ import 'package:ashira_flutter/customWidgets/GenreButton.dart';
 import 'package:ashira_flutter/customWidgets/SongLayout.dart';
 import 'package:ashira_flutter/model/Song.dart';
 import 'package:ashira_flutter/screens/SingTablet.dart';
-import '../utils/webPurchases/WpHelper.dart' as wph;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dart_ipify/dart_ipify.dart';
-import 'package:device_info_plus/device_info_plus.dart';
+
+// import 'package:device_info_plus/device_info_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/cupertino.dart';
@@ -26,6 +26,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:wordpress_api/wordpress_api.dart' as wp;
 
 import '../main.dart';
+import '../utils/webPurchases/WpHelper.dart' as wph;
 
 class AllSongsTablet extends StatefulWidget {
   AllSongsTablet();
@@ -52,7 +53,6 @@ int changeTime = 7;
 
 class _AllSongsTabletState extends State<AllSongsTablet> {
   // Locale _locale = Locale.fromSubtags(languageCode: "he");
-  static final DeviceInfoPlugin deviceInfoPlugin = DeviceInfoPlugin();
   final TextEditingController controller = new TextEditingController();
   final TextEditingController timeController = new TextEditingController();
   bool _smartPhone = false;
@@ -834,15 +834,18 @@ class _AllSongsTabletState extends State<AllSongsTablet> {
 
   buildSongLayout(Song song, int index) {
     return SongLayout(
-        song: song,
-        index: index,
-        open: signedIn || demoSongNames.contains(song.title),
-        clickedIndex: songsClicked.indexWhere((element) =>
-                element.songResourceFile == song.songResourceFile) +
-            1,
-        onTapAction: () => _onSongPressed(song),
-        isSmartphone: _smartPhone,
-        memberText: AppLocalizations.of(context)!.membersOnly);
+      song: song,
+      index: index,
+      open: signedIn || demoSongNames.contains(song.title),
+      clickedIndex: songsClicked.indexWhere(
+              (element) => element.songResourceFile == song.songResourceFile) +
+          1,
+      onTapAction: () => _onSongPressed(song),
+      isSmartphone: _smartPhone,
+      demoSongWording: AppLocalizations.of(context)!.demoWording,
+      memberText: AppLocalizations.of(context)!.membersOnly,
+      demoSong: !signedIn && demoSongNames.contains(song.title),
+    );
   }
 
   bool isSmartphone() {

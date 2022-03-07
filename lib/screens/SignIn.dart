@@ -5,7 +5,7 @@ import 'package:ashira_flutter/model/Song.dart';
 import 'package:ashira_flutter/screens/Sing.dart';
 import '../utils/webPurchases/WpHelper.dart' as wph;
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:device_info_plus/device_info_plus.dart';
+// import 'package:device_info_plus/device_info_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
@@ -460,15 +460,6 @@ class _SignIn extends State<SignIn> {
     }
   }
 
-  void incrementByOne(QueryDocumentSnapshot doc) async {
-    DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
-
-    await deviceInfo.webBrowserInfo.then((value) => doc.reference.update({
-          'signIns': value.vendor! +
-              value.userAgent! +
-              value.hardwareConcurrency.toString()
-        }));
-  }
 
   bool isSmartphone() {
     final userAgent = html.window.navigator.userAgent.toString().toLowerCase();

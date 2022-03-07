@@ -1,7 +1,7 @@
 import 'package:ashira_flutter/screens/AllSongs.dart';
 import 'package:ashira_flutter/screens/Contracts.dart';
 
-import 'package:ashira_flutter/screens/MobileSing.dart';
+// import 'package:ashira_flutter/screens/MobileSing.dart';
 import 'package:ashira_flutter/screens/Promo.dart';
 import 'package:ashira_flutter/screens/Sing.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -98,7 +98,7 @@ class _AppState extends State<App> {
                 // '/signIn': (context) => SignIn(),
                 '/allSongs': (context) => AllSongs(),
                 '/sing': (context) => Sing(songs, ""),
-                '/mobileSing': (context) => MobileSing(songs, ""),
+                // '/mobileSing': (context) => MobileSing(songs, ""),
               },
             );
           }
