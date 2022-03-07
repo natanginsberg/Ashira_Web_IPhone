@@ -66,10 +66,6 @@ class MobileUserHandler extends UserHandler {
     firestoreDoc['expirationDate'] = "";
     firestoreDoc["picUrl"] = photoURL;
 
-    // users.where("userEmail", isEqualTo: email).get().then(
-    //     (QuerySnapshot querySnapshot) => querySnapshot.docs.forEach((doc) {
-    //           return;
-    //         }));
     bool userAdded = false;
 
     Future<void> addUser() {

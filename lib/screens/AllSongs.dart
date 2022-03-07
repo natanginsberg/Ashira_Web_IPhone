@@ -8,7 +8,7 @@ import 'package:ashira_flutter/customWidgets/SongLayout.dart';
 import 'package:ashira_flutter/model/DisplayOptions.dart';
 import 'package:ashira_flutter/model/Song.dart';
 
-// import 'package:ashira_flutter/screens/MobileSing.dart';
+import 'package:ashira_flutter/screens/MobileSing.dart';
 import 'package:ashira_flutter/utils/AppleSignIn.dart';
 import 'package:ashira_flutter/utils/WebFlow.dart';
 import 'package:ashira_flutter/utils/firetools/FirebaseService.dart';
@@ -38,7 +38,6 @@ import 'package:universal_html/html.dart' as html;
 import 'package:url_launcher/url_launcher.dart';
 
 import '../main.dart';
-import '../utils/webPurchases/WpHelper.dart' as wph;
 import 'Sing.dart';
 
 class AllSongs extends StatefulWidget {
@@ -150,6 +149,8 @@ class _AllSongsState extends State<AllSongs> {
   var userHandler;
 
   late WebFlow webFlow;
+
+  bool addTimeHovering = false;
 
   _AllSongsState();
 
@@ -742,63 +743,69 @@ class _AllSongsState extends State<AllSongs> {
                               ],
                             ),
                           ),
-                        if (!signedIn)
-                          Container(
-                            height: 50,
-                            color: Colors.black,
-                            child: Directionality(
-                              textDirection: Directionality.of(context),
-                              child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      AppLocalizations.of(context)!.enterSystem,
-                                      style: TextStyle(
-                                          fontFamily: 'SignInFont',
-                                          color: Colors.white,
-                                          wordSpacing: 5,
-                                          height: 1.4,
-                                          letterSpacing: 1.6),
-                                    ),
-                                    SizedBox(
-                                      width: 15,
-                                    ),
-                                    Container(
-                                        decoration: BoxDecoration(
-                                            color: Colors.blue,
-                                            borderRadius: BorderRadius.all(
-                                                new Radius.circular(10))),
-                                        child: Padding(
-                                            padding: const EdgeInsets.fromLTRB(
-                                                8.0, 4, 8.0, 4),
-                                            child: TextButton(
-                                                onPressed: () {
-                                                  if (kIsWeb)
-                                                    setState(() {
-                                                      openSignIn = true;
-                                                    });
-                                                  else {
-                                                    if (service
-                                                        .isUserSignedIn())
-                                                      buildMobilePayment(false);
-                                                    else
-                                                      signInOptions(false);
-                                                  }
-                                                },
-                                                child: Directionality(
-                                                  textDirection:
-                                                      TextDirection.ltr,
-                                                  child: Text(
-                                                    AppLocalizations.of(
-                                                            context)!
-                                                        .enter,
-                                                    style: TextStyle(
-                                                        color: Colors.white),
-                                                  ),
-                                                )))),
-                                  ]),
-                            ),
-                          )
+                        signedIn
+                            ? placeNewOrder()
+                            : Container(
+                                height: 50,
+                                color: Colors.black,
+                                child: Directionality(
+                                  textDirection: Directionality.of(context),
+                                  child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          AppLocalizations.of(context)!
+                                              .enterSystem,
+                                          style: TextStyle(
+                                              fontFamily: 'SignInFont',
+                                              color: Colors.white,
+                                              wordSpacing: 5,
+                                              height: 1.4,
+                                              letterSpacing: 1.6),
+                                        ),
+                                        SizedBox(
+                                          width: 15,
+                                        ),
+                                        Container(
+                                            decoration: BoxDecoration(
+                                                color: Colors.blue,
+                                                borderRadius: BorderRadius.all(
+                                                    new Radius.circular(10))),
+                                            child: Padding(
+                                                padding:
+                                                    const EdgeInsets.fromLTRB(
+                                                        8.0, 4, 8.0, 4),
+                                                child: TextButton(
+                                                    onPressed: () {
+                                                      if (kIsWeb)
+                                                        setState(() {
+                                                          openSignIn = true;
+                                                        });
+                                                      else {
+                                                        if (service
+                                                            .isUserSignedIn())
+                                                          buildMobilePayment(
+                                                              false);
+                                                        else
+                                                          signInOptions(false);
+                                                      }
+                                                    },
+                                                    child: Directionality(
+                                                      textDirection:
+                                                          TextDirection.ltr,
+                                                      child: Text(
+                                                        AppLocalizations.of(
+                                                                context)!
+                                                            .enter,
+                                                        style: TextStyle(
+                                                            color:
+                                                                Colors.white),
+                                                      ),
+                                                    )))),
+                                      ]),
+                                ),
+                              )
                       ],
                     ),
                     genreOptions(),
@@ -1019,12 +1026,12 @@ class _AllSongsState extends State<AllSongs> {
                   builder: (_) => Sing(songsPassed, counter.toString())));
         }
       }
-      // else {
-      //   Navigator.push(
-      //       context,
-      //       MaterialPageRoute(
-      //           builder: (_) => MobileSing(songsPassed, counter.toString())));
-      // }
+      else {
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (_) => MobileSing(songsPassed, counter.toString())));
+      }
       setState(() {
         songsClicked.clear();
       });
@@ -1327,7 +1334,6 @@ class _AllSongsState extends State<AllSongs> {
   }
 
   void getPurchaseFromStore(bool newUser, bool timesUp) async {
-    wph.WordPressAPI api = wph.WordPressAPI('https://ashira-music.com');
     try {
       try {
         var res = await CheckForPurchase().getWooCommerceId(email);
@@ -1359,7 +1365,7 @@ class _AllSongsState extends State<AllSongs> {
       if (!available) {
         errorVal = AppLocalizations.of(context)!.storeReachError;
       }
-      const Set<String> _kIds = <String>{"daily_buy"};
+      const Set<String> _kIds = <String>{"daily_buy", "monthly_buy"};
       final ProductDetailsResponse response =
           await InAppPurchase.instance.queryProductDetails(_kIds);
       if (response.notFoundIDs.isNotEmpty) {
@@ -1419,52 +1425,52 @@ class _AllSongsState extends State<AllSongs> {
                                           : Colors.red,
                                       fontSize: 12),
                                 )),
-                                // if (!loading)
-                                //   Center(
-                                //     child: Container(
-                                //         width:
-                                //             MediaQuery.of(context).size.width /
-                                //                 2,
-                                //         height: 50,
-                                //         decoration: BoxDecoration(
-                                //             border: Border.all(
-                                //                 color: Colors.purple),
-                                //             borderRadius: BorderRadius.all(
-                                //                 new Radius.circular(10.0))),
-                                //         child: ElevatedButton(
-                                //           style: ButtonStyle(
-                                //               backgroundColor:
-                                //                   MaterialStateProperty
-                                //                       .all<Color>(errorVal == ""
-                                //                           ? Colors.blueAccent
-                                //                           : Colors.grey)),
-                                //           onPressed: () {
-                                //             if (errorVal == "")
-                                //               startPaymentFlow(products.last);
-                                //           },
-                                //           child: Row(
-                                //               mainAxisAlignment:
-                                //                   MainAxisAlignment.spaceEvenly,
-                                //               children: [
-                                //                 Flexible(
-                                //                     child: Container(
-                                //                   child: Text(
-                                //                     AppLocalizations.of(
-                                //                             context)!
-                                //                         .monthlySub,
-                                //                     style: TextStyle(
-                                //                         color: Colors.white),
-                                //                   ),
-                                //                 )),
-                                //                 Container(
-                                //                   color: Colors.pink,
-                                //                   child: Text("50₪",
-                                //                       style: TextStyle(
-                                //                           color: Colors.white)),
-                                //                 )
-                                //               ]),
-                                //         )),
-                                //   ),
+                                if (!loading)
+                                  Center(
+                                    child: Container(
+                                        width:
+                                            MediaQuery.of(context).size.width /
+                                                2,
+                                        height: 50,
+                                        decoration: BoxDecoration(
+                                            border: Border.all(
+                                                color: Colors.purple),
+                                            borderRadius: BorderRadius.all(
+                                                new Radius.circular(10.0))),
+                                        child: ElevatedButton(
+                                          style: ButtonStyle(
+                                              backgroundColor:
+                                                  MaterialStateProperty
+                                                      .all<Color>(errorVal == ""
+                                                          ? Colors.blueAccent
+                                                          : Colors.grey)),
+                                          onPressed: () {
+                                            if (errorVal == "")
+                                              startPaymentFlow(products.last);
+                                          },
+                                          child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.spaceEvenly,
+                                              children: [
+                                                Flexible(
+                                                    child: Container(
+                                                  child: Text(
+                                                    AppLocalizations.of(
+                                                            context)!
+                                                        .monthlySub,
+                                                    style: TextStyle(
+                                                        color: Colors.white),
+                                                  ),
+                                                )),
+                                                Container(
+                                                  color: Colors.pink,
+                                                  child: Text("50₪",
+                                                      style: TextStyle(
+                                                          color: Colors.white)),
+                                                )
+                                              ]),
+                                        )),
+                                  ),
                                 if (!loading)
                                   Center(
                                     child: Container(
@@ -2226,6 +2232,131 @@ class _AllSongsState extends State<AllSongs> {
     final PurchaseParam purchaseParam =
         PurchaseParam(productDetails: productDetails);
     InAppPurchase.instance.buyConsumable(purchaseParam: purchaseParam);
+  }
+
+  placeNewOrder() {
+    return Container(
+      height: 50,
+      color: Colors.black,
+      child: Directionality(
+        textDirection: Directionality.of(context),
+        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Text(
+            AppLocalizations.of(context)!.addTime + " ",
+            style: TextStyle(
+                fontFamily: 'SignInFont',
+                color: Colors.white,
+                wordSpacing: 5,
+                height: 1.4,
+                letterSpacing: 1.6),
+          ),
+          SizedBox(
+            width: 15,
+          ),
+          Directionality(
+            textDirection: Directionality.of(context),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Row(
+                  children: [
+                    IconButton(
+                      icon: Icon(
+                        Icons.remove,
+                        color: Colors.white,
+                      ),
+                      onPressed: () {
+                        if (quantity > 0)
+                          setState(() {
+                            quantity -= 1;
+                          });
+                      },
+                    ),
+                    Text(
+                        quantity.toString() +
+                            " " +
+                            AppLocalizations.of(context)!.hours,
+                        style: TextStyle(color: Colors.white)),
+                    IconButton(
+                      icon: Icon(
+                        Icons.add,
+                        color: Colors.white,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          quantity += 1;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+                SizedBox(
+                  width: 20,
+                ),
+                Center(
+                  child: MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    onEnter: (PointerEvent details) =>
+                        setState(() => amIHovering = true),
+                    onExit: (PointerEvent details) => setState(() {
+                      amIHovering = false;
+                    }),
+                    child: RichText(
+                        text: TextSpan(
+                            text: AppLocalizations.of(context)!.placeOrder,
+                            style: TextStyle(
+                              fontSize: 18,
+                              color:
+                                  amIHovering ? Colors.blue[300] : Colors.blue,
+                              decoration: TextDecoration.underline,
+                            ),
+                            recognizer: TapGestureRecognizer()
+                              ..onTap = () {
+                                launch(
+                                    "https://ashira-music.com/checkout/?add-to-cart=1102&quantity=$quantity");
+                              })),
+                  ),
+                ),
+                SizedBox(
+                  width: 15,
+                ),
+                Center(
+                  child: MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    onEnter: (PointerEvent details) =>
+                        setState(() => addTimeHovering = true),
+                    onExit: (PointerEvent details) => setState(() {
+                      addTimeHovering = false;
+                    }),
+                    child: RichText(
+                        text: TextSpan(
+                            text: AppLocalizations.of(context)!.add,
+                            style: TextStyle(
+                              fontSize: 18,
+                              color: addTimeHovering
+                                  ? Colors.green[300]
+                                  : Colors.green,
+                              decoration: TextDecoration.underline,
+                            ),
+                            recognizer: TapGestureRecognizer()
+                              ..onTap = () {
+                                addTime();
+                              })),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(
+            height: 15,
+          ),
+          Text(
+            _errorMessage,
+            style: TextStyle(color: Colors.red, fontSize: 20),
+          )
+        ]),
+      ),
+    );
   }
 }
 

@@ -50,6 +50,7 @@ class CheckForPurchase {
         Map<String, int> returnArgs = new Map();
         returnArgs["id"] = d["id"];
         returnArgs["quantity"] = getQuantity(d);
+        print(d);
         return returnArgs;
       }
     }

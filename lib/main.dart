@@ -1,9 +1,8 @@
 import 'package:ashira_flutter/screens/AllSongs.dart';
-
 import 'package:ashira_flutter/screens/Contracts.dart';
-// import 'package:ashira_flutter/screens/MobileSing.dart';
-import 'package:ashira_flutter/screens/Promo.dart';
 
+import 'package:ashira_flutter/screens/MobileSing.dart';
+import 'package:ashira_flutter/screens/Promo.dart';
 import 'package:ashira_flutter/screens/Sing.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -41,14 +40,7 @@ class _AppState extends State<App> {
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
-  }
-
-  void _initializeLocale(BuildContext context) {
-    Locale myLocale = Localizations.localeOf(context);
-    App.setLocale(context, myLocale);
-    // return myLocale;
   }
 
   @override
@@ -80,10 +72,9 @@ class _AppState extends State<App> {
                 const Locale('he', 'IL'), // Hebrew, no country code
               ],
               localeResolutionCallback: (locale, supportedLocales) {
-                print(locale!.languageCode);
                 for (var supportedLocaleLanguage in supportedLocales) {
                   if (supportedLocaleLanguage.languageCode ==
-                      locale.languageCode) {
+                      locale!.languageCode) {
                     // if (originalCode == "") {
                     originalLanguageCode = locale.languageCode;
                     // }
@@ -107,7 +98,7 @@ class _AppState extends State<App> {
                 // '/signIn': (context) => SignIn(),
                 '/allSongs': (context) => AllSongs(),
                 '/sing': (context) => Sing(songs, ""),
-                // '/mobileSing': (context) => MobileSing(songs, ""),
+                '/mobileSing': (context) => MobileSing(songs, ""),
               },
             );
           }

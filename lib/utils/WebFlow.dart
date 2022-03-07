@@ -36,6 +36,10 @@ class WebFlow {
 
   bool mounted = false;
 
+  int quantity = 0;
+
+  bool amIHovering = false;
+
   WebFlow(
       {required this.buildContext,
       required this.getValues,
@@ -83,6 +87,87 @@ class WebFlow {
                                 fit: BoxFit.fill,
                               ),
                               shape: BoxShape.rectangle,
+                            ),
+                          ),
+                          Directionality(
+                            textDirection: Directionality.of(buildContext),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Row(
+                                  children: [
+                                    // Text(
+                                    //     AppLocalizations.of(buildContext)!
+                                    //         .notACustomer,
+                                    //     style: TextStyle(
+                                    //         fontSize: 16, color: Colors.white)),
+                                    // SizedBox(
+                                    //   width: 15,
+                                    // ),
+                                    IconButton(
+                                      icon: Icon(
+                                        Icons.remove,
+                                        color: Colors.white,
+                                      ),
+                                      onPressed: () {
+                                        if (quantity > 0)
+                                          setState(() {
+                                            quantity -= 1;
+                                          });
+                                      },
+                                    ),
+                                    Text(
+                                        quantity.toString() +
+                                            " " +
+                                            AppLocalizations.of(buildContext)!
+                                                .hours,
+                                        style: TextStyle(color: Colors.white)),
+                                    IconButton(
+                                      icon: Icon(
+                                        Icons.add,
+                                        color: Colors.white,
+                                      ),
+                                      onPressed: () {
+                                        setState(() {
+                                          quantity += 1;
+                                        });
+                                      },
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(
+                                  width: 20,
+                                ),
+                                Center(
+                                  child: MouseRegion(
+                                    cursor: SystemMouseCursors.click,
+                                    onEnter: (PointerEvent details) =>
+                                        setState(() => amIHovering = true),
+                                    onExit: (PointerEvent details) =>
+                                        setState(() {
+                                      amIHovering = false;
+                                    }),
+                                    child: RichText(
+                                        text: TextSpan(
+                                            text: AppLocalizations.of(
+                                                    buildContext)!
+                                                .placeOrder,
+                                            style: TextStyle(
+                                              fontSize: 18,
+                                              color: amIHovering
+                                                  ? Colors.blue[300]
+                                                  : Colors.blue,
+                                              decoration:
+                                                  TextDecoration.underline,
+                                            ),
+                                            recognizer: TapGestureRecognizer()
+                                              ..onTap = () {
+                                                launch(
+                                                    "https://ashira-music.com/checkout/?add-to-cart=1102&quantity=$quantity");
+                                              })),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                           Center(
@@ -279,38 +364,38 @@ class WebFlow {
                                   ),
                                 )),
                               ),
-                              Padding(
-                                padding: const EdgeInsets.all(5.0),
-                                child: Center(
-                                  child: MouseRegion(
-                                    cursor: SystemMouseCursors.click,
-                                    onEnter: (PointerEvent details) => setState(
-                                        () => amIWatsAppHovering = true),
-                                    onExit: (PointerEvent details) =>
-                                        setState(() {
-                                      amIWatsAppHovering = false;
-                                    }),
-                                    child: RichText(
-                                        text: TextSpan(
-                                            text: AppLocalizations.of(
-                                                    buildContext)!
-                                                .watsappNumber,
-                                            style: TextStyle(
-                                              fontSize: 18,
-                                              color: amIWatsAppHovering
-                                                  ? Colors.green[300]
-                                                  : Colors.blue,
-                                              decoration:
-                                                  TextDecoration.underline,
-                                            ),
-                                            recognizer: TapGestureRecognizer()
-                                              ..onTap = () {
-                                                launch(
-                                                    "https://wa.me/message/6CROFFTK7A5BE1");
-                                              })),
-                                  ),
-                                ),
-                              ),
+                              // Padding(
+                              //   padding: const EdgeInsets.all(5.0),
+                              //   child: Center(
+                              //     child: MouseRegion(
+                              //       cursor: SystemMouseCursors.click,
+                              //       onEnter: (PointerEvent details) => setState(
+                              //           () => amIWatsAppHovering = true),
+                              //       onExit: (PointerEvent details) =>
+                              //           setState(() {
+                              //         amIWatsAppHovering = false;
+                              //       }),
+                              //       child: RichText(
+                              //           text: TextSpan(
+                              //               text: AppLocalizations.of(
+                              //                       buildContext)!
+                              //                   .watsappNumber,
+                              //               style: TextStyle(
+                              //                 fontSize: 18,
+                              //                 color: amIWatsAppHovering
+                              //                     ? Colors.green[300]
+                              //                     : Colors.blue,
+                              //                 decoration:
+                              //                     TextDecoration.underline,
+                              //               ),
+                              //               recognizer: TapGestureRecognizer()
+                              //                 ..onTap = () {
+                              //                   launch(
+                              //                       "https://wa.me/message/6CROFFTK7A5BE1");
+                              //                 })),
+                              //     ),
+                              //   ),
+                              // ),
                               Padding(
                                 padding: const EdgeInsets.all(5.0),
                                 child: Center(
