@@ -10,17 +10,17 @@ class WebUserHandler extends UserHandler{
     Map<String, dynamic> firestoreDoc = new Map<String, dynamic>();
     bool timeAdded = false;
     firestoreDoc["endTime"] = endTime;
-    firestoreDoc['email'] = email;
-    firestoreDoc['hours'] = quantity;
-    firestoreDoc['password'] = password;
+    // firestoreDoc['email'] = email;
+    // firestoreDoc['hours'] = quantity;
+    // firestoreDoc['password'] = password;
 
     CollectionReference users =
     FirebaseFirestore.instance.collection('internetUsers');
 
     Future<void> addUser() {
       return users
-          .doc(email)
-          .set(firestoreDoc)
+          .doc(email).update(firestoreDoc)
+          // .(firestoreDoc)
           .then((value) => timeAdded = true)
           .catchError((error) {});
     }

@@ -470,11 +470,14 @@ class WebFlow {
     userHandler.setEmail(email);
     userHandler.setPassword(password);
     bool saveIp = !(password != "" && password == "בלי");
+    print(password);
+    print(email);
     try {
       DocumentSnapshot<Map<String, dynamic>> doc =
           await userHandler.checkUser();
       if (doc.exists) {
         if ((doc.data()!.containsKey("password"))) {
+          print(doc.get("password"));
           if (password != doc.get("password")) {
             if (mounted)
               setState(() {
@@ -483,15 +486,15 @@ class WebFlow {
                 _loading = false;
               });
             return;
-          } else {
-            if (mounted)
-              setState(() {
-                _errorMessage = AppLocalizations.of(buildContext)!
-                    .passwordAndUserNameDoNotMatch;
-                _loading = false;
-              });
-            return;
           }
+        } else {
+          if (mounted)
+            setState(() {
+              _errorMessage = AppLocalizations.of(buildContext)!
+                  .passwordAndUserNameDoNotMatch;
+              _loading = false;
+            });
+          return;
         }
         if ((doc.data()!.containsKey("endTime"))) // time was already allocated
         {
@@ -506,7 +509,7 @@ class WebFlow {
           }
         } else {
           if (doc.data()!.containsKey("hours")) {
-            await addTimeToFirebase(doc.get("hours"));
+            await addTimeToFirebase(int.parse(doc.get("hours").toString()));
           }
         }
       } else {
